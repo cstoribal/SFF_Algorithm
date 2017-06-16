@@ -1,5 +1,3 @@
 # SFF_Algorithm
-# SFF_Algorithm
-# SFF_Algorithm
-# SFF_Algorithm
-# SFF_Algorithm
+
+Try "./ProjSFF help all" for help.
