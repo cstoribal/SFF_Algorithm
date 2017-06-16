@@ -32,7 +32,8 @@ loading saving images, depths, and visualisations
 #include <fstream>
 #include <vector>
 
-#include "miscdef.h"
+#include "../misc/miscdef.h"
+#include "../io/mgldrw.h"
 
 
 
@@ -88,6 +89,7 @@ public:
 			 bool (*fptr)(void*,Point), void* context) ;
     bool writeImage(const string filename, const Mat & image);
 
+    bool write3DImage(const string filename, const Mat & image);
     bool show3DImage(const string filename, const Mat & image);
     bool mat3Dplot(void);
 
@@ -104,7 +106,7 @@ private:
 
 
 
-
+    MyDrawer2D myDrawer2D;
 
     /////////////// Loading variables...
     string arg_filename;	// filename - used for help choice

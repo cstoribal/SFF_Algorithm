@@ -28,9 +28,9 @@
 #include <fstream>
 #include <vector>
 
-#include "miscdef.h"
-#include "gco/GCoptimization.h"
-#include "energy2.h"
+#include "../misc/miscdef.h"
+#include "../gco/GCoptimization.h"
+#include "../tool/energy2.h"
 
 using namespace std;
 using namespace cv;

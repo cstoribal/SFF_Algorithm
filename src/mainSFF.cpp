@@ -18,9 +18,8 @@
 #include <opencv2/highgui.hpp>
 
 
-#include "testClass.h"
+#include "misc/testClass.h"
 #include "sffClass.h"
-// #include "depthEstimator.h"
 
 
 using namespace cv;

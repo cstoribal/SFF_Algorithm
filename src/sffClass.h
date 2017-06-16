@@ -30,13 +30,13 @@ Aimed at holding test functions
 
 #include "gco/GCoptimization.h"
 
-#include "IOWizard.h"
-#include "sharpnessOperator.h"
-#include "depthEstimator.h"
-#include "energy2.h"
-#include "testClass.h"
-#include "optimization.h"
-#include "evaluation.h"
+#include "io/IOWizard.h"
+#include "tool/sharpnessOperator.h"
+#include "tool/depthEstimator.h"
+#include "tool/energy2.h"
+#include "misc/testClass.h"
+#include "tool/optimization.h"
+#include "tool/evaluation.h"
 
 using namespace cv;
 using namespace std;

@@ -1016,7 +1016,7 @@ bool IOWizard::writeImage(const string filename, const Mat & image){
 }
 
 
-bool IOWizard::show3DImage(const string filename, const Mat & image){
+bool IOWizard::write3DImage(const string filename, const Mat & image){
     fType imin, imax;
     int resolution;
     int rows = image.rows;
@@ -1041,6 +1041,37 @@ bool IOWizard::show3DImage(const string filename, const Mat & image){
 
     gr.WritePNG((autofolder + filename).c_str());
     //gr.Run();    
+    
+    
+
+    return 0;
+    
+    
+}
+
+bool IOWizard::show3DImage(const string filename, const Mat & image){
+    fType imin, imax;
+    int resolution;
+    int cols = image.cols;
+    vector<Mat> vmat_data;
+    vmat_data.push_back(image);
+
+    cv::minMaxLoc(image,&imin,&imax);
+
+
+    this->myDrawer2D.vmat_data = vmat_data;
+    this->myDrawer2D.imin = imin;
+    this->myDrawer2D.imax = imax;
+    this->myDrawer2D.rows = image.rows;
+    this->myDrawer2D.cols = image.cols;
+    this->myDrawer2D.filename = filename;
+
+
+
+    mglQT gr(&(this->myDrawer2D),filename.c_str());
+
+    gr.WritePNG((autofolder + filename).c_str());
+    gr.Run();    
     
     
 

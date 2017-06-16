@@ -27,7 +27,7 @@ Computing sharpness matrix
 #include <fstream>
 #include <vector>
 
-#include "miscdef.h"
+#include "../misc/miscdef.h"
 
 using namespace cv;
 using namespace std;
