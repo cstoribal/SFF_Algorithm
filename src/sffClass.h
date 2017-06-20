@@ -31,6 +31,7 @@ Aimed at holding test functions
 #include "gco/GCoptimization.h"
 
 #include "io/IOWizard.h"
+#include "tool/pretreat.h"
 #include "tool/sharpnessOperator.h"
 #include "tool/depthEstimator.h"
 #include "tool/energy2.h"
@@ -46,8 +47,10 @@ using namespace std;
 class MySFF{
 public:
     MySFF();~MySFF();
+    MyLog     myLog;
     TestClass testClass;
     IOWizard ioWizard;
+    PreTreatment pretreatClass;
     Sharpness_Operator sharpOP;
     DepthClass depthEst;
     EnergyClass energyClass;
@@ -57,8 +60,8 @@ public:
 
     tdf_input input_prts;
 
-    typedef_imgset imageSet;
-    typedef_imgset sharpSet;
+    tdf_imgset   imageSet;
+    tdf_imgset   sharpSet;
     tdfp_depth   depth_parameters;
     tdfp_opti     opti_prts;
     
@@ -113,7 +116,6 @@ private:
     
 
 };
-
 
 bool forwarder(void* context, Point A);
 

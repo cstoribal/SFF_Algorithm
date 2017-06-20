@@ -64,7 +64,7 @@ bool DepthClass::buildEstimation(void){
     return true;
 }
 
-bool DepthClass::buildEstimation(const typedef_imgset & sharpSet, tdfp_depth & pmat){
+bool DepthClass::buildEstimation(const tdf_imgset & sharpSet, tdfp_depth & pmat){
     this->set_dim[0] = sharpSet[0].ivmat[0].rows;
     this->set_dim[1] = sharpSet[0].ivmat[0].cols;
     this->set_dim[2] = sharpSet.size();
@@ -115,7 +115,7 @@ vector<double> DepthClass::getLabels(void){
 }
         
 
-bool DepthClass::showInterpolationAt(const vector<cv::Point> & vP, const typedef_imgset & SharpSet, const tdfp_depth & dparam, const cv::Mat1d & dmat, const string & folder){
+bool DepthClass::showInterpolationAt(const vector<cv::Point> & vP, const tdf_imgset & SharpSet, const tdfp_depth & dparam, const cv::Mat1d & dmat, const string & folder){
     if(type=="polynome") s_poly_ij(vP, SharpSet, dparam, dmat, folder);
     
     return true ;
@@ -133,7 +133,7 @@ bool DepthClass::showInterpolationAt(const vector<cv::Point> & vP, const typedef
 
 
 
-bool DepthClass::f_poly(const typedef_imgset & sharpSet, tdfp_depth & dparam){
+bool DepthClass::f_poly(const tdf_imgset & sharpSet, tdfp_depth & dparam){
     // gives the parameters of each i*j polynom (coefficients) from 
     if(sharpSet.size() == 0) return false;
     int N = set_dim[2];
@@ -306,7 +306,7 @@ bool DepthClass::interpolate(const vector<double> & x, const vector<double> & y,
     return true;
 }
 
-bool DepthClass::s_poly_ij(const vector<cv::Point> & vP, const typedef_imgset & sharpSet, const tdfp_depth & dparam,const cv::Mat1d & dmat, const string & folder){
+bool DepthClass::s_poly_ij(const vector<cv::Point> & vP, const tdf_imgset & sharpSet, const tdfp_depth & dparam,const cv::Mat1d & dmat, const string & folder){
     // calls gnuplot in order to sketch the evolution of sharpness and sharpness interpolated on one pixel.
     
     // build a vector holding sharpness vs depth (actually not that will just be the call)

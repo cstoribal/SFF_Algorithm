@@ -10,6 +10,8 @@ Aimed at managing all the IO data tranfers
 loading saving images, depths, and visualisations
 */
 
+//updates updvl0.1
+
 #ifndef IOWIZARD_H_
 #define IOWIZARD_H_
 
@@ -70,15 +72,15 @@ public:
     vector<Point> clicked; // last clicked point on window
 
 
-    bool addbuffer(const string & text);
-    bool writebuffer(void);
+    //bool addbuffer(const string & text); //updvl0.1
+    //bool writebuffer(void); //updvl0.1
 
     // Image Processing
     bool readImage(const string filepath, Mat & image);
     bool nameImage(const string filepath, const string extension, int indice, string& samplepath);
-    bool buildImageSet(typedef_imgset& imageSet);
+    bool buildImageSet(tdf_imgset& imageSet);
     	//when parameters are written on a txt file along with samples
-    bool autosetImsetParameters(typedef_imgset & imageSet);
+    bool autosetImsetParameters(tdf_imgset & imageSet);
 
     bool loadGroundTruth(Mat & gtmat, string filepath);
 
@@ -102,7 +104,7 @@ public:
 
 private:
     string autofolder;          // automatically added to filenames
-    string program_logs;
+    // string program_logs;  //Upd VL0.1
 
 
 
@@ -122,7 +124,7 @@ private:
     int arg_sizeindice;		//
     double arg_scale;		// scales the image
     int arg_gauss;		// windows size
-    double arg_noise1,arg_noise2,arg_noise3;//
+    double arg_noise_a,arg_noise_b,arg_noise_ca,arg_noise_cs;//
     int arg_sharpness;		// set focus measurement type
     int arg_depth;		// set local depth estimator type
     int arg_nrjdata;		// set energy for data related term

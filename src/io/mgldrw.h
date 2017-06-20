@@ -36,8 +36,8 @@ class MyDrawer2D: public mglDraw {
             
             gr->Title(filename.c_str());
             gr->Light(true);  gr->Rotate(50,60);
-            gr->SetRange('z',imin,imax); //gr.SetOrigin(-1,-1,-1); 
-            gr->Axis();
+            //gr->Axis("xyz");
+            gr->SetRange('z',imax,imin); //gr.SetOrigin(-1,-1,-1); 
             gr->Label('z',"depth",0); 
             gr->Box();  gr->Surf(a);
             return 0;

@@ -24,13 +24,13 @@ public:
     std::string type; // 8poly, gaussian, ...
     bool set_param(string settype);
     bool buildEstimation(void);
-    bool buildEstimation(const typedef_imgset & sharpSet, tdfp_depth & pdmat);
+    bool buildEstimation(const tdf_imgset & sharpSet, tdfp_depth & pdmat);
     bool buildDepthmat(const tdfp_depth & dparam, cv::Mat1d & dmat, cv::Mat1d & dmat_rank, cv::Mat1d & dmat_score);
     int getRankFromDepth(fType input);
     int getNbLabels(void);
     vector<fType> getLabels(void);
     
-    bool showInterpolationAt(const vector<cv::Point> & vP, const typedef_imgset & SharpSet, const tdfp_depth & dparam, const cv::Mat1d & dmat, const string & folder);
+    bool showInterpolationAt(const vector<cv::Point> & vP, const tdf_imgset & SharpSet, const tdfp_depth & dparam, const cv::Mat1d & dmat, const string & folder);
 
     
     
@@ -44,12 +44,12 @@ private:
     vector<vector<fType> > DepthToRank; // holds interpolated depth [0] and corresponding picture [1]
 
 ////Polynomial interpolation
-    bool f_poly(const typedef_imgset & sharpSet, tdfp_depth & pdmat);
+    bool f_poly(const tdf_imgset & sharpSet, tdfp_depth & pdmat);
     bool d_poly(const tdfp_depth & dparam, cv::Mat1d & dmat, cv::Mat1d & dmat_rank, cv::Mat1d & dmat_score);
     int degree; // degré du polynôme
     
     bool interpolate(const vector<fType> & x, const vector<fType> & y, int n, int N, vector<fType> X, vector<fType> & z);
-    bool s_poly_ij(const vector<cv::Point> & vP, const typedef_imgset & sharpSet, const tdfp_depth & dparam, const cv::Mat1d & dmat, const string & folder);
+    bool s_poly_ij(const vector<cv::Point> & vP, const tdf_imgset & sharpSet, const tdfp_depth & dparam, const cv::Mat1d & dmat, const string & folder);
 
     
 ////Gaussian interpolation

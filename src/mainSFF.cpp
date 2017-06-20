@@ -48,8 +48,14 @@ int main( int argc, char** argv )
     
     t1 = std::time(0);
     printf(" %li seconds for buildingdataset\n", t1-t0);
-    mySFF.preTreat(); //TODO add noise !
+    mySFF.preTreat();
 
+    for(int i=0; i<mySFF.imageSet.size(); i++)
+    {
+        Mat tmpmat2;
+        merge(mySFF.imageSet[i].ivmat,tmpmat2);
+        mySFF.ioWizard.showImage("scale",tmpmat2,1000);
+    }
     t0 = std::time(0);
     printf(" %li seconds for pretreatment\n", t0-t1);
 
@@ -66,7 +72,7 @@ int main( int argc, char** argv )
     //mySFF.ioWizard.showImage("scale",mySFF.dmat,1000);
     mySFF.ioWizard.writeImage("Idist.png",mySFF.dmat);
 
-    Mat1d tmpmat;
+    Mat1T tmpmat;
     log(mySFF.dmat_score,tmpmat);
     //mySFF.ioWizard.showImage("scale",tmpmat,5000);
     mySFF.ioWizard.writeImage("Iscore.png",tmpmat);

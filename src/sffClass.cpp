@@ -51,12 +51,15 @@ bool MySFF::loadProblem(int argc, char** argv){
 }
 
 bool MySFF::preTreat(void){
-    //for(int i=0; i<imageSet.size(); i++){
-    //for(int j=0; j<imageSet[0].dim; j++){
+    for(int i=0; i<imageSet.size(); i++){
+    for(int j=0; j<imageSet[0].dim; j++){
+        pretreatClass.set_param(&myLog,input_prts);
+        pretreatClass.compute_noises(imageSet[i].ivmat[j]);
         //resize(imageSet[i].ivmat[j], imageSet[i].ivmat[j], Size(), 0.2, 0.2);
         //GaussianBlur(imageSet[i].ivmat[j],imageSet[i].ivmat[j], Size(3,3),0,0);
-    //}
-    //}
+    }
+    }
+    
     dim1 = imageSet[0].ivmat[0].rows;
     dim2 = imageSet[0].ivmat[0].cols;
     cout << "- d1 " << dim1 << " d2 " << dim2 << endl;
@@ -232,7 +235,7 @@ bool MySFF::optimize(void){
         string tmp = "I_depth_lambda"; tmp += to_string2(lambda); tmp += ".png" ;
         ioWizard.writeImage(tmp,this->rmat);
         ioWizard.showImage("scale",this->rmat,100);
-        ioWizard.show3DImage("3D_rmat_l" + to_string2(lambda) +".png",this->rmat);
+        ioWizard.write3DImage("3D_rmat_l" + to_string2(lambda) +".png",this->rmat);
 
         evaluate();
         
@@ -249,8 +252,6 @@ bool MySFF::optimize(void){
 
 
 bool MySFF::evaluate(void){
-    //dmat.copyTo(gt_dmat);
-    //dmat.copyTo(rmat);
     evalClass.set_parameters(gt_dmat,depthEst.getLabels());
     evalClass.compute_RMSE(rmat,rmse,q_rmse);
 }

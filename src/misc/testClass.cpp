@@ -72,7 +72,7 @@ bool TestClass::cmatToArraymat(Mat3f M, vector<Mat1f>& Vm){
 }
 
 
-bool TestClass::fillSharpPoly(typedef_imgset & sharpSet)
+bool TestClass::fillSharpPoly(tdf_imgset & sharpSet)
 {
     int A[] = {3,100,-25,1};
     double tmp = 0;

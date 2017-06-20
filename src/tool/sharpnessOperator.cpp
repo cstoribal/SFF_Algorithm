@@ -31,8 +31,8 @@ bool Sharpness_Operator::optypeSelector(string type){
     return true;
 }
 
-bool Sharpness_Operator::computeOp(string optype, const typedef_imgset & iset, typedef_imgset& sset){
-    typedef_imgset tmpset;
+bool Sharpness_Operator::computeOp(string optype, const tdf_imgset & iset, tdf_imgset& sset){
+    tdf_imgset tmpset;
     for(int i=0;i<iset.size();i++)
     {   
         struct tagged_img tmpimg;
@@ -48,7 +48,7 @@ bool Sharpness_Operator::computeOp(string optype, const typedef_imgset & iset, t
     return true;
 }
 
-bool Sharpness_Operator::compute(typedef_imgset iset, typedef_imgset& sset){
+bool Sharpness_Operator::compute(tdf_imgset iset, tdf_imgset& sset){
     computeOp(this->type, iset, sset);
     return true;
 }

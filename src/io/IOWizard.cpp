@@ -36,9 +36,10 @@ IOWizard::IOWizard() {
     this->arg_gtb = 0;
     this->arg_scale = -1;
     this->arg_gauss = -1;
-    this->arg_noise1 = -1;
-    this->arg_noise2 = -1;
-    this->arg_noise3 = -1;
+    this->arg_noise_a = -1;
+    this->arg_noise_b = -1;
+    this->arg_noise_ca = -1;
+    this->arg_noise_cs = -1;
     this->arg_sharpness = -1;
     this->arg_depth = -1;
     this->arg_nrjdata = -1;
@@ -55,7 +56,8 @@ IOWizard::IOWizard() {
 		.groundt_set=0,.gtpath="",.gta=0,.gtb=0,
 		.outputf_set=0,.outputfolder="./",
 		.focus_set=0,.focus=vector<fType>(),
-                .preproc_set=0,.scale=1,.gauss=1,.noise1=0,.noise2=0,.noise3=0,
+                .preproc_set=0,.scale=1,.gauss=1,
+                        .noise_a=0.05,.noise_b=0.05,.noise_ca=0.05,.noise_cs=0.05,
 		.sharp_set=0,.sharp="",
                 .depth_set=0,.depth="",
 		.nrj_set=0,.nrj_d="",.nrj_r="",
@@ -214,15 +216,16 @@ bool IOWizard::setArgs(tdf_input & clonedinput){
         input.outputfolder= outputfolder;
     }
 
-    if((arg_scale!=-1 || arg_gauss!=-1 || arg_noise1!=-1 || arg_noise2!=-1 || arg_noise3 !=-1) && input.preproc_set==1 )
+    if((arg_scale!=-1 || arg_gauss!=-1 || arg_noise_a!=-1 || arg_noise_b!=-1 || arg_noise_ca !=-1 || arg_noise_cs !=-1) && input.preproc_set==1 )
     {
         COUT("replacing preprocessing");
     }
     if(arg_scale!=-1) input.scale = arg_scale;
     if(arg_gauss!=-1) input.gauss = arg_gauss;
-    if(arg_noise1!=-1) input.noise1 = arg_noise1;
-    if(arg_noise2!=-1) input.noise2 = arg_noise2;
-    if(arg_noise3!=-1) input.noise3 = arg_noise3;
+    if(arg_noise_a!=-1) input.noise_a = arg_noise_a;
+    if(arg_noise_b!=-1) input.noise_b = arg_noise_b;
+    if(arg_noise_ca!=-1) input.noise_ca = arg_noise_ca;
+    if(arg_noise_cs!=-1) input.noise_cs = arg_noise_cs;
     
 
     
@@ -655,13 +658,16 @@ bool IOWizard::parsevect2struct(const vector<vector<string> > & fd, tdf_input & 
                 inp.gauss = atoi( fd[l_idx][w_idx].c_str() );
                 break;
             case 3:
-                inp.noise1 = atof( fd[l_idx][w_idx].c_str() );
+                inp.noise_a = atof( fd[l_idx][w_idx].c_str() );
                 break;
             case 4:
-                inp.noise2 = atof( fd[l_idx][w_idx].c_str() );
+                inp.noise_b = atof( fd[l_idx][w_idx].c_str() );
                 break;
             case 5:
-                inp.noise3 = atof( fd[l_idx][w_idx].c_str() );
+                inp.noise_ca = atof( fd[l_idx][w_idx].c_str() );
+                break;
+            case 6:
+                inp.noise_cs = atof( fd[l_idx][w_idx].c_str() );
                 break;
             default:
                 break;
@@ -764,7 +770,7 @@ bool IOWizard::storeParameters(void){
         textdata +=  " ; " + to_string2(i.focus[j]);
     textdata += "\n";
 
-    textdata += to_string2(i.preproc_set) + " ; " + to_string2(i.scale) + " ; " + to_string2(i.gauss) + " ; " + to_string2(i.noise1) + " ; " + to_string2(i.noise2) + " ; " + to_string2(i.noise3) + "\n";
+    textdata += to_string2(i.preproc_set) + " ; " + to_string2(i.scale) + " ; " + to_string2(i.gauss) + " ; " + to_string2(i.noise_a) + " ; " + to_string2(i.noise_b) + " ; " + to_string2(i.noise_ca) + " ; " + to_string2(i.noise_cs) + "\n";
 
     textdata += to_string2(i.sharp_set) + " ; " + i.sharp + "\n";
 
@@ -787,7 +793,7 @@ bool IOWizard::storeParameters(void){
     return true;
 }
 
-
+/*
 bool IOWizard::addbuffer(const string & text){
     this->program_logs += text;    
     return true;
@@ -800,6 +806,7 @@ bool IOWizard::writebuffer(void){
     out.close();
     return true;    
 }
+*/ //Update updVL0.1
 
 ////////////////////////////////////////////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
@@ -844,7 +851,7 @@ bool IOWizard::nameImage(const string filepath, const string extension, int indi
     return false;
 }
 
-bool IOWizard::buildImageSet(typedef_imgset& imageSet) {
+bool IOWizard::buildImageSet(tdf_imgset& imageSet) {
     //Depending on the data builds the imageSet
     imageSet = vector<struct tagged_img>(); //vecteur
     int tmprank = 0;
@@ -919,7 +926,7 @@ bool IOWizard::buildImageSet(typedef_imgset& imageSet) {
 }
 
 
-bool IOWizard::autosetImsetParameters(typedef_imgset & imageSet) {
+bool IOWizard::autosetImsetParameters(tdf_imgset & imageSet) {
     for(int i=0; i<imageSet.size(); i++)
     {
         imageSet[i].dpth = 0; //TODO TEST //(fType)imageSet[i].rank;
@@ -1017,6 +1024,7 @@ bool IOWizard::writeImage(const string filename, const Mat & image){
 
 
 bool IOWizard::write3DImage(const string filename, const Mat & image){
+    
     fType imin, imax;
     int resolution;
     int rows = image.rows;
@@ -1042,9 +1050,8 @@ bool IOWizard::write3DImage(const string filename, const Mat & image){
     gr.WritePNG((autofolder + filename).c_str());
     //gr.Run();    
     
-    
 
-    return 0;
+    return true;
     
     
 }
@@ -1075,7 +1082,7 @@ bool IOWizard::show3DImage(const string filename, const Mat & image){
     
     
 
-    return 0;
+    return true;
     
     
 }

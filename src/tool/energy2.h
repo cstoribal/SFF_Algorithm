@@ -42,7 +42,7 @@ class EnergyClass{
 public:
     EnergyClass(); ~EnergyClass();
 
-    bool set_parameters(const string & typeD, const string & typeR, const typedef_imgset & sharpStruct, const Mat1d dmat, int nb_labels, double scale);
+    bool set_parameters(const string & typeD, const string & typeR, const tdf_imgset & sharpStruct, const Mat1d dmat, int nb_labels, double scale);
 
     Mat1d  ed_mat;
     Mat1d  er_mat;

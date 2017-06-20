@@ -12,7 +12,7 @@ EnergyClass::~EnergyClass(){}
 
 
 
-bool EnergyClass::set_parameters(const string & typeD, const string & typeR, const typedef_imgset & sharpStruct, const Mat1d dmat, int nb_labels, double scale){
+bool EnergyClass::set_parameters(const string & typeD, const string & typeR, const tdf_imgset & sharpStruct, const Mat1d dmat, int nb_labels, double scale){
     // also initialises Matrix flag_Mat (& ROI as part), exxxxij, var_exij
     this->eParams.typeD = typeD;
     this->eParams.typeR = typeR;

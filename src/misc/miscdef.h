@@ -24,6 +24,8 @@ Defines - stores generic function, typedef & structures
 #include <vector>
 #include <math.h>
 
+#include "../io/logs.h" //Forwards log class declaration for the whole program
+
 #define CPING(f) (cout << f << endl)
 #define CPING2(x,y) (cout << x << "  " << y << endl)
 
@@ -61,12 +63,6 @@ namespace std {
         std::ostringstream s;
         s << n;
         string str=s.str();
-        /* 
-        int offset{1}; 
-        if (str.find_last_not_of('0') == str.find('.'))
-            { offset = 0; } 
-        str.erase(str.find_last_not_of('0') + offset, string::npos);
-        */
         return str; 
     }
 }
@@ -99,12 +95,12 @@ struct struct_input{
     std::string outputfolder;
     
     int focus_set;//4
-    std::vector<double> focus;
+    std::vector<fType> focus;
  
     int preproc_set; //5
-    double scale;
+    fType scale;
     int gauss; //windowsize
-    double noise1,noise2,noise3;
+    fType noise_a,noise_b,noise_ca,noise_cs;
 
     int sharp_set; //6
     std::string sharp;
@@ -119,7 +115,7 @@ struct struct_input{
     std::string opti;
 
     int optir_set;   //10
-    std::vector<double> optirange;
+    std::vector<fType> optirange;
 
 };
 typedef struct struct_input tdf_input;
@@ -127,13 +123,13 @@ typedef struct struct_input tdf_input;
 
 struct tagged_img{
     std::vector<cv::Mat1d> ivmat;
-    double focus;
-    double dpth;
+    fType focus;
+    fType dpth;
     int dim; //dimension of ivmat vector
     std::string name; //name of file
     int rank; // file number
 }; 
-typedef std::vector<struct tagged_img> typedef_imgset;
+typedef std::vector<struct tagged_img> tdf_imgset;
 
 
 
@@ -156,7 +152,8 @@ struct energy_sidestruct{
     int autoroi; // set 1 if algorithm must seek for neighbors modified pixels (resulting in a double roi augmentation)
     cv::Mat1d dmat; // Matrice de profondeur initiale, lue à partir des données locales uniquement
     cv::Mat1d rmat; // Reliability matrix. Calculée à partir des données de sharpness
-    double scale; // tmp
+    fType scale; // tmp
+    fType data_coef;
 }; 
 typedef struct energy_sidestruct tdfp_energy ;
 

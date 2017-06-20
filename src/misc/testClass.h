@@ -52,7 +52,7 @@ public:
     bool matrixOp3(Mat& M);
     bool rgbToGray(Mat3f M, Mat1f& N);
     bool cmatToArraymat(Mat3f M, vector<Mat1f>& Vm);
-    bool fillSharpPoly(typedef_imgset & sharpSet);
+    bool fillSharpPoly(tdf_imgset & sharpSet);
     bool fillAMatrix(Mat1d & imat);
     int polyfit();
     

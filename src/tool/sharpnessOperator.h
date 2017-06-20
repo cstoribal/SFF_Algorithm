@@ -43,8 +43,8 @@ public:
     string type;
     
     bool optypeSelector(string type);
-    bool computeOp(string optype, const typedef_imgset & iset, typedef_imgset& sset);
-    bool compute(typedef_imgset iset, typedef_imgset& sset);
+    bool computeOp(string optype, const tdf_imgset & iset, tdf_imgset& sset);
+    bool compute(tdf_imgset iset, tdf_imgset& sset);
     
     
     bool compute_SMLAP(vector<Mat1d> ivmat, vector<Mat1d>& smat);
