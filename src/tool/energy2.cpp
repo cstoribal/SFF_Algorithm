@@ -12,8 +12,10 @@ EnergyClass::~EnergyClass(){}
 
 
 
-bool EnergyClass::set_parameters(const string & typeD, const string & typeR, const tdf_imgset & sharpStruct, const Mat1d dmat, int nb_labels, double scale){
+bool EnergyClass::set_parameters(MyLog* myLog, const string & typeD, const string & typeR, const tdf_imgset & sharpStruct, const Mat1d dmat, int nb_labels,fType scale_d, fType scale_r){
     // also initialises Matrix flag_Mat (& ROI as part), exxxxij, var_exij
+    this->myLog = myLog;
+
     this->eParams.typeD = typeD;
     this->eParams.typeR = typeR;
     this->eParams.autoroi = 1;
@@ -21,7 +23,8 @@ bool EnergyClass::set_parameters(const string & typeD, const string & typeR, con
     this->eParams.dim1  = dmat.rows;
     this->eParams.dim2  = dmat.cols;
     this->eParams.rmat = this->eParams.dmat.clone(); //TODO
-    this->eParams.scale = scale;
+    this->eParams.scale_d = scale_d;
+    this->eParams.scale_r = scale_r;
     
     this->flag_Dmat = Mat::zeros(eParams.dim1,eParams.dim2, CV_8U);
     this->flag_Rmat = Mat::zeros(eParams.dim1,eParams.dim2, CV_8U);
@@ -185,7 +188,7 @@ bool EnergyClass::get_ROI_from_ROI(int stype, const Rect & roiin, Rect & roiout)
 bool EnergyClass::d_absdiff(const Mat1d & drmat, const Rect & roi){
     Mat1d eDataij_roi = Mat(eDataij,roi);
     Mat1d tmpmat= Mat(drmat,roi) - Mat(eParams.dmat,roi);
-    tmpmat = cv::abs(tmpmat);
+    tmpmat = this->eParams.scale_d*(cv::abs(tmpmat));
     tmpmat.copyTo(eDataij_roi,flag_Dmat);
     tmpmat = tmpmat - ed_mat;
     tmpmat.copyTo(delta_eDij,flag_Dmat);
@@ -199,7 +202,7 @@ bool EnergyClass::d_absdiff(const Mat1d & drmat, const Rect & roi){
 bool EnergyClass::d_normeL2(const Mat1d & drmat, const Rect & roi){
     Mat1d eDataij_roi = Mat(eDataij,roi);
     Mat1d tmpmat= Mat(drmat,roi) - Mat(eParams.dmat,roi);
-    tmpmat = tmpmat.mul(tmpmat);
+    tmpmat = this->eParams.scale_d*tmpmat.mul(tmpmat);
     tmpmat.copyTo(eDataij_roi,flag_Dmat);
     tmpmat = tmpmat - ed_mat;
     tmpmat.copyTo(delta_eDij,flag_Dmat);
@@ -257,7 +260,7 @@ bool EnergyClass::l_absdiff(const vector<double> & lvect, Mat1d & lmat){
     lmat = Mat::zeros(lvect.size(),lvect.size(), CV_64F);
     for(int i=0;i<lvect.size();i++){
     for(int j=0;j<lvect.size();j++){
-        lmat.at<double>(i,j) = this->eParams.scale*abs( lvect[i] - lvect[j] );
+        lmat.at<double>(i,j) = this->eParams.scale_r*abs( lvect[i] - lvect[j] );
     }}
 
     return true;
@@ -268,7 +271,7 @@ bool EnergyClass::l_normeL2(const vector<double> & lvect, Mat1d & lmat){
     lmat = Mat::zeros(lvect.size(),lvect.size(), CV_64F);
     for(int i=0;i<lvect.size();i++){
     for(int j=0;j<lvect.size();j++){
-        lmat.at<double>(i,j) = this->eParams.scale*pow(lvect[i] - lvect[j],2);
+        lmat.at<double>(i,j) = this->eParams.scale_r*pow(lvect[i] - lvect[j],2);
     }}
 
     return true;

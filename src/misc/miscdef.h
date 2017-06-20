@@ -100,7 +100,7 @@ struct struct_input{
     int preproc_set; //5
     fType scale;
     int gauss; //windowsize
-    fType noise_a,noise_b,noise_ca,noise_cs;
+    fType noise_a,noise_b,noise_ca,noise_cs;   // nice, correctly added.
 
     int sharp_set; //6
     std::string sharp;
@@ -114,8 +114,11 @@ struct struct_input{
     int opti_set;  //9
     std::string opti;
 
-    int optir_set;   //10
-    std::vector<fType> optirange;
+    int lambda_r_set;   //10   //ex opti_set
+    std::vector<fType> vect_lambda_r;  //ex optirange
+    
+    int lambda_d_set;   //11
+    std::vector<fType> vect_lambda_d;
 
 };
 typedef struct struct_input tdf_input;
@@ -152,7 +155,7 @@ struct energy_sidestruct{
     int autoroi; // set 1 if algorithm must seek for neighbors modified pixels (resulting in a double roi augmentation)
     cv::Mat1d dmat; // Matrice de profondeur initiale, lue à partir des données locales uniquement
     cv::Mat1d rmat; // Reliability matrix. Calculée à partir des données de sharpness
-    fType scale; // tmp
+    fType scale_d,scale_r;
     fType data_coef;
 }; 
 typedef struct energy_sidestruct tdfp_energy ;

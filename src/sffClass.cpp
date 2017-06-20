@@ -181,7 +181,7 @@ bool MySFF::setMultifocusRmat(void){
 
 bool MySFF::testEnergy(void){
 
-    energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r,sharpSet, dmat, this->nb_labels, 1);
+    energyClass.set_parameters(&myLog, input_prts.nrj_d, input_prts.nrj_r,sharpSet, dmat, this->nb_labels, 1, 1);
     Mat1T rmattmp;
     dmat.copyTo(rmattmp);
 
@@ -197,11 +197,30 @@ bool MySFF::testEnergy(void){
 
 bool MySFF::optimize(void){
     //for(fType lambda=1;lambda<8;lambda+=0.5)
-    for(int i=0;i<input_prts.optirange.size();i++)
+    tdf_input& ip = input_prts; //alias. too complex
+    if(ip.vect_lambda_d.size()<ip.vect_lambda_r.size()){
+        fType lambdareplicate = ip.vect_lambda_d[ip.vect_lambda_d.size()-1];
+        ip.vect_lambda_d.resize(ip.vect_lambda_r.size());
+        for(int i=ip.vect_lambda_d.size();i<ip.vect_lambda_r.size();i++){
+            ip.vect_lambda_d[i]=lambdareplicate;
+        }
+    }
+    if(ip.vect_lambda_d.size()>ip.vect_lambda_r.size()){
+        fType lambdareplicate = ip.vect_lambda_r[ip.vect_lambda_r.size()-1];
+        ip.vect_lambda_r.resize(ip.vect_lambda_d.size());
+        for(int i=ip.vect_lambda_r.size();i<ip.vect_lambda_d.size();i++){
+            ip.vect_lambda_r[i]=lambdareplicate;
+        }
+    } 
+    // fill in differences.
+    for(int i=0;i<input_prts.vect_lambda_r.size();i++)
     {
-        fType lambda = input_prts.optirange[i];
-        COUT2("Starting optimization at lambda= ",lambda);
-        energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r, sharpSet, dmat, this->nb_labels, lambda);
+        
+        fType lambda_r = input_prts.vect_lambda_r[i];
+        fType lambda_d = input_prts.vect_lambda_d[i];
+        COUT2("Starting optimization at lambda_r = ",lambda_r);
+        COUT2("Starting optimization at lambda_d = ",lambda_d);
+        energyClass.set_parameters(&myLog, input_prts.nrj_d, input_prts.nrj_r, sharpSet, dmat, this->nb_labels, lambda_d, lambda_r);
         //set
         
         opti_prts.type = input_prts.opti;
@@ -219,23 +238,23 @@ bool MySFF::optimize(void){
         }
         catch(const GCException & error)
         {
-            COUT2("\nGCException encounterd at lambda = ",lambda);
+            COUT2("\nGCException encounterd at lambda_r = ",lambda_r);
             printf("\n%s\n",error.message);
             COUT("\n");
             continue;
         } 
        catch(const char* message)
         {
-            COUT2("\n Error encounterd at lambda = ",lambda);
+            COUT2("\n Error encounterd at lambda_r = ",lambda_r);
             printf("\n%s\n",message);
             COUT("\n");
             continue;
         }
         optiClass.writebackmatrix(rmat);
-        string tmp = "I_depth_lambda"; tmp += to_string2(lambda); tmp += ".png" ;
+        string tmp = "I_depth_lambda"; tmp += to_string2(lambda_r); tmp += ".png" ;
         ioWizard.writeImage(tmp,this->rmat);
         ioWizard.showImage("scale",this->rmat,100);
-        ioWizard.write3DImage("3D_rmat_l" + to_string2(lambda) +".png",this->rmat);
+        ioWizard.write3DImage("3D_rmat_l" + to_string2(lambda_r) +".png",this->rmat);
 
         evaluate();
         

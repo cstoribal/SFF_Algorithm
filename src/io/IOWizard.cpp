@@ -62,7 +62,8 @@ IOWizard::IOWizard() {
                 .depth_set=0,.depth="",
 		.nrj_set=0,.nrj_d="",.nrj_r="",
 		.opti_set=0,.opti="",
-                .optir_set=0,.optirange=vector<fType>(3)};
+                .lambda_r_set=0,.vect_lambda_r=vector<fType>(3),
+                .lambda_d_set=0,.vect_lambda_d=vector<fType>(2)};
 
 }
 
@@ -730,12 +731,12 @@ bool IOWizard::parsevect2struct(const vector<vector<string> > & fd, tdf_input & 
         case 10:
             switch(w_idx){
             case 0:
-                inp.optir_set=atoi(fd[l_idx][w_idx].c_str());
-                if(inp.optir_set!=1)w_idx = fd[l_idx].size();
-                else inp.optirange.resize( fd[l_idx].size()-1 );
+                inp.lambda_r_set=atoi(fd[l_idx][w_idx].c_str());
+                if(inp.lambda_r_set!=1)w_idx = fd[l_idx].size();
+                else inp.vect_lambda_r.resize( fd[l_idx].size()-1 );
                 break;
             default:
-                inp.optirange[w_idx-1] = atof(fd[l_idx][w_idx].c_str());
+                inp.vect_lambda_r[w_idx-1] = atof(fd[l_idx][w_idx].c_str());
                 break;
             }
             break;
@@ -780,9 +781,9 @@ bool IOWizard::storeParameters(void){
 
     textdata += to_string2(i.opti_set) +" ; "+ i.opti + "\n";
 
-    textdata += to_string2(i.optir_set);
-    for(int j=0; j<i.optirange.size();j++)
-        textdata +=  " ; " + to_string2(i.optirange[j]);
+    textdata += to_string2(i.lambda_r_set);
+    for(int j=0; j<i.vect_lambda_r.size();j++)
+        textdata +=  " ; " + to_string2(i.vect_lambda_r[j]);
     textdata += "\n";
 
     // COUT(textdata);

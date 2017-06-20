@@ -34,6 +34,7 @@ and to regularisation
 #include <vector>
 
 #include "../misc/miscdef.h"
+#include "../io/logs.h"
 
 using namespace std;
 using namespace cv;
@@ -42,12 +43,12 @@ class EnergyClass{
 public:
     EnergyClass(); ~EnergyClass();
 
-    bool set_parameters(const string & typeD, const string & typeR, const tdf_imgset & sharpStruct, const Mat1d dmat, int nb_labels, double scale);
+    bool set_parameters(MyLog* myLog, const string & typeD, const string & typeR, const tdf_imgset & sharpStruct, const Mat1d dmat, int nb_labels,fType scale_d, fType scale_r);
 
-    Mat1d  ed_mat;
-    Mat1d  er_mat;
-    double eData ;
-    double eRegu ;
+    Mat1d  ed_mat ;
+    Mat1d  er_mat ;
+    double eData  ;
+    double eRegu  ;
 
 
 // Ajout d'un paramètre stype : 1=data, 2=Regularisation, 3=both
@@ -93,6 +94,8 @@ public:
 private:
     //typedef_structurespécifique
     tdfp_energy eParams;
+    
+    MyLog* myLog;
     
 
 
