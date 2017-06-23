@@ -26,6 +26,11 @@ Sharpness_Operator::~Sharpness_Operator(){
 
 }
 
+bool Sharpness_Operator::setlogs(MyLog* mylog){
+    this->myLog = mylog;
+    return true;
+}
+
 bool Sharpness_Operator::optypeSelector(string type){
     this->type = type;
     return true;

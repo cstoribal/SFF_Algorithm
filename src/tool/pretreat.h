@@ -38,13 +38,15 @@ fType randftype(fType a, fType b)
 class PreTreatment{
 public:
     PreTreatment(); ~PreTreatment();
-    bool set_param(MyLog* plog, const tdf_input & prts);
-
+    
+    bool setlogs(MyLog* mylog);
+    bool set_param(const tdf_input & prts);
+    
     bool compute_noises(Mat_<fType> & image);
 
 private:
     //Setup related
-    MyLog* log;
+    MyLog* myLog;
     fType noise_a, noise_b, noise_ca, noise_cs;
        // multiplicatif normal gaussien (amplitude&sigma)
     //Defined on demand

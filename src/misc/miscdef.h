@@ -24,7 +24,7 @@ Defines - stores generic function, typedef & structures
 #include <vector>
 #include <math.h>
 
-#include "../io/logs.h" //Forwards log class declaration for the whole program
+//  #include "../io/logs.h" //Forwards log class declaration for the whole program
 
 #define CPING(f) (cout << f << endl)
 #define CPING2(x,y) (cout << x << "  " << y << endl)
@@ -67,8 +67,14 @@ namespace std {
     }
 }
 
-
-
+class MyLog;
+class IOWizard;
+class PreTreatment;
+class Sharpness_Operator;
+class DepthClass;
+class EnergyClass;
+class OptiClass;
+class EvalClass;
 
 
 
@@ -162,12 +168,26 @@ typedef struct energy_sidestruct tdfp_energy ;
 
 
 
+struct set_param_opti{
+    std::string      type;
+    EnergyClass *energyclass;
+    int nb_pixels, nb_labels, width, height;
+    std::vector<fType> labels; // allows conversion label -> ranklabel
+    
+};
+typedef struct set_param_opti tdfp_opti;
+
+
+
+
+
+/*
 union interpol_func
 {
     bool (*fptr)(void*,cv::Point);
     void* context;
 };
-
+*/
 
 
 

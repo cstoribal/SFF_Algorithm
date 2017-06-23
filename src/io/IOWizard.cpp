@@ -21,6 +21,8 @@ using namespace cv;
 
 
 IOWizard::IOWizard() {
+
+    ///// Parsing arguments - default - unset
     this->arg_datapath = "";
     this->arg_savedatapath = "data.txt";
     this->arg_filename = "";
@@ -47,7 +49,7 @@ IOWizard::IOWizard() {
     this->arg_opti = -1;
 
     this->clicked = vector<Point>() ;
-
+    ///// tdf_input default values
     this->input =(tdf_input) {
 		.file1_set=0,.file1_path="",.file1_sizeind=0,
 			.file1_sep="",.file1_ext="",.file1_firsti=-1,
@@ -62,8 +64,11 @@ IOWizard::IOWizard() {
                 .depth_set=0,.depth="",
 		.nrj_set=0,.nrj_d="",.nrj_r="",
 		.opti_set=0,.opti="",
-                .lambda_r_set=0,.vect_lambda_r=vector<fType>(3),
-                .lambda_d_set=0,.vect_lambda_d=vector<fType>(2)};
+                .lambda_r_set=0,.vect_lambda_r={1,2,3},
+                .lambda_d_set=0,.vect_lambda_d={3,2,1.5}};
+
+    ///// IOWizard behaviorial set/unset parameters
+    this->img_dout_scaleselect=0;
 
 }
 
@@ -71,6 +76,15 @@ IOWizard::~IOWizard(){
 
 }
 
+bool IOWizard::setlogs(MyLog* mylog){
+    this->myLog = mylog;
+    return true;
+}
+bool IOWizard::setlogsoutput(void){
+    // to be called when parsing arguments is done. currently called at parseArgs, seems okay
+    this->myLog->set_param(this->input.outputfolder + "/logs.txt",true);
+    return true;
+}
 /////////////////////////////////////////////////////////////////
 // Parsing
 /////////////////////////////////////////////////////////////////
@@ -182,6 +196,8 @@ bool IOWizard::parseArgs(int argc, char** argv) {
 
 bool IOWizard::setArgs(tdf_input & clonedinput){
     // Evaluate the arguments litterally (for the user)
+    // and now compares the C++ input modified data to the file data
+    // passes the argument thanks to line case -1: break;
     if(arg_datapath !="")
         input_folder = arg_datapath.substr(0,arg_datapath.find_last_of("/"));
     COUT2("input folder is",input_folder);
@@ -314,6 +330,7 @@ bool IOWizard::setArgs(tdf_input & clonedinput){
     }
     
     clonedinput = input;
+    this->setlogsoutput();
     return true;
 }
 
@@ -564,6 +581,7 @@ bool IOWizard::parsefile2vect(string filename, vector<vector<string> > & filedat
 
 bool IOWizard::parsevect2struct(const vector<vector<string> > & fd, tdf_input & inp){
     // Follows the exact structure of tdf_input
+    // fd est un vecteur<lignes de vecteurs<mots> > 
     int l_idx =0;
     int w_idx =0;
     while( l_idx<fd.size() )
@@ -740,6 +758,18 @@ bool IOWizard::parsevect2struct(const vector<vector<string> > & fd, tdf_input & 
                 break;
             }
             break;
+        case 11:
+            switch(w_idx){
+            case 0:
+                inp.lambda_d_set=atoi(fd[l_idx][w_idx].c_str());
+                if(inp.lambda_d_set!=1)w_idx = fd[l_idx].size();
+                else inp.vect_lambda_d.resize( fd[l_idx].size()-1 );
+                break;
+            default:
+                inp.vect_lambda_d[w_idx-1] = atof(fd[l_idx][w_idx].c_str());
+                break;
+            }
+            break;
         default:break;
         }
         w_idx += 1;
@@ -753,7 +783,7 @@ bool IOWizard::parsevect2struct(const vector<vector<string> > & fd, tdf_input & 
 
 bool IOWizard::storeParameters(void){
 
-    tdf_input i = input;
+    tdf_input i = this->input;
     string textdata;
     textdata = to_string2(i.file1_set) + " ; " + i.file1_path + " ; " + to_string2(i.file1_sizeind) + " ; " + i.file1_sep + " ; " + i.file1_ext + " ; " + to_string2(i.file1_firsti) + " ; " + to_string2(i.file1_deltai) + " ; " + to_string2(i.file1_lasti) + "\n" ;
 
@@ -810,9 +840,9 @@ bool IOWizard::writebuffer(void){
 */ //Update updVL0.1
 
 ////////////////////////////////////////////////////////////////////////
-////////////////////////////////////////////////////////////////////////
 ////////////////////////////Load - Store////////////////////////////////
-////////////////////////////////////////////////////////////////////////
+////////////////////////////Load - Store////////////////////////////////
+////////////////////////////Load - Store////////////////////////////////
 ////////////////////////////////////////////////////////////////////////
 
 
@@ -957,18 +987,78 @@ bool IOWizard::loadGroundTruth(Mat & gtmat,string filepath = "") {
     return true;
 }
 
+////SCALING////
+////SCALING////
+////SCALING////
+bool IOWizard::img_setscale(fType min, fType max, int select){
+    //select=0 -> erase all
+    //select=1 -> Depthmap
+
+    if(max == min) throw("error omax == omin in setscale");
+    if(select<=0)
+    {
+        select = 0;
+        this->img_dout_scaleset.resize(select,false);
+        this->img_dout_sca.resize(select,1);
+        this->img_dout_scb.resize(select,0);
+        myLog->a("IOWizard: unset all scales");
+        return true;
+    }
+        
+    if(this->img_dout_sca.size()<select){
+        this->img_dout_scaleset.resize(select,false);
+        this->img_dout_sca.resize(select,1);
+        this->img_dout_scb.resize(select,0);
+    }
+    this->img_dout_scaleset[select-1] = true;
+    this->img_dout_sca[select-1] = 1/(max - min);
+    this->img_dout_scb[select-1] = min;
+    this->img_dout_scaleselect = select;
+    return true;
+}
+bool IOWizard::img_setscale(int select){// 0 to unset.
+    if(this->img_dout_scaleset.size() < select)
+    {
+        myLog->a("Failure in iowizard output scale selector too big");
+        this->img_dout_scaleselect = 0;
+        return false;
+    }
+    if(!this->img_dout_scaleset[select-1])
+    {
+        myLog->a("Falure in ioWizard output scale selected not set");
+        this->img_dout_scaleselect = 0;
+        return false;
+    }
+    this->img_dout_scaleselect = select;
+    return true;
+}
+
+bool IOWizard::img_unsetscale(void){
+    this->img_dout_scaleselect = 0;
+    return true;
+}
+//// IMG DISPLAY & SAVE ////
+//// IMG DISPLAY & SAVE ////
+//// IMG DISPLAY & SAVE ////
 
 bool IOWizard::showImage(const string param, const Mat & image, int timer) {
     if(0){return false;}
     fType imin, imax, scale;
     Mat imat;
     image.copyTo(imat);
-    cv::minMaxLoc(imat, &imin, &imax);
-    scale = 1;
-    if(imin != imax) scale = 1/(imax-imin);
-    imat = (imat-imin)*scale;
+    if(img_dout_scaleselect)
+    {
+        imat = (imat - this->img_dout_scb[img_dout_scaleselect-1])*this->img_dout_sca[img_dout_scaleselect-1];
+    }
+    else
+    {
+        cv::minMaxLoc(imat, &imin, &imax);
+        scale = 1;
+        if(imin != imax) scale = 1/(imax-imin);
+        imat = (imat-imin)*scale;
+    }
     imat.convertTo(imat,CV_8UC1,255);
-    normalize(imat, imat, 0, 255, NORM_MINMAX);
+    //normalize(imat, imat, 0, 255, NORM_MINMAX);
     if(param == "scale") namedWindow( "View", WINDOW_NORMAL );
     else namedWindow( "View", WINDOW_AUTOSIZE);
     
@@ -981,43 +1071,25 @@ bool IOWizard::showImage(const string param, const Mat & image, int timer) {
     return true;
 }
 
-bool IOWizard::clickImage(const string param, const Mat & image, int timer, bool (*fptr)(void*,Point), void* context) {
-    if(0){return false;}
-    fType imin, imax, scale;
-    Mat imat;
-    image.copyTo(imat);
-    cv::minMaxLoc(imat, &imin, &imax);
-    scale = 1;
-    if(imin != imax) scale = 1/(imax-imin);
-    imat = (imat-imin)*scale;
-    imat.convertTo(imat,CV_8UC1,255);
-    normalize(imat, imat, 0, 255, NORM_MINMAX);
-    if(param == "scale") namedWindow( "View", WINDOW_NORMAL );
-    else namedWindow( "View", WINDOW_AUTOSIZE);
-    
-    interpol_func tmp;
-    tmp.fptr = fptr;
-    tmp.context = context;
-    setMouseCallback("View", CallBackFunc2, &(tmp) );
-
-    imshow( "View", imat );
-    //resizeWindow( "View" , 900,600);
-    waitKey(timer);
-    
-    return true;
-}
-
 bool IOWizard::writeImage(const string filename, const Mat & image){
     if(0){return false;}
     fType imin, imax, scale;
+    fType omin, omax;
     Mat imat;
     image.copyTo(imat);
-    cv::minMaxLoc(imat, &imin, &imax);
-    scale = 1;
-    if(imin != imax) scale = 1/(imax-imin);
-    imat = (imat-imin)*scale;
+    if(img_dout_scaleselect)
+    {
+        imat = (imat - this->img_dout_scb[img_dout_scaleselect-1])*this->img_dout_sca[img_dout_scaleselect-1];
+    }
+    else
+    {
+        cv::minMaxLoc(imat, &imin, &imax);
+        scale = 1;
+        if(imin != imax) scale = 1/(imax-imin);
+        imat = (imat-imin)*scale;
+    }
     imat.convertTo(imat, CV_8UC1, 255);
-    normalize(image, imat, 0, 255, NORM_MINMAX);
+    //normalize(image, imat, 0, 255, NORM_MINMAX);
     imwrite( autofolder+filename, imat );
 
     return true;
@@ -1026,6 +1098,8 @@ bool IOWizard::writeImage(const string filename, const Mat & image){
 
 bool IOWizard::write3DImage(const string filename, const Mat & image){
     
+    //TODO perpare vector evolution (vector mat &)
+
     fType imin, imax;
     int resolution;
     int rows = image.rows;
@@ -1034,22 +1108,31 @@ bool IOWizard::write3DImage(const string filename, const Mat & image){
     //Mat imat;
     //image copyTo(imat);
     mglData a;
-    cv::minMaxLoc(image,&imin,&imax);
+    if(img_dout_scaleselect)
+    {
+        imin = this->img_dout_scb[img_dout_scaleselect-1];
+        imax = 1/this->img_dout_sca[img_dout_scaleselect-1]+imin;
+    }
+    else
+    {
+        cv::minMaxLoc(image,&imin,&imax);
+        
+    }
+    // Data computation for sketching
     a.Create(image.rows,image.cols);
     for(int i=0; i<rows; i++)    for(int j=0; j<cols; j++)
     {
         a.a[i+rows*j] = image.at<fType>(i,j);
     }
-    
+    // data import
     gr.Title(filename.c_str());
     gr.Light(true);  gr.Rotate(50,60);
-    gr.SetRange('z',imin,imax); //gr.SetOrigin(-1,-1,-1); 
+    gr.SetRange('z',imax,imin); //gr.SetOrigin(-1,-1,-1); 
     gr.Axis();
     gr.Label('z',"depth",0); 
     gr.Box();  gr.Surf(a);//"kw|:");
 
-    gr.WritePNG((autofolder + filename).c_str());
-    //gr.Run();    
+    gr.WritePNG((autofolder + filename).c_str()); 
     
 
     return true;
@@ -1058,14 +1141,23 @@ bool IOWizard::write3DImage(const string filename, const Mat & image){
 }
 
 bool IOWizard::show3DImage(const string filename, const Mat & image){
+    //TODO prepare vector evolution
     fType imin, imax;
     int resolution;
     int cols = image.cols;
     vector<Mat> vmat_data;
     vmat_data.push_back(image);
 
-    cv::minMaxLoc(image,&imin,&imax);
-
+    if(img_dout_scaleselect)
+    {
+        imin = this->img_dout_scb[img_dout_scaleselect-1];
+        imax = 1/this->img_dout_sca[img_dout_scaleselect-1]+imin;
+    }
+    else
+    {
+        cv::minMaxLoc(image,&imin,&imax);
+        
+    }
 
     this->myDrawer2D.vmat_data = vmat_data;
     this->myDrawer2D.imin = imin;
@@ -1078,7 +1170,7 @@ bool IOWizard::show3DImage(const string filename, const Mat & image){
 
     mglQT gr(&(this->myDrawer2D),filename.c_str());
 
-    gr.WritePNG((autofolder + filename).c_str());
+    //gr.WritePNG((autofolder + filename).c_str());
     gr.Run();    
     
     
@@ -1088,13 +1180,6 @@ bool IOWizard::show3DImage(const string filename, const Mat & image){
     
 }
 
-bool IOWizard::mat3Dplot(void)
-{
-    
-    
-    
-    return true;
-}
 
 
 bool IOWizard::mkdir(const string directory){
@@ -1141,6 +1226,7 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata){
 
 }
 
+/*
 void CallBackFunc2(int event, int x, int y, int flags, void* userdata){
     // TODO debug here
     if  ( event == EVENT_RBUTTONDOWN )
@@ -1151,16 +1237,36 @@ void CallBackFunc2(int event, int x, int y, int flags, void* userdata){
     }
 }
 
-void CallBack3DQT(mglGraph *gr)
-{
-        
+*/
+
+
+/*
+bool IOWizard::clickImage(const string param, const Mat & image, int timer, bool (*fptr)(void*,Point), void* context) {
+    if(0){return false;}
+    fType imin, imax, scale;
+    Mat imat;
+    image.copyTo(imat);
+    cv::minMaxLoc(imat, &imin, &imax);
+    scale = 1;
+    if(imin != imax) scale = 1/(imax-imin);
+    imat = (imat-imin)*scale;
+    imat.convertTo(imat,CV_8UC1,255);
+    normalize(imat, imat, 0, 255, NORM_MINMAX);
+    if(param == "scale") namedWindow( "View", WINDOW_NORMAL );
+    else namedWindow( "View", WINDOW_AUTOSIZE);
+    
+    interpol_func tmp;
+    tmp.fptr = fptr;
+    tmp.context = context;
+    setMouseCallback("View", CallBackFunc2, &(tmp) );
+
+    imshow( "View", imat );
+    //resizeWindow( "View" , 900,600);
+    waitKey(timer);
+    
+    return true;
 }
+*/
 
-
-
-bool forwarder2(void* context)
-{
-    static_cast<IOWizard*>(context)->mat3Dplot();
-}
 
 

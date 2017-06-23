@@ -11,6 +11,10 @@
 OptiClass::OptiClass(){ this->set = false; };
 OptiClass::~OptiClass(){};
 
+bool OptiClass::setlogs(MyLog* mylog){
+    this->myLog = mylog;
+    return true;
+}
 
 bool OptiClass::set_param(tdfp_opti popti){ //const void* param){
 //sets name_opti, 

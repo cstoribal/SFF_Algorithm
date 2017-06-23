@@ -16,6 +16,11 @@ RMSE, PSNR, UQI
 EvalClass::EvalClass(){ this->set = false; }
 EvalClass::~EvalClass(){}
 
+bool EvalClass::setlogs(MyLog* mylog){
+    this->myLog = mylog;
+    return true;
+}
+
 bool EvalClass::set_parameters(const Mat1T & gt_dmat, const vector<fType> & labels){
     this->gt_dmat = gt_dmat;
     height = gt_dmat.rows;

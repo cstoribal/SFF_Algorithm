@@ -10,11 +10,13 @@
 EnergyClass::EnergyClass(){ }
 EnergyClass::~EnergyClass(){}
 
+bool EnergyClass::setlogs(MyLog* mylog){
+    this->myLog = mylog;
+    return true;
+}
 
-
-bool EnergyClass::set_parameters(MyLog* myLog, const string & typeD, const string & typeR, const tdf_imgset & sharpStruct, const Mat1d dmat, int nb_labels,fType scale_d, fType scale_r){
+bool EnergyClass::set_parameters(const string & typeD, const string & typeR, const tdf_imgset & sharpStruct, const Mat1d dmat, int nb_labels,fType scale_d, fType scale_r){
     // also initialises Matrix flag_Mat (& ROI as part), exxxxij, var_exij
-    this->myLog = myLog;
 
     this->eParams.typeD = typeD;
     this->eParams.typeR = typeR;

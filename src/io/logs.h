@@ -22,13 +22,14 @@ using namespace std;
 class MyLog{
 public:
     MyLog(); ~MyLog();
-    bool set_param(string filepath); //setting path and filename for output;
-    bool a(string addstring); //add
+    bool set_param(const string & filepath, bool verb); //setting path and filename for output;
+    bool a(const string & addstring); //add
     bool write(void);
     
 private:
     string logs;
     string filepath; //file name+path, ready
+    bool verbose;
     
     
 };

@@ -27,6 +27,7 @@ Computing sharpness matrix
 #include <fstream>
 #include <vector>
 
+#include "../io/logs.h"
 #include "../misc/miscdef.h"
 
 using namespace cv;
@@ -41,7 +42,7 @@ public:
     ~Sharpness_Operator();
     
     string type;
-    
+    bool setlogs(MyLog* myLog);
     bool optypeSelector(string type);
     bool computeOp(string optype, const tdf_imgset & iset, tdf_imgset& sset);
     bool compute(tdf_imgset iset, tdf_imgset& sset);
@@ -52,6 +53,10 @@ public:
 
 
     bool combinRule(vector<Mat1d> in_svmat, vector<Mat1d>& out_svmat);
+
+private:
+    MyLog* myLog;
+
 
 
 

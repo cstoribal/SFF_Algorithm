@@ -85,6 +85,8 @@ public:
 
 
 // Fonctions
+    bool setlogs(void); 
+
     bool loadProblem(int argc, char** argv);
     
     bool preTreat(void);

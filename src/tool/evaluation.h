@@ -24,6 +24,7 @@ Private
 #ifndef EVALUATION_H_
 #define EVALUATION_H_
 
+#include "../io/logs.h"
 #include "../misc/miscdef.h"
 
 using namespace std;
@@ -34,7 +35,7 @@ using namespace cv;
 class EvalClass{
 public:
     EvalClass();~EvalClass();
-
+    bool setlogs(MyLog* mylog);
     bool set_parameters(const Mat1T & gt_dmat, const vector<fType> & labels);
     
     bool compute_RMSE(const Mat1T & dmat, fType & rmse, fType & q_rmse );
@@ -43,6 +44,7 @@ public:
     bool compute_quantization_noise(void);
     
 private:
+    MyLog* myLog;
     bool set;
     Mat1T gt_dmat;
     int height, width;

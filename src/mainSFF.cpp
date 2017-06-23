@@ -30,48 +30,40 @@ MySFF mySFF; // global eurk variable
 
 int main( int argc, char** argv )
 {
-    
-
+    mySFF.setlogs();
+    MyLog* myLog = &mySFF.myLog; //alias
     std::time_t t0 = std::time(0);
     std::time_t t1 = std::time(0);
-    
-    TestClass testClass;    
-    //MySFF mySFF;
-    string tmp;
-    //vector<vector<string> > testvec;
-    //Mat3b imat;
-    //Mat1b imatgrey;
-    //mySFF.ioWizard.parsefile2vect("data.txt",testvec);
     
     mySFF.loadProblem(argc, argv);
 
     
     t1 = std::time(0);
-    printf(" %li seconds for buildingdataset\n", t1-t0);
+    myLog->a(to_string2(t1-t0)+" seconds for building dataset\n");
     mySFF.preTreat();
 
     for(int i=0; i<mySFF.imageSet.size(); i++)
     {
         Mat tmpmat2;
         merge(mySFF.imageSet[i].ivmat,tmpmat2);
-        mySFF.ioWizard.showImage("scale",tmpmat2,1000);
+        mySFF.ioWizard.showImage("scale",tmpmat2,100);
     }
     t0 = std::time(0);
-    printf(" %li seconds for pretreatment\n", t0-t1);
+    myLog->a(to_string2(t0-t1)+" seconds for pretreatment\n");
 
     mySFF.doSharpness();
     t1 = std::time(0);
-    printf(" %li seconds for computing sharpness\n", t1-t0);
+    myLog->a(to_string2(t1-t0)+" seconds for computing sharpness\n");
 
     mySFF.doDepth();
     t0 = std::time(0);
-    printf(" %li seconds for computing interpolation\n", t0-t1);
+    myLog->a(to_string2(t0-t1)+" seconds for computing interpolation\n");
     
     //mySFF.testEnergy();
 
     //mySFF.ioWizard.showImage("scale",mySFF.dmat,1000);
     mySFF.ioWizard.writeImage("Idist.png",mySFF.dmat);
-
+    mySFF.ioWizard.img_unsetscale();
     Mat1T tmpmat;
     log(mySFF.dmat_score,tmpmat);
     //mySFF.ioWizard.showImage("scale",tmpmat,5000);
@@ -81,19 +73,21 @@ int main( int argc, char** argv )
     //mySFF.ioWizard.showImage("scale",mySFF.image_MF,10);
     mySFF.ioWizard.writeImage("I_Multifocus.png",mySFF.image_MF);
 
+    mySFF.ioWizard.img_setscale(1);
     //mySFF.clickInterpolation(mySFF.image_MF,0);
-    mySFF.ioWizard.showImage("scale",mySFF.dmat,100);
+    mySFF.ioWizard.showImage("scale",mySFF.dmat,200);
     mySFF.showInterpolationAt();
-    t0 = std::time(0);
-    printf(" %li seconds for misc\n", t1-t0);
+    t1 = std::time(0);
+    myLog->a(to_string2(t1-t0)+" seconds for misc\n");
 
     mySFF.optimize();
-    t1 = std::time(0);
-    printf(" %li seconds for computing optimisation\n", t0-t1);
+    t0 = std::time(0);
+    myLog->a(to_string2(t0-t1)+" seconds for computing optimisation\n");
     //mySFF.ioWizard.showImage("scale",mySFF.rmat,1000);
     mySFF.ioWizard.writeImage("I_dregu.png",mySFF.rmat);
 
     mySFF.setMultifocusRmat();
+    mySFF.ioWizard.img_unsetscale();
     //mySFF.ioWizard.showImage("scale",mySFF.image_MF,10);
     mySFF.ioWizard.writeImage("I_Multifocus_regu.png",mySFF.image_MF);
 
@@ -109,8 +103,9 @@ int main( int argc, char** argv )
     
     
     
-    
-    
+    //mySFF.myLog.write();
+
+        
     return 0;
 
 }

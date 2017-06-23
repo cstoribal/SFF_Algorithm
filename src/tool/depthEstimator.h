@@ -13,6 +13,7 @@
 #include <string>
 #include <vector>
 
+#include "../io/logs.h"
 #include "../misc/miscdef.h"
 
 using namespace std;
@@ -22,6 +23,7 @@ public:
     DepthClass(); ~DepthClass();
     
     std::string type; // 8poly, gaussian, ...
+    bool setlogs(MyLog* mylog);
     bool set_param(string settype);
     bool buildEstimation(void);
     bool buildEstimation(const tdf_imgset & sharpSet, tdfp_depth & pdmat);
@@ -35,6 +37,7 @@ public:
     
     
 private:
+    MyLog* myLog;
     bool set;
     fType focus_min;
     fType focus_max;

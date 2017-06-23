@@ -33,8 +33,9 @@ and to regularisation
 #include <fstream>
 #include <vector>
 
-#include "../misc/miscdef.h"
+
 #include "../io/logs.h"
+#include "../misc/miscdef.h"
 
 using namespace std;
 using namespace cv;
@@ -43,7 +44,8 @@ class EnergyClass{
 public:
     EnergyClass(); ~EnergyClass();
 
-    bool set_parameters(MyLog* myLog, const string & typeD, const string & typeR, const tdf_imgset & sharpStruct, const Mat1d dmat, int nb_labels,fType scale_d, fType scale_r);
+    bool setlogs(MyLog* mylog);
+    bool set_parameters(const string & typeD, const string & typeR, const tdf_imgset & sharpStruct, const Mat1d dmat, int nb_labels,fType scale_d, fType scale_r);
 
     Mat1d  ed_mat ;
     Mat1d  er_mat ;

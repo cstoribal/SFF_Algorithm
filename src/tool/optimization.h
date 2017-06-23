@@ -31,25 +31,10 @@
 #include "../misc/miscdef.h"
 #include "../gco/GCoptimization.h"
 #include "../tool/energy2.h"
+#include "../io/logs.h"
 
 using namespace std;
 using namespace cv;
-
-
-
-struct set_param_opti{
-    string      type;
-    EnergyClass *energyclass;
-    int nb_pixels, nb_labels, width, height;
-    vector<double> labels; // allows conversion label -> ranklabel
-    
-    
-    
-};
-typedef struct set_param_opti tdfp_opti;
-
-
-
 
 
 
@@ -64,6 +49,8 @@ public:
     OptiClass(); ~OptiClass();
     string name_opti; // sets what kind of optimization method is used 
 
+    bool setlogs(MyLog* mylog);
+
     bool set_param(tdfp_opti popti);
     bool set_optimization(void);
     bool compute_optimization(void);
@@ -73,6 +60,7 @@ public:
 private:
 // common
     bool set;
+    MyLog* myLog;
     EnergyClass *energyClass;
 
     int nb_pixels;

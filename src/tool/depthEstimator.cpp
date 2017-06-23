@@ -51,6 +51,11 @@ using namespace std;
 DepthClass::DepthClass(){ this->set = false; }
 DepthClass::~DepthClass(){}
 
+bool DepthClass::setlogs(MyLog* mylog){
+    this->myLog = mylog;
+    return true;
+}
+
 bool DepthClass::set_param(string settype){
     this->type = settype;
     this->degree = 8;
@@ -106,10 +111,10 @@ int DepthClass::getNbLabels(void){
     return DepthToRank.size();
 }
 
-vector<double> DepthClass::getLabels(void){
-    vector<double> A(DepthToRank.size());
-    for(int i=0; i<DepthToRank.size(); i++){
-        A[i] = DepthToRank[i][0];
+vector<fType> DepthClass::getLabels(void){
+    vector<fType> A(this->DepthToRank.size());
+    for(int i=0; i<this->DepthToRank.size(); i++){
+        A[i] = this->DepthToRank[i][0];
     }
     return A;
 }

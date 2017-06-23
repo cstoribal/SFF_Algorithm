@@ -19,17 +19,21 @@ PreTreatment::PreTreatment(){
     this->noise_b = 0.0;
     this->noise_ca = 0.0;
     this->noise_cs = 0.0;
-    this->log = new MyLog();
+    this->myLog = new MyLog();
     srand(time(NULL));
 }
 PreTreatment::~PreTreatment(){}
 
-bool PreTreatment::set_param(MyLog* plog, const tdf_input & prts){
+bool PreTreatment::setlogs(MyLog* mylog){
+    this->myLog = mylog;
+    return true;
+}
+
+bool PreTreatment::set_param(const tdf_input & prts){
     this->noise_a  = prts.noise_a;
     this->noise_b  = prts.noise_b;
     this->noise_ca = prts.noise_ca;
     this->noise_cs = prts.noise_cs; 
-    this->log      = plog;
     return true;
 }
 
@@ -39,22 +43,22 @@ bool PreTreatment::compute_noises(Mat_<fType> & image){
     this->dimc = image.channels();
 
     if(this->dimx==0||this->dimy==0){
-        //log->a("Pretreatment noise impossible, image dimention is null");
+        //myLog->a("Pretreatment noise impossible, image dimention is null");
         return false;
     }
 
     if(noise_a){
-        //log->a( "Computing noise_mult "+to_string(noise_a)+"\n");
+        //myLog->a( "Computing noise_mult "+to_string(noise_a)+"\n");
         this->compute_nmult(image);
     }
 
     if(noise_b){
-        //log->a( "Computing noise_add "+to_string(noise_b)+"\n");
+        //myLog->a( "Computing noise_add "+to_string(noise_b)+"\n");
         this->compute_nunif(image);
     }
 
     if(noise_ca){
-        //log->a( "Computing noise_gauss "+to_string(noise_ca)+ "sigma " +to_string2(noise_cs)+"\n");
+        //myLog->a( "Computing noise_gauss "+to_string(noise_ca)+ "sigma " +to_string2(noise_cs)+"\n");
         this->compute_ngauss(image);
     }
     
@@ -64,7 +68,7 @@ bool PreTreatment::compute_noises(Mat_<fType> & image){
     threshold( image, image, 0.0, 0.0,THRESH_TRUNC);
     image = -image;
     //image.convertTo(image, CV_TF);
-    this->log->a("noising done \n");
+    
     //image = image.mul(Mat::zeros(dimy,dimx,CV_TF),(image<0));
     
     return true;

@@ -34,8 +34,9 @@ loading saving images, depths, and visualisations
 #include <fstream>
 #include <vector>
 
-#include "../misc/miscdef.h"
+#include "../io/logs.h"
 #include "../io/mgldrw.h"
+#include "../misc/miscdef.h"
 
 
 
@@ -51,6 +52,8 @@ public:
     ~IOWizard();
 
     // Parsing
+    bool setlogs(MyLog* mylog);
+    bool setlogsoutput(void);
     bool parseArgs(int argc, char** argv);
     bool setArgs(tdf_input & clonedinput);
     bool checkArgs(void);
@@ -60,8 +63,7 @@ public:
     bool parsevect2struct(const vector<vector<string> > & fd, tdf_input & inp); //ok
     bool storeParameters(void);
 
-
-    int help;			// check if help mode is on   //TODO checking and default values if needed
+    int help;			// check if help mode is on 
     string arg_datapath;	// dataname 
     string arg_savedatapath;
 
@@ -85,15 +87,16 @@ public:
     bool loadGroundTruth(Mat & gtmat, string filepath);
 
 
-
-    bool showImage(const string param, const Mat & image, int timer);
-    bool clickImage(const string param, const Mat & image, int timer,
-			 bool (*fptr)(void*,Point), void* context) ;
+    bool img_setscale(fType min, fType max, int select);
+    bool img_setscale(int select);    
+    bool img_unsetscale(void);    
     bool writeImage(const string filename, const Mat & image);
+    bool showImage(const string param, const Mat & image, int timer);
+    //bool clickImage(const string param, const Mat & image, int timer,
+    //			 bool (*fptr)(void*,Point), void* context) ;
 
     bool write3DImage(const string filename, const Mat & image);
     bool show3DImage(const string filename, const Mat & image);
-    bool mat3Dplot(void);
 
 
     bool mkdir(const string directory);
@@ -108,7 +111,13 @@ private:
 
 
 
+    MyLog* myLog;
     MyDrawer2D myDrawer2D;
+
+    int  img_dout_scaleselect;
+    vector<bool>  img_dout_scaleset;
+    vector<fType> img_dout_sca; //scale O = (I-b)*a
+    vector<fType> img_dout_scb;
 
     /////////////// Loading variables...
     string arg_filename;	// filename - used for help choice
@@ -135,9 +144,7 @@ private:
 };
 
 void CallBackFunc(int event, int x, int y, int flags, void* userdata);
-void CallBackFunc2(int event, int x, int y, int flags, void* userdata);
+//void CallBackFunc2(int event, int x, int y, int flags, void* userdata);
 
-void CallBack3DQT(mglGraph *gr);
-bool forwarder2(void* context);
 
 #endif // IOWIZARD_H_

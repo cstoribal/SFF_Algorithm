@@ -19,9 +19,23 @@ using namespace cv;
 MySFF::MySFF(){
     A_tst = Point(5,5);
 }
-MySFF::~MySFF(){ }
+MySFF::~MySFF(){
+    myLog.write();
+    //CPING("this is MySFF destructor's test");
+}
+
+bool MySFF::setlogs(void){
+    // redirects all child classes pointers to the log output class
+    ioWizard.setlogs(&myLog);
+    pretreatClass.setlogs(&myLog);
+    sharpOP.setlogs(&myLog);
+    depthEst.setlogs(&myLog);
+    energyClass.setlogs(&myLog);
+    optiClass.setlogs(&myLog);
+    evalClass.setlogs(&myLog);
 
 
+}
 
 bool MySFF::loadProblem(int argc, char** argv){
     ioWizard.parseArgs(argc, argv);
@@ -33,7 +47,10 @@ bool MySFF::loadProblem(int argc, char** argv){
     }
 
 
-    ioWizard.setArgs(input_prts); //andget
+    ioWizard.setArgs(input_prts); // andget args
+    
+
+
     // Parsing done
     ioWizard.buildImageSet(imageSet);
     ioWizard.loadGroundTruth(gt_dmat,"");
@@ -41,9 +58,7 @@ bool MySFF::loadProblem(int argc, char** argv){
     ioWizard.mkdir(input_prts.outputfolder);
     ioWizard.set_auto_directory(input_prts.outputfolder);
     ioWizard.storeParameters();
-    dim1 = imageSet[0].ivmat[0].rows;
-    dim2 = imageSet[0].ivmat[0].cols;
-    
+
 
 
     
@@ -53,18 +68,16 @@ bool MySFF::loadProblem(int argc, char** argv){
 bool MySFF::preTreat(void){
     for(int i=0; i<imageSet.size(); i++){
     for(int j=0; j<imageSet[0].dim; j++){
-        pretreatClass.set_param(&myLog,input_prts);
+        pretreatClass.set_param(input_prts);
         pretreatClass.compute_noises(imageSet[i].ivmat[j]);
-        //resize(imageSet[i].ivmat[j], imageSet[i].ivmat[j], Size(), 0.2, 0.2);
         //GaussianBlur(imageSet[i].ivmat[j],imageSet[i].ivmat[j], Size(3,3),0,0);
     }
     }
     
     dim1 = imageSet[0].ivmat[0].rows;
     dim2 = imageSet[0].ivmat[0].cols;
-    cout << "- d1 " << dim1 << " d2 " << dim2 << endl;
-
-    // Gaussian blur
+    myLog.a("Image Dimensions : "+to_string2(dim1)+"px rows per "+to_string2(dim2)+"px cols\n");
+    //TODO Gaussian blur
 
 
     return true;
@@ -74,10 +87,8 @@ bool MySFF::preTreat(void){
 bool MySFF::doSharpness(void){
     sharpOP.optypeSelector(input_prts.sharp);
     sharpOP.compute(this->imageSet,this->sharpSet);
-    cout << "dsharp1 " << sharpSet[0].ivmat[0].cols << endl;
     //done
-    
-    
+    return true;
 }
 
 bool MySFF::doDepth(void){
@@ -86,8 +97,13 @@ bool MySFF::doDepth(void){
     //testClass.fillSharpPoly(sharpSet);
     depthEst.buildEstimation(sharpSet, depth_parameters);
     depthEst.buildDepthmat(depth_parameters, dmat, dmat_rank, dmat_score);
-    this->nb_labels = depthEst.getNbLabels();
-    assert(this->nb_labels == (this->sharpSet.size()-1)*2); // Oversampling
+    vector<fType> labels = depthEst.getLabels();
+    this->nb_labels = labels.size();
+    // set dmat next outputs
+    assert(this->nb_labels == (this->sharpSet.size()-1)*2); // Check Oversampling
+    fType d_min = labels[0];
+    fType d_max = labels[this->nb_labels-1];
+    ioWizard.img_setscale(d_min,d_max,1);
     dmat.copyTo(rmat);
     return true;
 }
@@ -102,10 +118,10 @@ bool MySFF::showInterpolationAt(void){
     return true;
 }
 
-bool MySFF::clickInterpolation(Mat image, int timer){ //TODO interpolation non fonctionnelle
-    ioWizard.clickImage("scale", image, timer, &forwarder, this );
-    return true;
-}
+//bool MySFF::clickInterpolation(Mat image, int timer){ //TODO interpolation non fonctionnelle
+//    ioWizard.clickImage("scale", image, timer, &forwarder, this );
+//    return true;
+//}
 
 bool MySFF::showInterpolation(Point A){
     vector<Point> v = vector<Point>();
@@ -181,7 +197,7 @@ bool MySFF::setMultifocusRmat(void){
 
 bool MySFF::testEnergy(void){
 
-    energyClass.set_parameters(&myLog, input_prts.nrj_d, input_prts.nrj_r,sharpSet, dmat, this->nb_labels, 1, 1);
+    energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r,sharpSet, dmat, this->nb_labels, 1, 1);
     Mat1T rmattmp;
     dmat.copyTo(rmattmp);
 
@@ -199,16 +215,18 @@ bool MySFF::optimize(void){
     //for(fType lambda=1;lambda<8;lambda+=0.5)
     tdf_input& ip = input_prts; //alias. too complex
     if(ip.vect_lambda_d.size()<ip.vect_lambda_r.size()){
-        fType lambdareplicate = ip.vect_lambda_d[ip.vect_lambda_d.size()-1];
+        int start =ip.vect_lambda_d.size();
+        fType lambdareplicate = ip.vect_lambda_d[start-1];
         ip.vect_lambda_d.resize(ip.vect_lambda_r.size());
-        for(int i=ip.vect_lambda_d.size();i<ip.vect_lambda_r.size();i++){
+        for(int i=start;i<ip.vect_lambda_r.size();i++){
             ip.vect_lambda_d[i]=lambdareplicate;
         }
     }
     if(ip.vect_lambda_d.size()>ip.vect_lambda_r.size()){
-        fType lambdareplicate = ip.vect_lambda_r[ip.vect_lambda_r.size()-1];
+        int start = ip.vect_lambda_r.size();
+        fType lambdareplicate = ip.vect_lambda_r[start-1];
         ip.vect_lambda_r.resize(ip.vect_lambda_d.size());
-        for(int i=ip.vect_lambda_r.size();i<ip.vect_lambda_d.size();i++){
+        for(int i=start;i<ip.vect_lambda_d.size();i++){
             ip.vect_lambda_r[i]=lambdareplicate;
         }
     } 
@@ -220,7 +238,7 @@ bool MySFF::optimize(void){
         fType lambda_d = input_prts.vect_lambda_d[i];
         COUT2("Starting optimization at lambda_r = ",lambda_r);
         COUT2("Starting optimization at lambda_d = ",lambda_d);
-        energyClass.set_parameters(&myLog, input_prts.nrj_d, input_prts.nrj_r, sharpSet, dmat, this->nb_labels, lambda_d, lambda_r);
+        energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r, sharpSet, dmat, this->nb_labels, lambda_d, lambda_r);
         //set
         
         opti_prts.type = input_prts.opti;
@@ -251,19 +269,17 @@ bool MySFF::optimize(void){
             continue;
         }
         optiClass.writebackmatrix(rmat);
-        string tmp = "I_depth_lambda"; tmp += to_string2(lambda_r); tmp += ".png" ;
-        ioWizard.writeImage(tmp,this->rmat);
+        string tmp = "Dep_D" + to_string2(lambda_d) + "R" + to_string2(lambda_r) + ".png" ;
+        ioWizard.img_setscale(1);
+        ioWizard.writeImage("2D_"+tmp,this->rmat);
         ioWizard.showImage("scale",this->rmat,100);
-        ioWizard.write3DImage("3D_rmat_l" + to_string2(lambda_r) +".png",this->rmat);
+        ioWizard.write3DImage("3D_"+tmp,this->rmat);
+
+        ioWizard.img_unsetscale();
+        ioWizard.write3DImage("3Ddiff_"+tmp,10*(this->rmat-this->gt_dmat) );
 
         evaluate();
-        
-        fType tmpmean = cv::sum(this->rmat)[0]/(dim1*dim2);
-        CPING2("rmat mean is ",tmpmean);
-
-        tmpmean = cv::sum(this->gt_dmat)[0]/(dim1*dim2);
-        CPING2("gtmat mean is ",tmpmean);
-        
+               
     }
     
     
