@@ -109,19 +109,12 @@ bool MySFF::doDepth(void){
 }
 
 bool MySFF::showInterpolationAt(void){
-    //this->A_tst = ioWizard.clicked; // updates last clicked point and shows interpolation at that point 
-    //TODO version vectorpoint
-    //cout << "point: " << A_tst.y << " " << A_tst.x << endl;
-    //depthEst.showInterpolationAt(A_tst.y,A_tst.x,sharpSet,depth_parameters, input_prts.outputfolder);
     depthEst.showInterpolationAt(ioWizard.clicked,sharpSet,depth_parameters,dmat, input_prts.outputfolder);
     ioWizard.clicked = vector<Point>();
     return true;
 }
 
-//bool MySFF::clickInterpolation(Mat image, int timer){ //TODO interpolation non fonctionnelle
-//    ioWizard.clickImage("scale", image, timer, &forwarder, this );
-//    return true;
-//}
+
 
 bool MySFF::showInterpolation(Point A){
     vector<Point> v = vector<Point>();
@@ -269,15 +262,15 @@ bool MySFF::optimize(void){
             continue;
         }
         optiClass.writebackmatrix(rmat);
-        string tmp = "Dep_D" + to_string2(lambda_d) + "R" + to_string2(lambda_r) + ".png" ;
+        string tmp = "Dep-D" + to_string2(lambda_d) + "R" + to_string2(lambda_r);
         ioWizard.img_setscale(1);
-        ioWizard.writeImage("2D_"+tmp,this->rmat);
+        ioWizard.writeImage("2D-"+tmp+ ".png",this->rmat);
         ioWizard.showImage("scale",this->rmat,100);
-        ioWizard.write3DImage("3D_"+tmp,this->rmat);
+        ioWizard.write3DImage("3D-"+tmp+ ".png",this->rmat);
 
         ioWizard.img_unsetscale();
-        ioWizard.write3DImage("3Ddiff_"+tmp,10*(this->rmat-this->gt_dmat) );
-
+        ioWizard.write3DImage("3Ddiff-"+tmp+ ".png",10*(this->rmat-this->gt_dmat) );
+        myLog.a(tmp);
         evaluate();
                
     }
@@ -292,10 +285,16 @@ bool MySFF::evaluate(void){
 }
 
 
-bool forwarder(void* context, Point A) {
-    static_cast<MySFF*>(context)->showInterpolation(A);
-}
+//bool forwarder(void* context, Point A) {
+//    static_cast<MySFF*>(context)->showInterpolation(A);
+//}
 
+
+
+//bool MySFF::clickInterpolation(Mat image, int timer){ //TODO interpolation non fonctionnelle
+//    ioWizard.clickImage("scale", image, timer, &forwarder, this );
+//    return true;
+//}
 
 
 

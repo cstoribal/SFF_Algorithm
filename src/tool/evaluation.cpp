@@ -38,7 +38,9 @@ bool EvalClass::compute_RMSE(const Mat1T & dmat, fType & rmse, fType & q_rmse ){
     pow(tmpmat,2,tmpmat);
     rmse = sqrt(cv::sum(tmpmat)[0]/(height*width));
     q_rmse = 1/rmse;
-    cout << "RMSE is : " << rmse << " and Q is : " << q_rmse << endl; 
+
+    string logout = " * RMSE is : " + to_string2(rmse) + " and Q is : " + to_string2(q_rmse) + "\n";
+    myLog->a(logout);
     return true;
 }
 

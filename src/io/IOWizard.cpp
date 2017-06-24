@@ -816,6 +816,11 @@ bool IOWizard::storeParameters(void){
         textdata +=  " ; " + to_string2(i.vect_lambda_r[j]);
     textdata += "\n";
 
+    textdata += to_string2(i.lambda_d_set);
+    for(int j=0; j<i.vect_lambda_d.size();j++)
+        textdata +=  " ; " + to_string2(i.vect_lambda_d[j]);
+    textdata += "\n";
+
     // COUT(textdata);
     string filepath = i.outputfolder + "/" + this->arg_savedatapath;
     ofstream out(filepath.c_str());
