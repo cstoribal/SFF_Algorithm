@@ -109,6 +109,14 @@
                     <keyword>CV_TF</keyword>
                     <keyword>CV_TFC1</keyword>
                     <keyword>CV_TFC3</keyword>
+                    <keyword>eType</keyword>
+                    <keyword>Mat1E</keyword>
+                    <keyword>Mat3E</keyword>
+                    <keyword>Vec1E</keyword>
+                    <keyword>Vec3E</keyword>
+                    <keyword>CV_TE</keyword>
+                    <keyword>CV_TEC1</keyword>
+                    <keyword>CV_TEC3</keyword>
                 </context>
 
                 <context id="common-defines" style-ref="common-defines">

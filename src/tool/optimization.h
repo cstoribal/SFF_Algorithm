@@ -54,7 +54,7 @@ public:
     bool set_param(tdfp_opti popti);
     bool set_optimization(void);
     bool compute_optimization(void);
-    bool writebackmatrix(Mat1d & do_mat);
+    bool writebackmatrix(Mat1T & do_mat);
     
 
 private:
@@ -67,11 +67,11 @@ private:
     int nb_labels;
     int width;
     int height;
-    vector<double> labels;
+    vector<fType> labels;
 
-
-    vector<double> data_in;
-    vector<double> data_out;
+    // ce sont des labels, donc des entiers ?
+    vector<eType> data_in; //poids data
+    vector<int> data_out;  //labels output
 
 
     //nap-shield
@@ -79,19 +79,19 @@ private:
     Mat1i          getrank;
     vector<Point>  getxy;
 
-    bool convert_mat2labvec(const vector<Mat1d> & vmat, vector<double> & vect);
-    bool convert_vec2mat(const vector<double> & vect, Mat1d & vmat);
+    bool convert_mat2labvec(const vector<Mat1E> & vmat, vector<eType> & vect);
+    bool convert_vec2mat(const vector<int> & vect, Mat1T & vmat);
 
     
 // used by graph cuts
     GCoptimization *gco;
     string gcotype;
 
-    vector<double> smoothvect;  //label*label
+    vector<eType> smoothvect;  //label*label
     int nb_neighbors;
     Mat1b neighbor_mat; //other way of describing neighbors?
     vector<vector<Point> >  neighborhoods; //wow
-    vector<vector<double> > weights;       //if needed
+    vector<vector<eType> > weights;       //if needed
 
 
     bool set_optimization_gco_grid(void);

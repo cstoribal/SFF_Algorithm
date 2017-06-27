@@ -73,6 +73,8 @@
 #ifndef __ENERGY_H__
 #define __ENERGY_H__
 
+#include "../misc/miscdef.h"
+
 #include <assert.h>
 #include "graph.h"
 #include <iostream>
@@ -227,7 +229,7 @@ inline void Energy<captype,tcaptype,flowtype>::add_term2(Var x, Var y,
 	*/
         if (B + C < 0)
         {
-            if( B+C > -0.000000000000001) throw "rounding error giving B+C<0 - skipping iteration";
+            if( B+C > -0.000000000000001 || (std::is_same<eType,float>::value && B+C>  -0.00000001) ) throw "rounding error giving B+C<0 - skipping iteration";
             std::cout<<std::endl;
             std::cout<< " a " << A << std::endl;
             std::cout<< " b " << B << std::endl;

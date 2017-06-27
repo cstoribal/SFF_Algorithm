@@ -110,6 +110,8 @@
 #include "graph.inl"
 #include "maxflow.inl"
 
+#include "../misc/miscdef.h"
+
 /////////////////////////////////////////////////////////////////////
 // Utility functions, classes, and macros
 /////////////////////////////////////////////////////////////////////
@@ -163,11 +165,11 @@ public:
 	typedef GCO_ENERGYTERMTYPE EnergyTermType;
 #else
 #ifdef GCO_ENERGYTYPE32
-	typedef double EnergyType;        // int 32-bit energy total
+	typedef eType EnergyType;        // int 32-bit energy total
 #else
-	typedef double EnergyType;  //  long long 64-bit energy total
+	typedef elType EnergyType;  //  long long 64-bit energy total
 #endif
-	typedef double EnergyTermType;    // int 32-bit energy terms
+	typedef eType EnergyTermType;    // int 32-bit energy terms
 #endif
 	typedef Energy<EnergyTermType,EnergyTermType,EnergyType> EnergyT;
 	typedef EnergyT::Var VarID;

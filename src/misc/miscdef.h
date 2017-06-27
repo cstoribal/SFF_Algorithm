@@ -26,14 +26,16 @@ Defines - stores generic function, typedef & structures
 
 //  #include "../io/logs.h" //Forwards log class declaration for the whole program
 
-#define CPING(f) (cout << f << endl)
-#define CPING2(x,y) (cout << x << "  " << y << endl)
+#define CPING(f) (std::cout << f << std::endl)
+#define CPING2(x,y) (std::cout << x << "  " << y << std::endl)
 
-#define COUT(f) (cout << f << endl)
-#define COUT2(x,y) (cout << x << "  " << y << endl)
+#define COUT(f) (std::cout << f << std::endl)
+#define COUT2(x,y) (std::cout << x << "  " << y << std::endl)
 
-#define SFF_PRECISION double
-#if SFF_PRECISION == double
+#define SFF_PRECISION_D  //double
+#define SFF_ENERGY_I     //double
+
+#ifdef SFF_PRECISION_D
     typedef double      fType;
     typedef cv::Mat1d   Mat1T;
     typedef cv::Mat3d   Mat3T;
@@ -42,8 +44,8 @@ Defines - stores generic function, typedef & structures
     #define CV_TF       CV_64F   
     #define CV_TFC1     CV_64FC1 
     #define CV_TFC3     CV_64FC3 
-#else
-#if SFF_PRECISION == float
+#endif
+#ifdef SFF_PRECISION_F
     typedef float       fType;
     typedef cv::Mat1f   Mat1T;
     typedef cv::Mat3f   Mat3T;
@@ -53,8 +55,45 @@ Defines - stores generic function, typedef & structures
     #define CV_TFC1     CV_32FC1 
     #define CV_TFC3     CV_32FC3 
 #endif
+
+
+#ifdef SFF_ENERGY_I
+    typedef int         eType;
+    typedef long long int elType;
+    typedef cv::Mat1i   Mat1E;
+    typedef cv::Mat3i   Mat3E;
+    //typedef std::Vec1d     Vec1T;
+    //typedef std::Vec3d     Vec3T;
+    #define CV_TE       CV_32S   
+    #define CV_TEC1     CV_32SC1 
+    #define CV_TEC3     CV_32SC3 
 #endif
-//#include "energy2.h"
+#ifdef SFF_ENERGY_D
+    typedef double      eType;
+    typedef double      elType;
+    typedef cv::Mat1d   Mat1E;
+    typedef cv::Mat3d   Mat3E;
+    //typedef std::Vec1d     Vec1T;
+    //typedef std::Vec3d     Vec3T;
+    #define CV_TE       CV_64F   
+    #define CV_TEC1     CV_64FC1 
+    #define CV_TEC3     CV_64FC3 
+#endif
+#ifdef SFF_ENERGY_F
+    typedef float       eType;
+    typedef double      elType;
+    typedef cv::Mat1f   Mat1E;
+    typedef cv::Mat3f   Mat3E;
+    //typedef std::Vec1f     Vec1T;
+    //typedef std::Vec3f     Vec3T;
+    #define CV_TE       CV_32F   
+    #define CV_TEC1     CV_32FC1 
+    #define CV_TEC3     CV_32FC3 
+#endif
+
+
+
+
 
 
 namespace std {
@@ -66,6 +105,12 @@ namespace std {
         return str; 
     }
 }
+
+namespace cv {
+    bool minMaxLoc(cv::Mat matrix, float* fmin, float* fmax);
+}
+
+
 
 class MyLog;
 class IOWizard;
@@ -95,7 +140,7 @@ struct struct_input{
 
     int groundt_set;//2
     std::string gtpath;
-    double gta,gtb;
+    fType gta,gtb;
     
     int outputf_set;//3
     std::string outputfolder;
@@ -131,7 +176,7 @@ typedef struct struct_input tdf_input;
 
 
 struct tagged_img{
-    std::vector<cv::Mat1d> ivmat;
+    std::vector<Mat1T> ivmat;
     fType focus;
     fType dpth;
     int dim; //dimension of ivmat vector
@@ -146,7 +191,7 @@ typedef std::vector<struct tagged_img> tdf_imgset;
 
 struct paramdepth{      // type d'interpolation, paramètres. Mal nommé.
     std::string type;
-    std::vector<cv::Mat1d> vmat;
+    std::vector<Mat1T> vmat;
     int degree;
 };
 typedef struct paramdepth tdfp_depth;
@@ -159,8 +204,8 @@ struct energy_sidestruct{
     std::string info;
     int dim1, dim2;
     int autoroi; // set 1 if algorithm must seek for neighbors modified pixels (resulting in a double roi augmentation)
-    cv::Mat1d dmat; // Matrice de profondeur initiale, lue à partir des données locales uniquement
-    cv::Mat1d rmat; // Reliability matrix. Calculée à partir des données de sharpness
+    Mat1T dmat; // Matrice de profondeur initiale, lue à partir des données locales uniquement
+    // Mat1T rmat; // Reliability matrix. Calculée à partir des données de sharpness
     fType scale_d,scale_r;
     fType data_coef;
 }; 

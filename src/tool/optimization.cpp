@@ -54,10 +54,10 @@ bool OptiClass::compute_optimization(void){
     return false;
 }
 
-bool OptiClass::writebackmatrix(Mat1d & do_mat){
+bool OptiClass::writebackmatrix(Mat1T & do_mat){
 // according to optimization type, stores the regularised matrix from the vectors to the sff class
 // 
-    do_mat = Mat::zeros(height,width,CV_32S);
+    do_mat = Mat::zeros(height,width,CV_TF);
     convert_vec2mat(data_out,do_mat);
     return true;
 
@@ -74,7 +74,7 @@ bool OptiClass::writebackmatrix(Mat1d & do_mat){
 
 bool OptiClass::build_rank4xy(void){
     // knowing width & height, we can build the mat1i and vector<point> for conversions
-    this->getrank = Mat::zeros(height,width,CV_32S); //TODO check width%height
+    this->getrank = Mat::zeros(height,width,CV_32S); //TODO check h, w swap
     this->getxy   = vector<Point>(width*height);
     int k=0;
     for(int i=0;i<height;i++){
@@ -87,25 +87,25 @@ bool OptiClass::build_rank4xy(void){
     return true;
 }
 
-bool OptiClass::convert_mat2labvec(const vector<Mat1d> & vmat, vector<double> & vect){
+bool OptiClass::convert_mat2labvec(const vector<Mat1E> & vmat, vector<eType> & vect){
     // knowing height*width*labels we can construct the vector from the matrix vector.
     vect.resize(height*width*nb_labels);
     for(int i=0; i<height;   i++){
     for(int j=0; j<width;    j++){
     for(int l=0; l<nb_labels; l++){
-        vect[i*width*nb_labels+j*nb_labels+l]=vmat[l].at<double>(i,j);        
+        vect[i*width*nb_labels+j*nb_labels+l]=vmat[l].at<eType>(i,j);        
     }}}
 
     return true;
 }
 
 
-bool OptiClass::convert_vec2mat(const vector<double> & vect, Mat1d & vmat){
+bool OptiClass::convert_vec2mat(const vector<int> & vect, Mat1T & vmat){
     // if we know height*width (check it's nb_pixels) we can get the matrix from the vector
     // in addition, we convert it immediately to the old label format. so that's done.
     for(int i=0; i<height; i++){
     for(int j=0; j<width; j++){
-        vmat.at<double>(i,j)=labels[vect[i*width+j]];
+        vmat.at<fType>(i,j)=labels[vect[i*width+j]];
     }}
     return true;
 }
@@ -120,43 +120,40 @@ bool OptiClass::set_optimization_gco_grid(void){
 // also stores the vector of matrix (depth*mat) to the data_in 
 // which will call some functions from param to gco to initialise the gco
     // get vector of matrix;
-    Mat1d tmp_mat = Mat::zeros(height,width,CV_64F);
-    vector<Mat1d> tmp_data_energy(nb_labels);
+    Mat1E tmp_mat = Mat::zeros(height,width,CV_TE);
+    vector<Mat1E> tmp_data_energy(nb_labels);
+    energyClass->getDataEnergy_3DMatrix(this->labels,tmp_data_energy);
+    /*
     for(int l=0; l<nb_labels; l++){
         tmp_mat = tmp_mat*0+labels[l];
         energyClass->computeMatEnergy(E_DATA,tmp_mat,vector<Point>() );
         energyClass->updateEnergy(E_DATA);
         energyClass->ed_mat.copyTo(tmp_data_energy[l]);
         }
+    */
     convert_mat2labvec(tmp_data_energy,data_in);
-    tmp_mat = Mat::zeros(nb_labels,nb_labels,CV_64F);
+    tmp_mat = Mat::zeros(nb_labels,nb_labels,CV_TE);
     energyClass->getCrossLabelMatrix(labels,tmp_mat);
     smoothvect.resize(nb_labels*nb_labels);
     for(int i=0; i<nb_labels; i++){
     for(int j=0; j<nb_labels; j++){
-        smoothvect[i*nb_labels+j]=tmp_mat.at<double>(i,j);
+        smoothvect[i*nb_labels+j]=tmp_mat.at<eType>(i,j);
     }}
-        
-	try{
-    gco = new GCoptimizationGridGraph(width,height,nb_labels);
-    gco->setDataCost(&data_in[0]);
-    gco->setSmoothCost(&smoothvect[0]);
-    printf("\nBefore optimization energy is %f",gco->compute_energy());
-
-/*
-		for ( int  i = 0; i < nb_pixels; i++ )
-			result[i] = gc->whatLabel(i);
-
-		delete gc;
-*/
+    
+    try{
+        gco = new GCoptimizationGridGraph(width,height,nb_labels);
+        gco->setDataCost(&data_in[0]);
+        gco->setSmoothCost(&smoothvect[0]);
+        if(is_same<eType,int>::value)
+            printf("\nBefore optimization energy is %lli",
+			gco->compute_energy());
+        else
+            printf("\nBefore optimization energy is %f",
+			gco->compute_energy());
 	}
-	catch (GCException e){
+    catch (GCException e){
 		e.Report();
 	}
-    
-    
-
-
 
 
 
@@ -169,7 +166,13 @@ bool OptiClass::compute_gco_grid(void){
     for(int i=0; i<nb_pixels; i++){
         data_out[i] = gco->whatLabel(i);
         }
-    printf("\nAfter optimization energy is %f \n",gco->compute_energy());
+
+    if(is_same<eType,int>::value)
+        printf("\nAfter optimization energy is %lli \n",
+		gco->compute_energy());
+    else
+        printf("\nAfter optimization energy is %f \n",
+		gco->compute_energy());
 
     
 
@@ -194,9 +197,13 @@ bool OptiClass::compute_gco_gen(void){
     for(int i=0; i<nb_pixels; i++){
         data_out[i] = gco->whatLabel(i);
         }
-    printf("\nAfter optimization energy is %f \n",gco->compute_energy());
 
-    
+    if(is_same<eType,int>::value)
+        printf("\nAfter optimization energy is %lli \n",
+		gco->compute_energy());
+    else
+        printf("\nAfter optimization energy is %f \n",
+		gco->compute_energy()); 
 
     return true;
     

@@ -41,13 +41,14 @@ int main( int argc, char** argv )
     t1 = std::time(0);
     myLog->a(to_string2(t1-t0)+" seconds for building dataset\n");
     mySFF.preTreat();
-
+/*
     for(int i=0; i<mySFF.imageSet.size(); i++)
     {
         Mat tmpmat2;
         merge(mySFF.imageSet[i].ivmat,tmpmat2);
-        mySFF.ioWizard.showImage("scale",tmpmat2,100);
+        mySFF.ioWizard.showImage("scxle",tmpmat2,10);
     }
+*/
     t0 = std::time(0);
     myLog->a(to_string2(t0-t1)+" seconds for pretreatment\n");
 

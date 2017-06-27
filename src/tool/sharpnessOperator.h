@@ -48,11 +48,11 @@ public:
     bool compute(tdf_imgset iset, tdf_imgset& sset);
     
     
-    bool compute_SMLAP(vector<Mat1d> ivmat, vector<Mat1d>& smat);
-    bool compute_DLAP(vector<Mat1d> ivmat, vector<Mat1d>& smat);
+    bool compute_SMLAP(vector<Mat1T> ivmat, vector<Mat1T>& smat);
+    bool compute_DLAP(vector<Mat1T> ivmat, vector<Mat1T>& smat);
 
 
-    bool combinRule(vector<Mat1d> in_svmat, vector<Mat1d>& out_svmat);
+    bool combinRule(vector<Mat1T> in_svmat, vector<Mat1T>& out_svmat);
 
 private:
     MyLog* myLog;

@@ -979,7 +979,7 @@ bool IOWizard::loadGroundTruth(Mat & gtmat,string filepath = "") {
     }
     if(filepath == "") filepath = this->input_folder+"/"+this->input.gtpath;
     readImage(filepath, gtmat);
-    vector<Mat1d> tmpmatv;
+    vector<Mat1T> tmpmatv;
     split(gtmat,tmpmatv);
     gtmat = tmpmatv[0];
     gtmat = gtmat*(input.gta)+input.gtb;

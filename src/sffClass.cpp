@@ -34,7 +34,7 @@ bool MySFF::setlogs(void){
     optiClass.setlogs(&myLog);
     evalClass.setlogs(&myLog);
 
-
+    energyClass.set_depthclass(&depthEst);
 }
 
 bool MySFF::loadProblem(int argc, char** argv){
@@ -241,9 +241,10 @@ bool MySFF::optimize(void){
         opti_prts.height     = dim1;
         opti_prts.width      = dim2;
         opti_prts.labels    = depthEst.getLabels();
-    
+        
         optiClass.set_param(opti_prts);
         optiClass.set_optimization();
+
         try{
             optiClass.compute_optimization();
         }
