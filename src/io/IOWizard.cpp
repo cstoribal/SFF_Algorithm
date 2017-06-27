@@ -405,13 +405,15 @@ bool IOWizard::displayHelp(void){
         COUT("     1/0; -gt; gta; gtb; \\n");
         COUT("     1/0; -o; \\n");
         COUT("     1/0; -focusdepths(a vector of imagefocus); \\n");
-        COUT("     1/0; -sc; -gw; -n1; -n2; \\n");
+        COUT("     1/0; -sc; -gw; -n1; -n2; -nga; -ngs\\n");
         COUT("     1/0; -psharp; \\n");
         COUT("     1/0; -pdepth; \\n");
         COUT("     1/0; -pnd energy data; -pnr energyregul; \\n");
         COUT("     1/0; -poptimization; \\n");
+        COUT("     1/0; -lambda_r vector; \\n");
+        COUT("     1/0; -lambda_d vector; \\n");
         COUT("     note : called parameters overwrite those ones");
-        COUT("     nb : data.txt must lie within images.png");
+        COUT("     nb : data.txt should lie near images.png");
         }
         if(this->arg_filename=="-D" or all==1)
         {
