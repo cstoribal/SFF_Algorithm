@@ -94,6 +94,17 @@ bool DepthClass::buildDepthmat(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & 
     return true;
 }
 
+
+bool DepthClass::getVmatSharpI(vector<Mat1T> & vmat){
+    if(!vmat_sharp_i_set){
+        myLog->a("getVmatSharpI failed, depthmap not set");
+        return false;
+    }
+    
+    vmat = this->vmat_sharp_i;
+    return true;
+}
+
 int DepthClass::getRankFromDepth(fType input){
     int rank = -1;
     int i=0;

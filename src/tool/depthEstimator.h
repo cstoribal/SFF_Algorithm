@@ -28,6 +28,7 @@ public:
     bool buildEstimation(void);
     bool buildEstimation(const tdf_imgset & sharpSet, tdfp_depth & pdmat);
     bool buildDepthmat(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score);
+    bool          getVmatSharpI(vector<Mat1T> & vmat);
     int           getRankFromDepth(fType input);
     int           getNbLabels(void);
     vector<fType> getLabels(void);

@@ -112,10 +112,10 @@ private:
 /////////////////////////////////////////////////////////////////////
 //	DNRJ - Lab2Mat wrning - totally ignore previous system.
 /////////////////////////////////////////////////////////////////////
-    bool e_normeL1(const vector<fType> & lvect, vector<Mat1E> & emat);
-    bool e_normeL2(const vector<fType> & lvect, vector<Mat1E> & emat);
-    bool e_Nsharp( const vector<fType> & lvect, vector<Mat1E> & emat);
-
+    bool e_normeL1(const vector<fType> & lvect, vector<Mat1T> & emat);
+    bool e_normeL2(const vector<fType> & lvect, vector<Mat1T> & emat);
+    bool e_Nsharp( const vector<fType> & lvect, vector<Mat1T> & emat);
+    bool e_nLx_Rw1(const vector<fType> & lvect, vector<Mat1T> & emat);
     
 /////////////////////////////////////////////////////////////////////
 //	REG - Lab2Lab
@@ -129,6 +129,8 @@ private:
 //      Utility
 ///////////////////
     eType round_etype(fType input);
+    Mat1E round_etype(Mat1T input);
+    vector<Mat1E> round_etype(vector<Mat1T> input);
     
     
 };

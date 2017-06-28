@@ -30,20 +30,27 @@ bool EnergyClass::set_parameters(const string & typeD, const string & typeR, con
     this->eParams.dmat  = dmat;      // not needed anymore
     this->eParams.dim1  = dmat.rows; // ?
     this->eParams.dim2  = dmat.cols; 
-    // this->eParams.rmat = this->eParams.dmat.clone(); //TODO // not needed
+
     this->eParams.scale_d = scale_d; //ok
     this->eParams.scale_r = scale_r; //ok
-    
+
+    this->eParams.rmat = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
+    this->eParams.rmatset = "NULL"; //TODO manage intelligent update.
+                                    //TODO kill all useless functions.
+                                    //TODO add a storage vor vectmat data
+                                    //TODO so that it's computed once4all
+                                    //      excepted scale_d factor
+                                    //      IDEM for scale_r
     this->flag_Dmat = Mat::zeros(eParams.dim1,eParams.dim2, CV_8U);
     this->flag_Rmat = Mat::zeros(eParams.dim1,eParams.dim2, CV_8U);
-    this->eDataij   = Mat::zeros(eParams.dim1,eParams.dim2, CV_64F);
-    this->eReguij   = Mat::zeros(eParams.dim1,eParams.dim2, CV_64F);
-    this->delta_eDij= Mat::zeros(eParams.dim1,eParams.dim2, CV_64F);
-    this->delta_eRij= Mat::zeros(eParams.dim1,eParams.dim2, CV_64F);
-    this->ed_mat    = Mat::zeros(eParams.dim1,eParams.dim2, CV_64F);
-    this->er_mat    = Mat::zeros(eParams.dim1,eParams.dim2, CV_64F);
-    this->zeromatrix= Mat::zeros(eParams.dim1,eParams.dim2, CV_64F);
-    this->accumat   = Mat::zeros(eParams.dim1,eParams.dim2, CV_64F);
+    this->eDataij   = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
+    this->eReguij   = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
+    this->delta_eDij= Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
+    this->delta_eRij= Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
+    this->ed_mat    = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
+    this->er_mat    = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
+    this->zeromatrix= Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
+    this->accumat   = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
     
     this->eData=0;
     this->eRegu=0;
@@ -64,7 +71,7 @@ bool EnergyClass::set_parameters(const string & typeD, const string & typeR, con
 
 
 
-
+/*
 bool EnergyClass::computeMatEnergy(int stype, const Mat1T & drmat, 
 			const vector<Point> & P){
 
@@ -144,7 +151,7 @@ bool EnergyClass::updateEnergy(int stype){
 
     return true;
 }
-
+*/
 
 
 bool EnergyClass::getCrossLabelMatrix(const vector<fType> & lvect, Mat1E & lmat){
@@ -154,16 +161,30 @@ bool EnergyClass::getCrossLabelMatrix(const vector<fType> & lvect, Mat1E & lmat)
 }
 
 bool EnergyClass::getDataEnergy_3DMatrix(const vector<fType> & lvect, vector<Mat1E> & emat){
-    if(eParams.typeD == "absdiff") e_normeL1(lvect,emat);
-    if(eParams.typeD == "normeL1") e_normeL1(lvect,emat);
-    if(eParams.typeD == "normeL2") e_normeL2(lvect,emat);
-    if(eParams.typeD == "Nsharp")  e_Nsharp(lvect,emat);
+    //TODO check initialisation
+    //TODO add feature checking if energy>>overflow
     
+    
+    eParams.typeD = "nL1_Rw2"; //TODO TMP
+    vector<Mat1T> e1mat;
+    if(true) //NotSet.
+    {
+    if(eParams.typeD == "absdiff"
+     ||eParams.typeD == "normeL1") e_normeL1(lvect,e1mat);
+    if(eParams.typeD == "normeL2") e_normeL2(lvect,e1mat);
+    if(eParams.typeD == "Nsharp")  e_Nsharp( lvect,e1mat);
+    if(eParams.typeD == "nL1_Rw1"
+     ||eParams.typeD == "nL2_Rw1") e_nLx_Rw1(lvect,e1mat);
+    }
+    
+    for(int k=0; k<emat.size();k++){
+        emat[k] = round_etype(e1mat[k]*this->eParams.scale_d);
+    }
     return true;
 }
 
 
-
+/*
 /////////////////////////////////////////////////////////////////////
 ///	ROIs
 /////////////////////////////////////////////////////////////////////
@@ -206,7 +227,7 @@ bool EnergyClass::get_ROI_from_ROI(int stype, const Rect & roiin, Rect & roiout)
     // Limit ROI to bounds
     return true;
 }
-    
+
 
 /////////////////////////////////////////////////////////////////////
 //	DataNRJ
@@ -276,7 +297,7 @@ bool EnergyClass::r_absdiff(const Mat1T & drmat, const Rect & roi){
     
 }
 
-
+*/
 
 
 
@@ -287,28 +308,30 @@ bool EnergyClass::r_absdiff(const Mat1T & drmat, const Rect & roi){
 /////////////////////////////////////////////////////////////////////
 
 
-bool EnergyClass::e_normeL1(const vector<fType> & lvect, vector<Mat1E> & emat){
-    emat = vector<Mat1E>( lvect.size() );
+bool EnergyClass::e_normeL1(const vector<fType> & lvect, vector<Mat1T> & emat){
+    emat = vector<Mat1T>( lvect.size() );
     Mat1T labelmat = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
     Mat1T tmpmat = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
     for(int k=0; k<lvect.size(); k++)
     {
         labelmat = labelmat*0+lvect[k];
-        tmpmat = this->scale_to_etype*this->eParams.scale_d
-                 *cv::abs(labelmat-this->eParams.dmat);
-        emat[k] = Mat::zeros(eParams.dim1,eParams.dim2, CV_TE);
+        tmpmat = this->scale_to_etype*cv::abs(labelmat-this->eParams.dmat);
+        tmpmat.copyTo(emat[k]);
+        /*
+        Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
         for(int i=0; i<this->eParams.dim1; i++) 
-        for(int j=0; j<this->eParams.dim1; j++)
+        for(int j=0; j<this->eParams.dim2; j++)
         {
             emat[k].at<eType>(i,j) = round_etype(tmpmat.at<fType>(i,j));
         }
+        */
     }
 
     return true;
 }
 
-bool EnergyClass::e_normeL2(const vector<fType> & lvect, vector<Mat1E> & emat){
-    emat = vector<Mat1E>( lvect.size() );
+bool EnergyClass::e_normeL2(const vector<fType> & lvect, vector<Mat1T> & emat){
+    emat = vector<Mat1T>( lvect.size() );
     Mat1T labelmat = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
     Mat1T tmpmat = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
     for(int k=0; k<lvect.size(); k++)
@@ -316,21 +339,103 @@ bool EnergyClass::e_normeL2(const vector<fType> & lvect, vector<Mat1E> & emat){
         labelmat = labelmat*0+lvect[k];
         tmpmat = this->scale_to_etype
                  *cv::abs(labelmat-this->eParams.dmat);
-        tmpmat = tmpmat.mul(tmpmat)*this->eParams.scale_d;
-        emat[k] = Mat::zeros(eParams.dim1,eParams.dim2, CV_TE);
+        tmpmat = tmpmat.mul(tmpmat);
+        tmpmat.copyTo(emat[k]);
+        /*
+        Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
         for(int i=0; i<this->eParams.dim1; i++) 
-        for(int j=0; j<this->eParams.dim1; j++)
+        for(int j=0; j<this->eParams.dim2; j++)
         {
             emat[k].at<eType>(i,j) = round_etype(tmpmat.at<fType>(i,j));
         }
+        */
     }
     return true;
 }
 
-bool EnergyClass::e_Nsharp( const vector<fType> & lvect, vector<Mat1E> & emat){
-    CPING("not set");
-    throw("Nsharp dataenergy not set");
+bool EnergyClass::e_Nsharp( const vector<fType> & lvect, vector<Mat1T> & emat){
+    // Prendre les sharpmatrix (à priori m^ dimensions)
+    // trouver maxmax
+    // maxmax-sharpmat = okay
+    fType maxmax, fmin, fmax;
+    vector<Mat1T> sharp3Dvmat;
+    Mat1T tmpmat = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
+    emat.resize(lvect.size());
+    p_depthClass->getVmatSharpI(sharp3Dvmat);
+    minMaxLoc(sharp3Dvmat[0],&fmin,&maxmax);
+    for(int k=0; k<lvect.size(); k++)
+        {
+            minMaxLoc(sharp3Dvmat[k],&fmin,&fmax);
+            maxmax= (fmax>maxmax)?fmax:maxmax;           
+        }
+    for(int k=0; k<lvect.size(); k++)
+        {
+            tmpmat = (1-sharp3Dvmat[k]/maxmax)*
+			this->scale_to_etype*
+			lvect.size();
+            emat[k] = tmpmat.clone();
+        }
+    return true;
+}
+
+
+bool EnergyClass::e_nLx_Rw1( const vector<fType> & lvect, vector<Mat1T> & emat){
+    // to be scaled, labeldynamic nblabel*(1/scale_to_etype)
+    //               sharpnessdynamic (max, min?)
+    // L1 norm reweighted with reliability 1 == (Max-Min)/RArea/(MaxMax)
+    //						*labels (scaling factor)
+    // unit is labels
+    if(eParams.rmatset != "rw1") //1step setting reliability matrix
+    {
+        fType fmin, fmax, maxmax,minmin,auc; //auc area under curve
+        vector<Mat1T> sharp3Dvmat;
+        p_depthClass->getVmatSharpI(sharp3Dvmat);
+        int nblabel=sharp3Dvmat.size();
+        
+        Mat1T accumulator, maxmat, minmat;
+        accumulator = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
+        maxmat = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
+        minmat = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
+        Mat1b flagmat = Mat::zeros(eParams.dim1,eParams.dim2, CV_8U);
+        //init min & max with a lower/upper bound
+        minMaxLoc(sharp3Dvmat[0],&minmin,&maxmax);
+        sharp3Dvmat[0].copyTo(maxmat);
+        sharp3Dvmat[0].copyTo(minmat);
+        for(int k=0; k<nblabel; k++)
+        {
+            minMaxLoc(sharp3Dvmat[k],&fmin,&fmax);
+            flagmat= (sharp3Dvmat[k]>maxmat);//?sharp3Dvmat[k]:maxmat;
+            sharp3Dvmat[k].copyTo(maxmat,flagmat);
+            flagmat = (sharp3Dvmat[k]<minmat);//?sharp3Dvmat[k]:minmat;
+            sharp3Dvmat[k].copyTo(minmat,flagmat);
+            maxmax= (fmax>maxmax)?fmax:maxmax;
+            minmin= (fmin<minmin)?fmin:minmin;            
+        }
+
+        for(int k=0; k<nblabel; k++)
+        {
+            accumulator += sharp3Dvmat[k]-minmat;            
+        }
+        
+        Mat1T matrix;
+        divide((maxmat-minmat).mul(maxmat-minmat)*nblabel, (accumulator*maxmax), matrix);
+        //minMaxLoc(matrix,&minmin,&maxmax);
+        //CPING("rmat");CPING2(minmin,maxmax);
+        this->eParams.rmat = matrix/mean(matrix)[0];
+        this->eParams.rmatset= "rw1";
+    }
+
+
+    if(eParams.typeD == "nL1_Rw1") this->e_normeL1(lvect, emat);
+    if(eParams.typeD == "nL2_Rw1") this->e_normeL2(lvect, emat);
     
+    for(int k=0; k<emat.size(); k++)
+    {
+        emat[k] = emat[k].mul(this->eParams.rmat);
+    }
+    //fType maxmax,minmin;
+    //minMaxLoc(this->eParams.rmat,&minmin,&maxmax);
+    //CPING("rmat");CPING2(minmin,maxmax);
     return true;
 }
 
@@ -379,4 +484,46 @@ eType EnergyClass::round_etype(fType input){
         return static_cast<eType>(input);
 }
 
-    
+Mat1E EnergyClass::round_etype(Mat1T input){
+    if(is_same<eType,fType>::value)
+        return input;
+
+    Mat1E output = Mat::zeros(eParams.dim1,eParams.dim2, CV_TE);
+
+    if(is_same<eType,int>::value)
+    {
+        for(int i=0; i<input.rows; i++) 
+        for(int j=0; j<input.cols; j++)
+        {
+            output.at<eType>(i,j) = round(input.at<fType>(i,j));
+        }
+    }
+    else
+    {
+        for(int i=0; i<input.rows; i++) 
+        for(int j=0; j<input.cols; j++)
+        {
+            output.at<eType>(i,j) = static_cast<eType>(input.at<fType>(i,j));
+        }
+    }
+    return output;
+}
+
+vector<Mat1E> EnergyClass::round_etype(vector<Mat1T> input){
+    vector<Mat1E> output;
+    output.resize(input.size());
+
+    if(is_same<eType,fType>::value)
+    {
+        for(int k=0; k<input.size(); k++){
+            output[k]=input[k];
+        }
+    }
+    else
+    {
+        for(int k=0; k<input.size(); k++){
+            output[k]=round_etype(input[k]);
+        }
+    }
+    return output;
+}

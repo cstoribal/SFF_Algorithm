@@ -32,7 +32,7 @@ Defines - stores generic function, typedef & structures
 #define COUT(f) (std::cout << f << std::endl)
 #define COUT2(x,y) (std::cout << x << "  " << y << std::endl)
 
-#define SFF_PRECISION_D  //double
+#define SFF_PRECISION_F  //double
 #define SFF_ENERGY_I     //double
 
 #ifdef SFF_PRECISION_D
@@ -205,7 +205,8 @@ struct energy_sidestruct{
     int dim1, dim2;
     int autoroi; // set 1 if algorithm must seek for neighbors modified pixels (resulting in a double roi augmentation)
     Mat1T dmat; // Matrice de profondeur initiale, lue à partir des données locales uniquement
-    // Mat1T rmat; // Reliability matrix. Calculée à partir des données de sharpness
+    std::string rmatset;
+    Mat1T rmat; // Reliability matrix. Calculée à partir des données de sharpness
     fType scale_d,scale_r;
     fType data_coef;
 }; 

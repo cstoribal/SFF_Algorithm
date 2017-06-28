@@ -194,8 +194,8 @@ bool MySFF::testEnergy(void){
     Mat1T rmattmp;
     dmat.copyTo(rmattmp);
 
-    energyClass.computeMatEnergy(E_BOTH,rmattmp,vector<Point>() );
-    energyClass.updateEnergy(E_BOTH);
+    //energyClass.computeMatEnergy(E_BOTH,rmattmp,vector<Point>() );
+    //energyClass.updateEnergy(E_BOTH);
     
     ioWizard.showImage("scale",energyClass.ed_mat,1000);
     ioWizard.showImage("scale",energyClass.er_mat,1000);
