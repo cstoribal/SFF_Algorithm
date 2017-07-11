@@ -30,6 +30,11 @@ private:
     string logs;
     string filepath; //file name+path, ready
     bool verbose;
+
+
+
+
+    bool print_eftypes(void);
     
     
 };

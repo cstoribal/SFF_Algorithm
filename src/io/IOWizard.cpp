@@ -1048,7 +1048,7 @@ bool IOWizard::img_unsetscale(void){
 //// IMG DISPLAY & SAVE ////
 //// IMG DISPLAY & SAVE ////
 
-bool IOWizard::showImage(const string param, const Mat & image, int timer) {
+bool IOWizard::showImage(const string param, const string name, const Mat & image, int timer) {
     if(0){return false;}
     fType imin, imax, scale;
     Mat imat;
@@ -1066,14 +1066,16 @@ bool IOWizard::showImage(const string param, const Mat & image, int timer) {
     }
     imat.convertTo(imat,CV_8UC1,255);
     //normalize(imat, imat, 0, 255, NORM_MINMAX);
-    if(param == "scale") namedWindow( "View", WINDOW_NORMAL );
-    else namedWindow( "View", WINDOW_AUTOSIZE);
+    if(param == "scale") namedWindow( name , WINDOW_NORMAL );
+    else namedWindow( name, WINDOW_AUTOSIZE);
     
-    setMouseCallback("View", CallBackFunc, &(this->clicked) );
+    setMouseCallback( name, CallBackFunc, &(this->clicked) );
 
-    imshow( "View", imat );
-    resizeWindow( "View" , 900,600);
+    imshow( name, imat );
+    if(param == "scale") resizeWindow( name , 900,600);
     waitKey(timer);
+    
+    destroyWindow(name);
     
     return true;
 }

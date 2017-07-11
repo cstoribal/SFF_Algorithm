@@ -63,7 +63,7 @@ bool DepthClass::setlogs(MyLog* mylog){
 bool DepthClass::set_param(string settype){
     this->type = settype;
     this->degree = 8;
-    this->oversampling = 2;
+    this->oversampling = 1;
     cout<< this->type <<endl;
     this->set = true;
     return true;
@@ -131,6 +131,10 @@ vector<fType> DepthClass::getLabels(void){
         A[i] = this->DepthToRank[i][0];
     }
     return A;
+}
+
+fType DepthClass::getOversampling(void){
+    return this->oversampling;
 }
 
 vector<fType> DepthClass::getMeanFocusStep(void){ // how to check DTR is built
@@ -241,7 +245,7 @@ bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_ra
     //     enregistrer dans sharp_interpol_vmat;
 
     //int dim[] = {set_dim[0],set_dim[1]};
-    //cv::Mat1d tmpmat(set_dim[0],set_dim[1],CV_64F);//(2,dim,CV_32F);
+    //cv::Mat1d tmpmat(set_dim[0],set_dim[1],CV_TF);//(2,dim,CV_32F);
     vector<Mat1T> vectmat;
     if(!vmat_sharp_i_set)
     {
@@ -256,7 +260,7 @@ bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_ra
     dmat_score = cv::Mat::zeros(set_dim[0],set_dim[1],CV_TF);
     dmat_rank = cv::Mat::zeros(set_dim[0],set_dim[1],CV_TF);
 
-    //tmpmat = cv::Mat1d::Mat(set_dim[0],set_dim[1],CV_64F);
+    //tmpmat = cv::Mat1d::Mat(set_dim[0],set_dim[1],CV_TF);
     CPING2(dmat.rows,dmat.cols);
     vector<fType> X( (set_dim[2]-1)*oversampling*degree);
     vector<vector<fType> > DR( (set_dim[2]-1)*oversampling, vector<fType>(2));
@@ -305,6 +309,10 @@ bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_ra
         
         dmat.at<fType>(i,j)= (fType)arg; //TODO uncomment
         dmat_score.at<fType>(i,j)= (fType)max; // usefull for scaling
+        if(max>1000)
+        {
+            CPING2("alleeeeert",max);
+        }
         dmat_rank.at<fType>(i,j) = (fType)rnk;
     }
     this->DepthToRank = DR;

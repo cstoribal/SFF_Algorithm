@@ -37,6 +37,27 @@ bool OptiClass::set_param(tdfp_opti popti){ //const void* param){
     this->set = true;
 }
 
+bool OptiClass::do_optimization(void){
+    if(0){
+        set_optimization_gco_grid();
+        return compute_gco_grid();
+    }
+    if(0){
+        set_optimization_gco_gen();
+        return compute_gco_gen();
+    }
+    if(1){
+        return compute_opt_binary();
+    }
+    if(0){
+        return compute_opt_multiscale();
+    }
+    return false;
+
+}
+
+
+/*
 bool OptiClass::set_optimization(void){
 // calls set_optimization_gcotype()
 // also stores the vector of matrix (depth*mat) to the data_in 
@@ -53,6 +74,7 @@ bool OptiClass::compute_optimization(void){
     if(0) return compute_gco_gen();
     return false;
 }
+*/
 
 bool OptiClass::writebackmatrix(Mat1T & do_mat){
 // according to optimization type, stores the regularised matrix from the vectors to the sff class
@@ -89,11 +111,12 @@ bool OptiClass::build_rank4xy(void){
 
 bool OptiClass::convert_mat2labvec(const vector<Mat1E> & vmat, vector<eType> & vect){
     // knowing height*width*labels we can construct the vector from the matrix vector.
-    vect.resize(height*width*nb_labels);
+    int nb_lab = vmat.size();
+    vect.resize(height*width*nb_lab);
     for(int i=0; i<height;   i++){
     for(int j=0; j<width;    j++){
-    for(int l=0; l<nb_labels; l++){
-        vect[i*width*nb_labels+j*nb_labels+l]=vmat[l].at<eType>(i,j);        
+    for(int l=0; l<nb_lab; l++){
+        vect[i*width*nb_lab+j*nb_lab+l]=vmat[l].at<eType>(i,j);        
     }}}
 
     return true;
@@ -110,11 +133,17 @@ bool OptiClass::convert_vec2mat(const vector<int> & vect, Mat1T & vmat){
     return true;
 }
 
-
+bool OptiClass::convert_vec2mat(const vector<int> & vect, Mat1i & vmat){
+    // no typecast
+    for(int i=0; i<height; i++){
+    for(int j=0; j<width; j++){
+        vmat.at<int>(i,j)=vect[i*width+j];
+    }}
+    return true;
+}
 
 
 /////////////// graph cuts
-
 bool OptiClass::set_optimization_gco_grid(void){
 // calls set_optimization_gcotype()
 // also stores the vector of matrix (depth*mat) to the data_in 
@@ -123,14 +152,7 @@ bool OptiClass::set_optimization_gco_grid(void){
     Mat1E tmp_mat = Mat::zeros(height,width,CV_TE);
     vector<Mat1E> tmp_data_energy(nb_labels);
     energyClass->getDataEnergy_3DMatrix(this->labels,tmp_data_energy);
-    /*
-    for(int l=0; l<nb_labels; l++){
-        tmp_mat = tmp_mat*0+labels[l];
-        energyClass->computeMatEnergy(E_DATA,tmp_mat,vector<Point>() );
-        energyClass->updateEnergy(E_DATA);
-        energyClass->ed_mat.copyTo(tmp_data_energy[l]);
-        }
-    */
+
     convert_mat2labvec(tmp_data_energy,data_in);
     tmp_mat = Mat::zeros(nb_labels,nb_labels,CV_TE);
     energyClass->getCrossLabelMatrix(labels,tmp_mat);
@@ -160,6 +182,20 @@ bool OptiClass::set_optimization_gco_grid(void){
     return true;
 }
 
+
+
+bool OptiClass::set_optimization_gco_gen(void){
+// first arranges the data
+// calls set_optimization_gco_general()
+// also stores the vector of matrix (depth*mat) to the data_in 
+// which will call some functions from param to gco to initialise the gco
+    // get vector of matrix;
+}
+
+
+
+
+
 bool OptiClass::compute_gco_grid(void){
     gco->expansion(10);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
     data_out.resize(nb_pixels);
@@ -180,16 +216,6 @@ bool OptiClass::compute_gco_grid(void){
     
 }
 
-
-bool OptiClass::set_optimization_gco_gen(void){
-// first arranges the data
-// calls set_optimization_gco_general()
-// also stores the vector of matrix (depth*mat) to the data_in 
-// which will call some functions from param to gco to initialise the gco
-    // get vector of matrix;
-}
-
-
 bool OptiClass::compute_gco_gen(void){
 
     gco->expansion(10);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
@@ -209,6 +235,89 @@ bool OptiClass::compute_gco_gen(void){
     
 }
 
+
+
+
+
+bool OptiClass::compute_opt_binary(void){
+// Parcourt tous les labels les uns après les autres.
+// en déduit une matrice comparant les labels deux à deux. 
+//     - M matrice des labels en construction (+1)
+//     - E vectmat energie attache aux données
+//     - L mat energie labels
+//     - n indice d'itération ( n=0, n++, n<nblabels-1 )
+//     - start, loop.
+    Mat1i M = Mat::zeros(height,width,CV_32S);
+    Mat1i N = Mat::zeros(height,width,CV_32S);
+        
+    Mat1E lmat = Mat::zeros(nb_labels,nb_labels,CV_TE);
+    energyClass->getCrossLabelMatrix(labels,lmat);
+    smoothvect.resize(2*2);
+    
+    vector<Mat1E> Edata(nb_labels);
+    vector<Mat1E> Edata_slice(2);
+    energyClass->getDataEnergy_3DMatrix(this->labels,Edata);
+    for(int n=0; n<nb_labels-1; n++)
+    {
+        Edata_slice[0] = Edata[n];
+        Edata_slice[1] = Edata[n+1];
+        this->convert_mat2labvec(Edata_slice,data_in);
+
+        for(int i=0; i<2; i++) for(int j=0; j<2; j++)
+        {
+            smoothvect[i*2+j]=lmat.at<eType>(n+i,n+j);
+        }
+        try{
+            gco = new GCoptimizationGridGraph(width,height,2);
+            gco->setDataCost(&data_in[0]);
+            gco->setSmoothCost(&smoothvect[0]);
+            //if(is_same<eType,int>::value)
+            //    printf("\nBefore optimization energy is %lli",
+		//	gco->compute_energy());
+            //else
+            //    printf("\nBefore optimization energy is %f",
+		//	gco->compute_energy());
+            //CPING("here");
+            gco->expansion(10);
+            data_out.resize(nb_pixels);
+            for(int i=0; i<nb_pixels; i++){
+                data_out[i] = gco->whatLabel(i);
+            }
+            delete gco;
+            
+	}
+        catch (GCException e){
+	    e.Report();
+            return false;
+	}
+        convert_vec2mat(data_out,N);
+        M = M+N;
+    }
+    //output = Mat::zeros(height,width,CV_TF);
+    // go back to original output.
+    for(int i=0; i<height; i++) for(int j=0; j<width; j++)
+    {
+        data_out[i*width+j] = M.at<int>(i,j);
+    }
+    return true;
+}
+
+bool OptiClass::compute_opt_multiscale(void){
+// Parcourt les labels en opérant une dichotomie. 
+//     - know label <-> focus ?
+//     - M matrice masque des labels en construction. (+I)
+//     - n indice d'itération ( n~log2(Nlabels)-1 -> 0 )
+//     - I labelshift rang n  ( '00001' << n )
+//     - E vectmat energie attache aux données 
+//     - L mat energie labels.
+//     - start !
+// Loop
+
+    
+    
+    
+    return true;
+}
 
 
 

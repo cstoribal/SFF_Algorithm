@@ -32,9 +32,9 @@ bool MySFF::setlogs(void){
     depthEst.setlogs(&myLog);
     energyClass.setlogs(&myLog);
     optiClass.setlogs(&myLog);
-    evalClass.setlogs(&myLog);
+    evalClass.setup(&myLog,&depthEst);
 
-    energyClass.set_depthclass(&depthEst);
+    energyClass.set_class(&depthEst, &ioWizard);
 }
 
 bool MySFF::loadProblem(int argc, char** argv){
@@ -69,10 +69,14 @@ bool MySFF::preTreat(void){
     for(int i=0; i<imageSet.size(); i++){
     for(int j=0; j<imageSet[0].dim; j++){
         pretreatClass.set_param(input_prts);
+        pretreatClass.compute_scale(imageSet[i].ivmat[j]);
         pretreatClass.compute_noises(imageSet[i].ivmat[j]);
+        pretreatClass.compute_blur(imageSet[i].ivmat[j]);
         //GaussianBlur(imageSet[i].ivmat[j],imageSet[i].ivmat[j], Size(3,3),0,0);
     }
     }
+    
+    pretreatClass.compute_scale(gt_dmat);
     
     dim1 = imageSet[0].ivmat[0].rows;
     dim2 = imageSet[0].ivmat[0].cols;
@@ -100,7 +104,7 @@ bool MySFF::doDepth(void){
     vector<fType> labels = depthEst.getLabels();
     this->nb_labels = labels.size();
     // set dmat next outputs
-    assert(this->nb_labels == (this->sharpSet.size()-1)*2); // Check Oversampling
+    assert(this->nb_labels == (this->sharpSet.size()-1)*depthEst.getOversampling()); // Check Oversampling
     fType d_min = labels[0];
     fType d_max = labels[this->nb_labels-1];
     ioWizard.img_setscale(d_min,d_max,1);
@@ -197,8 +201,8 @@ bool MySFF::testEnergy(void){
     //energyClass.computeMatEnergy(E_BOTH,rmattmp,vector<Point>() );
     //energyClass.updateEnergy(E_BOTH);
     
-    ioWizard.showImage("scale",energyClass.ed_mat,1000);
-    ioWizard.showImage("scale",energyClass.er_mat,1000);
+    ioWizard.showImage("scale","energy", energyClass.ed_mat,1000);
+    ioWizard.showImage("scale","energy", energyClass.er_mat,1000);
     
 }
     
@@ -243,10 +247,9 @@ bool MySFF::optimize(void){
         opti_prts.labels    = depthEst.getLabels();
         
         optiClass.set_param(opti_prts);
-        optiClass.set_optimization();
 
         try{
-            optiClass.compute_optimization();
+            optiClass.do_optimization();
         }
         catch(const GCException & error)
         {
@@ -266,13 +269,14 @@ bool MySFF::optimize(void){
         string tmp = "Dep-D" + to_string2(lambda_d) + "R" + to_string2(lambda_r);
         ioWizard.img_setscale(1);
         ioWizard.writeImage("2D-"+tmp+ ".png",this->rmat);
-        ioWizard.showImage("scale",this->rmat,100);
+        ioWizard.showImage("scale",tmp,this->rmat,100);
         ioWizard.write3DImage("3D-"+tmp+ ".png",this->rmat);
 
         ioWizard.img_unsetscale();
         ioWizard.write3DImage("3Ddiff-"+tmp+ ".png",10*(this->rmat-this->gt_dmat) );
-        myLog.a(tmp);
+        myLog.a(tmp+"\n");
         evaluate();
+        myLog.write();
                
     }
     
@@ -283,8 +287,26 @@ bool MySFF::optimize(void){
 bool MySFF::evaluate(void){
     evalClass.set_parameters(gt_dmat,depthEst.getLabels());
     evalClass.compute_RMSE(rmat,rmse,q_rmse);
+    evalClass.compute_RMSE_label(rmat,rmse,q_rmse);
 }
 
+bool MySFF::setNewProblem(void){
+    // if the 1st loading ioWizard returns -M as an option (macro) then
+    // store the string vector with problems adresses indexed by iPRB,
+    // destroy all classes, reset variables
+    // iPRB++
+    // logout the iprb (for debug)
+    // reset classes, relink to logs,
+    // call loadProblem with a new int argc, char** argv
+    // basically argc = 2, (?), argv = [-D,../../Samples/.....]
+
+
+
+
+
+
+    return true;
+}
 
 //bool forwarder(void* context, Point A) {
 //    static_cast<MySFF*>(context)->showInterpolation(A);

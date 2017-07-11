@@ -42,8 +42,6 @@ using namespace cv;
 
 
 
-
-
 class OptiClass{
 public:
     OptiClass(); ~OptiClass();
@@ -52,8 +50,9 @@ public:
     bool setlogs(MyLog* mylog);
 
     bool set_param(tdfp_opti popti);
-    bool set_optimization(void);
-    bool compute_optimization(void);
+    bool do_optimization(void);
+    //bool set_optimization(void);
+    //bool compute_optimization(void);
     bool writebackmatrix(Mat1T & do_mat);
     
 
@@ -81,6 +80,7 @@ private:
 
     bool convert_mat2labvec(const vector<Mat1E> & vmat, vector<eType> & vect);
     bool convert_vec2mat(const vector<int> & vect, Mat1T & vmat);
+    bool convert_vec2mat(const vector<int> & vect, Mat1i & vmat);
 
     
 // used by graph cuts
@@ -99,6 +99,9 @@ private:
 
     bool set_optimization_gco_gen(void);
     bool compute_gco_gen(void);
+
+    bool compute_opt_binary(void);
+    bool compute_opt_multiscale(void);
 
 // others
     

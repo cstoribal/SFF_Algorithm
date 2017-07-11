@@ -26,6 +26,7 @@ Private
 
 #include "../io/logs.h"
 #include "../misc/miscdef.h"
+#include "../tool/depthEstimator.h"
 
 using namespace std;
 using namespace cv;
@@ -35,9 +36,10 @@ using namespace cv;
 class EvalClass{
 public:
     EvalClass();~EvalClass();
-    bool setlogs(MyLog* mylog);
+    bool setup(MyLog* mylog, DepthClass* depthClass);
     bool set_parameters(const Mat1T & gt_dmat, const vector<fType> & labels);
     
+    bool compute_RMSE_label(const Mat1T & dmat, fType & rmse, fType & q_rmse );
     bool compute_RMSE(const Mat1T & dmat, fType & rmse, fType & q_rmse );
     bool compute_PSNR(const Mat1T & dmat, fType & psnr);
 
@@ -45,10 +47,13 @@ public:
     
 private:
     MyLog* myLog;
+    DepthClass* p_depth;
+
     bool set;
     Mat1T gt_dmat;
     int height, width;
     vector<fType> labels;
+    fType step;
     
     
     

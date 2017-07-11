@@ -32,8 +32,8 @@ Defines - stores generic function, typedef & structures
 #define COUT(f) (std::cout << f << std::endl)
 #define COUT2(x,y) (std::cout << x << "  " << y << std::endl)
 
-#define SFF_PRECISION_F  //double
-#define SFF_ENERGY_I     //double
+#define SFF_PRECISION_D  //double
+#define SFF_ENERGY_D     //double
 
 #ifdef SFF_PRECISION_D
     typedef double      fType;

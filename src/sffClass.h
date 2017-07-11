@@ -71,7 +71,7 @@ public:
     Mat1T dmat_score; // 
     //Mat3f imat;
     //vector<Mat1f> ivmat;
-    Mat1T gmat;
+    //Mat1T gmat;
     Mat3T image_MF; // Multifocus	
     // Mat1T smat;
     Mat1T rmat; // Matrice de l'image régularisée 
@@ -109,6 +109,8 @@ public:
 
     bool evaluate(void);
 
+    bool setNewProblem(void);
+
     //bool testPrintDepths(void);
     
     
@@ -119,6 +121,6 @@ private:
 
 };
 
-bool forwarder(void* context, Point A);
+//bool forwarder(void* context, Point A);
 
 #endif // SFFCLASS_H_

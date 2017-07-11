@@ -228,8 +228,7 @@ inline void Energy<captype,tcaptype,flowtype>::add_term2(Var x, Var y,
 	   C 0
 	*/
         if (B + C < 0)
-        {
-            if( B+C > -0.000000000000001 || (std::is_same<eType,float>::value && B+C>  -0.00000001) ) throw "rounding error giving B+C<0 - skipping iteration";
+        {   
             std::cout<<std::endl;
             std::cout<< " a " << A << std::endl;
             std::cout<< " b " << B << std::endl;
@@ -237,6 +236,8 @@ inline void Energy<captype,tcaptype,flowtype>::add_term2(Var x, Var y,
             std::cout<< " d " << D << std::endl;
             std::cout<< "b+c "<< B+C << std::endl;
             std::cout<< "at x " << x << " y " << y << std::endl;
+            if( B+C > -0.000000000000001 || (std::is_same<eType,float>::value && B+C>  -0.00000001) ) throw "rounding error giving B+C<0 - skipping iteration";
+
         }
 	assert(B + C >= 0); /* check regularity */
 	if (B < 0)

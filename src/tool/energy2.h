@@ -46,7 +46,7 @@ public:
     EnergyClass(); ~EnergyClass();
 
     bool setlogs(MyLog* mylog);
-    bool set_depthclass(DepthClass* p_depthclass);
+    bool set_class(DepthClass* p_depthclass, IOWizard* p_io);
     bool set_parameters(const string & typeD, const string & typeR, const tdf_imgset & sharpStruct, const Mat1T & dmat, int nb_labels, fType scale_d, fType scale_r);
 
     Mat1T  ed_mat ;
@@ -54,7 +54,7 @@ public:
     fType  eData  ;
     fType  eRegu  ;
 
-
+/*
 // Ajout d'un paramètre stype : stype :: 1=data, 2=Regularisation, 3=both
     // set roi with vector<Point>, prendre vector<Point>() pour roi = img
     bool computeMatEnergy(int stype, const Mat1T & drmat, 
@@ -66,12 +66,12 @@ public:
     bool get_P_Qneighbors(int stype, const vector<Point> & P, vector<Point> & Q);
     bool get_P_ROI(int stype, const vector<Point> & P, Rect & mROI);
     bool get_ROI_from_ROI(int stype, const Rect & roiin, Rect & roiout);
-
+*/
     
     bool getCrossLabelMatrix(const vector<fType> & lvect, Mat1E & lmat);
     bool getDataEnergy_3DMatrix(const vector<fType> & lvect, vector<Mat1E> & emat);
 
-
+/*
     Rect  roi_D,      roi_R;
     Mat1b roi_Dmat,   roi_Rmat;
     Mat1b flag_Dmat,  flag_Rmat; // use ROI to locate points in the flagMAT with the good scale
@@ -81,13 +81,14 @@ public:
     fType delta_eD,  delta_eR;
 
     Mat1T accumat;
-
+*/
 private:
     //typedef_structurespécifique
     tdfp_energy eParams;
     
     MyLog* myLog;
     DepthClass* p_depthClass;
+    IOWizard* p_ioW;
 
     fType scale_to_etype;
 
@@ -97,6 +98,7 @@ private:
 /////////////////////////////////////////////////////////////////////
 //	DataNRJ
 /////////////////////////////////////////////////////////////////////
+/*
     bool d_absdiff(const Mat1T & drmat, const Rect & roi);
     bool d_normeL2(const Mat1T & drmat, const Rect & roi);
 
@@ -106,7 +108,7 @@ private:
 //	DataREG
 /////////////////////////////////////////////////////////////////////
     bool r_absdiff(const Mat1T & drmat, const Rect & roi);
-
+*/
 
  
 /////////////////////////////////////////////////////////////////////
@@ -120,6 +122,7 @@ private:
 /////////////////////////////////////////////////////////////////////
 //	REG - Lab2Lab
 /////////////////////////////////////////////////////////////////////
+    bool l_checkmetric(Mat1E & lmat);
     bool l_absdiff(const vector<fType> & lvect, Mat1E & lmat);
     bool l_normeL2(const vector<fType> & lvect, Mat1E & lmat);
     

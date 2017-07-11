@@ -15,8 +15,9 @@ bool EnergyClass::setlogs(MyLog* mylog){
     return true;
 }
 
-bool EnergyClass::set_depthclass(DepthClass* p_depthclass){
+bool EnergyClass::set_class(DepthClass* p_depthclass, IOWizard* p_io){
     this->p_depthClass = p_depthclass;
+    this->p_ioW = p_io;
     return true;
 }
 
@@ -41,6 +42,7 @@ bool EnergyClass::set_parameters(const string & typeD, const string & typeR, con
                                     //TODO so that it's computed once4all
                                     //      excepted scale_d factor
                                     //      IDEM for scale_r
+    /*
     this->flag_Dmat = Mat::zeros(eParams.dim1,eParams.dim2, CV_8U);
     this->flag_Rmat = Mat::zeros(eParams.dim1,eParams.dim2, CV_8U);
     this->eDataij   = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
@@ -54,7 +56,7 @@ bool EnergyClass::set_parameters(const string & typeD, const string & typeR, con
     
     this->eData=0;
     this->eRegu=0;
-    
+    */
     
     if(is_same<eType,int>::value){
         this->scale_to_etype = 10/(this->p_depthClass->getMeanFocusStep()[0]);
@@ -157,6 +159,11 @@ bool EnergyClass::updateEnergy(int stype){
 bool EnergyClass::getCrossLabelMatrix(const vector<fType> & lvect, Mat1E & lmat){
     if(eParams.typeR == "absdiff") l_absdiff(lvect,lmat);
     if(eParams.typeR == "normeL2") l_normeL2(lvect,lmat);
+
+    if(!l_checkmetric(lmat)){
+        myLog->a("regularisation term is not a metric\n");
+        COUT("regularisation term is not a metric");
+    }
     return true;
 }
 
@@ -165,7 +172,7 @@ bool EnergyClass::getDataEnergy_3DMatrix(const vector<fType> & lvect, vector<Mat
     //TODO add feature checking if energy>>overflow
     
     
-    eParams.typeD = "nL1_Rw2"; //TODO TMP
+    eParams.typeD = "nL1_Rw1"; //TODO TMP
     vector<Mat1T> e1mat;
     if(true) //NotSet.
     {
@@ -441,6 +448,45 @@ bool EnergyClass::e_nLx_Rw1( const vector<fType> & lvect, vector<Mat1T> & emat){
 
 
 
+////
+bool EnergyClass::l_checkmetric(Mat1E & lmat){
+    for(int i=0;i<lmat.rows;i++){
+        for(int j=0;j<lmat.cols;j++){
+            if(i==j && lmat.at<eType>(i,j)!=0){
+                
+                COUT("Separation1");
+                return false;
+            }
+            if(i!=j && lmat.at<eType>(i,j)==0){
+                
+                COUT("Separation2");
+                return false;
+            }
+            if(lmat.at<eType>(i,j)<0){
+                COUT("positivité");
+                return false;
+            }
+            if( lmat.at<eType>(i,j)!=lmat.at<eType>(i,j) ){
+                COUT("symmétrie");
+                return false;
+            }
+            for(int k=0; k<lmat.rows; k++){
+                if( lmat.at<eType>(i,j)>
+		(lmat.at<eType>(i,k)+lmat.at<eType>(k,j)) ){
+                COUT("Inégalité triangulaire");
+                printf("delta       %.40f \n",this->eParams.scale_r);
+                printf("i,j  %2i,%2i  %.40f \n",i,j,lmat.at<eType>(i,j) );
+                printf("i,k  %2i,%2i  %.40f \n",i,k,lmat.at<eType>(i,k) );
+                printf("k,j  %2i,%2i  %.40f \n",k,j,lmat.at<eType>(k,j) );
+                printf("delta       %.40f \n",lmat.at<eType>(i,j)-lmat.at<eType>(i,k)-lmat.at<eType>(k,j) );
+                return false;
+                }
+            }
+        }
+    }
+    return true;    
+}
+
 
 /////////////////////////////////////////////////////////////////////
 //	REG -Lab2Lab
@@ -450,11 +496,21 @@ bool EnergyClass::e_nLx_Rw1( const vector<fType> & lvect, vector<Mat1T> & emat){
 bool EnergyClass::l_absdiff(const vector<fType> & lvect, Mat1E & lmat){
     //
     lmat = Mat::zeros(lvect.size(),lvect.size(), CV_TE);
+    //myLog->a("\n regularisation term matrix \n");
     for(int i=0;i<lvect.size();i++)
+    {
     for(int j=0;j<lvect.size();j++)
     {
-        lmat.at<eType>(i,j) = round_etype(this->scale_to_etype*this->eParams.scale_r*abs( lvect[i] - lvect[j] ));
+        lmat.at<eType>(i,j) = this->eParams.scale_r*abs(i-j);
+        //lmat.at<eType>(i,j) = round_etype(this->scale_to_etype*this->eParams.scale_r*abs( lvect[i] - lvect[j] ));
+        //myLog->a(to_string2(lmat.at<eType>(i,j)) +"; ");
     }
+    //myLog->a("\n");
+    }
+    
+    //myLog->a("\n");
+    //myLog->write();
+
 
     return true;
 }

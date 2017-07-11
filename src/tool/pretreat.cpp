@@ -15,6 +15,8 @@ and the results under the format of a csv
 
 
 PreTreatment::PreTreatment(){
+    this->blurwin = 0;
+    this->scale = 1.0;
     this->noise_a = 0.0;
     this->noise_b = 0.0;
     this->noise_ca = 0.0;
@@ -30,10 +32,33 @@ bool PreTreatment::setlogs(MyLog* mylog){
 }
 
 bool PreTreatment::set_param(const tdf_input & prts){
+    this->blurwin  = prts.gauss;
+    this->scale    = prts.scale;
     this->noise_a  = prts.noise_a;
     this->noise_b  = prts.noise_b;
     this->noise_ca = prts.noise_ca;
     this->noise_cs = prts.noise_cs; 
+    return true;
+}
+bool PreTreatment::compute_scale(Mat_<fType> & image){
+    //if(scale!=1||scale!=0){
+        resize(image,image,Size(),1,0.8);
+        // déjà fait au chargement des images.
+        return true;
+    //}
+
+    return false;
+}
+
+bool PreTreatment::compute_blur(Mat_<fType> & image){
+    if(blurwin!=1||blurwin!=0)
+    {
+        GaussianBlur(image,image, Size(blurwin,blurwin),0,0);
+        return true;
+    }
+    
+    
+    
     return true;
 }
 
@@ -48,17 +73,17 @@ bool PreTreatment::compute_noises(Mat_<fType> & image){
     }
 
     if(noise_a){
-        //myLog->a( "Computing noise_mult "+to_string(noise_a)+"\n");
+        myLog->a( "Computing noise_mult "+to_string(noise_a)+"\n");
         this->compute_nmult(image);
     }
 
     if(noise_b){
-        //myLog->a( "Computing noise_add "+to_string(noise_b)+"\n");
+        myLog->a( "Computing noise_add "+to_string(noise_b)+"\n");
         this->compute_nunif(image);
     }
 
     if(noise_ca){
-        //myLog->a( "Computing noise_gauss "+to_string(noise_ca)+ "sigma " +to_string2(noise_cs)+"\n");
+        myLog->a( "Computing noise_gauss "+to_string(noise_ca)+ "sigma " +to_string2(noise_cs)+"\n");
         this->compute_ngauss(image);
     }
     

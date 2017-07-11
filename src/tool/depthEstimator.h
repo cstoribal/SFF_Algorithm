@@ -31,6 +31,7 @@ public:
     bool          getVmatSharpI(vector<Mat1T> & vmat);
     int           getRankFromDepth(fType input);
     int           getNbLabels(void);
+    fType         getOversampling(void);
     vector<fType> getLabels(void);
     vector<fType> getMeanFocusStep(void);
     vector<fType> getMeanLogFocusStep(void);

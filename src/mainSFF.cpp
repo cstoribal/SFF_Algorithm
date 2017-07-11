@@ -62,12 +62,11 @@ int main( int argc, char** argv )
     
     //mySFF.testEnergy();
 
-    //mySFF.ioWizard.showImage("scale",mySFF.dmat,1000);
     mySFF.ioWizard.writeImage("Idist.png",mySFF.dmat);
     mySFF.ioWizard.img_unsetscale();
     Mat1T tmpmat;
     log(mySFF.dmat_score,tmpmat);
-    //mySFF.ioWizard.showImage("scale",tmpmat,5000);
+    mySFF.ioWizard.showImage("scale","score",tmpmat,0);
     mySFF.ioWizard.writeImage("Iscore.png",tmpmat);
  
     mySFF.setMultifocus();
@@ -76,7 +75,7 @@ int main( int argc, char** argv )
 
     mySFF.ioWizard.img_setscale(1);
     //mySFF.clickInterpolation(mySFF.image_MF,0);
-    mySFF.ioWizard.showImage("scale",mySFF.dmat,200);
+    mySFF.ioWizard.showImage("scale","dmat",mySFF.dmat,1000);
     mySFF.showInterpolationAt();
     t1 = std::time(0);
     myLog->a(to_string2(t1-t0)+" seconds for misc\n");
@@ -84,7 +83,7 @@ int main( int argc, char** argv )
     mySFF.optimize();
     t0 = std::time(0);
     myLog->a(to_string2(t0-t1)+" seconds for computing optimisation\n");
-    //mySFF.ioWizard.showImage("scale",mySFF.rmat,1000);
+    //mySFF.ioWizard.showImage("scale","rmat",mySFF.rmat,1000);
     mySFF.ioWizard.writeImage("I_dregu.png",mySFF.rmat);
 
     mySFF.setMultifocusRmat();

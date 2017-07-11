@@ -91,7 +91,7 @@ public:
     bool img_setscale(int select);    
     bool img_unsetscale(void);    
     bool writeImage(const string filename, const Mat & image);
-    bool showImage(const string param, const Mat & image, int timer);
+    bool showImage(const string param,const string name, const Mat & image, int timer);
     //bool clickImage(const string param, const Mat & image, int timer,
     //			 bool (*fptr)(void*,Point), void* context) ;
 

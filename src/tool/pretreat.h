@@ -41,16 +41,18 @@ public:
     
     bool setlogs(MyLog* mylog);
     bool set_param(const tdf_input & prts);
-    
-    bool compute_noises(Mat_<fType> & image);
+
+    bool compute_scale(Mat_<fType> & image);    
+    bool compute_noises(Mat_<fType> & image);  
+    bool compute_blur(Mat_<fType> & image);
 
 private:
     //Setup related
     MyLog* myLog;
-    fType noise_a, noise_b, noise_ca, noise_cs;
+    fType scale, noise_a, noise_b, noise_ca, noise_cs;
        // multiplicatif normal gaussien (amplitude&sigma)
     //Defined on demand
-    int dimx, dimy, dimc;
+    int blurwin, dimx, dimy, dimc;
 
 
     bool compute_nmult(Mat_<fType> & image);
