@@ -66,7 +66,7 @@ int main( int argc, char** argv )
     mySFF.ioWizard.img_unsetscale();
     Mat1T tmpmat;
     log(mySFF.dmat_score,tmpmat);
-    mySFF.ioWizard.showImage("scale","score",tmpmat,0);
+    mySFF.ioWizard.showImage("scale","score",tmpmat,4000);
     mySFF.ioWizard.writeImage("Iscore.png",tmpmat);
  
     mySFF.setMultifocus();

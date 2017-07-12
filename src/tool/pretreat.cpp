@@ -42,7 +42,7 @@ bool PreTreatment::set_param(const tdf_input & prts){
 }
 bool PreTreatment::compute_scale(Mat_<fType> & image){
     //if(scale!=1||scale!=0){
-        resize(image,image,Size(),1,0.8);
+        resize(image,image,Size(),1,1);
         // déjà fait au chargement des images.
         return true;
     //}
