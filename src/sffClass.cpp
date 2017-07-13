@@ -228,6 +228,18 @@ bool MySFF::optimize(void){
         }
     } 
     // fill in differences.
+    opti_prts.type = input_prts.opti;
+    opti_prts.energyclass = & this->energyClass;
+    opti_prts.nb_pixels = dim1*dim2;
+    opti_prts.nb_labels = nb_labels;
+    opti_prts.height    = dim1;
+    opti_prts.width     = dim2;
+    opti_prts.labels    = depthEst.getLabels();
+    
+    optiClass.set_param(opti_prts);
+    optiClass.set_allneighbors();
+    myLog.a("Optimisation class set");
+    
     for(int i=0;i<input_prts.vect_lambda_r.size();i++)
     {
         
@@ -237,16 +249,9 @@ bool MySFF::optimize(void){
         COUT2("Starting optimization at lambda_d = ",lambda_d);
         energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r, sharpSet, dmat, this->nb_labels, lambda_d, lambda_r);
         //set
-        
-        opti_prts.type = input_prts.opti;
-        opti_prts.energyclass = & this->energyClass;
-        opti_prts.nb_pixels = dim1*dim2;
-        opti_prts.nb_labels = nb_labels;
-        opti_prts.height     = dim1;
-        opti_prts.width      = dim2;
-        opti_prts.labels    = depthEst.getLabels();
-        
-        optiClass.set_param(opti_prts);
+
+        optiClass.reset();
+
 
         try{
             optiClass.do_optimization();

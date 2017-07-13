@@ -27,6 +27,7 @@
 #include <ctype.h>
 #include <fstream>
 #include <vector>
+#include <cmath>
 
 #include "../misc/miscdef.h"
 #include "../gco/GCoptimization.h"
@@ -54,6 +55,8 @@ public:
     //bool set_optimization(void);
     //bool compute_optimization(void);
     bool writebackmatrix(Mat1T & do_mat);
+    bool set_allneighbors(void);
+    bool reset(void);
     
 
 private:
@@ -67,6 +70,7 @@ private:
     int width;
     int height;
     vector<fType> labels;
+    int connexity;
 
     // ce sont des labels, donc des entiers ?
     vector<eType> data_in; //poids data
@@ -89,9 +93,18 @@ private:
 
     vector<eType> smoothvect;  //label*label
     int nb_neighbors;
-    Mat1b neighbor_mat; //other way of describing neighbors?
-    vector<vector<Point> >  neighborhoods; //wow
-    vector<vector<eType> > weights;       //if needed
+    Mat1E neighbor_mat; //other way of describing neighbors? weights
+    //vector<vector<Point> >  neighborhoods; //wow
+    //vector<vector<eType> > weights;       //if needed
+    //Neighborsystem nbs_
+    bool nbs_set;
+    int* nbs_nb;
+    int* nbs_n1D;
+    int** nbs_n;
+    eType* nbs_w1D;
+    eType** nbs_w;
+    eType* nbs_wk1D;
+    eType** nbs_wk;
 
 
     bool set_optimization_gco_grid(void);

@@ -8,8 +8,22 @@
 #include "optimization.h"
 
 
-OptiClass::OptiClass(){ this->set = false; };
-OptiClass::~OptiClass(){};
+OptiClass::OptiClass(){ 
+    this->set = false;
+    this->nbs_set = 0;
+    this->connexity = 4; //TODO
+};
+OptiClass::~OptiClass(){
+    if(this->nbs_set)
+    {
+        delete [] nbs_nb;
+        delete [] nbs_n1D;
+        delete [] nbs_n;
+        delete [] nbs_w1D;
+        delete [] nbs_w;
+        this->nbs_set=0;
+    }
+};
 
 bool OptiClass::setlogs(MyLog* mylog){
     this->myLog = mylog;
@@ -46,10 +60,10 @@ bool OptiClass::do_optimization(void){
         set_optimization_gco_gen();
         return compute_gco_gen();
     }
-    if(1){
+    if(0){
         return compute_opt_binary();
     }
-    if(0){
+    if(1){
         return compute_opt_multiscale();
     }
     return false;
@@ -75,6 +89,15 @@ bool OptiClass::compute_optimization(void){
     return false;
 }
 */
+bool OptiClass::reset(void){
+    //copy weight matrix to reset it at initial status
+    for(int k=0; k<nb_pixels; k++) for(int c=0; c<connexity; c++)
+    {
+        nbs_wk[k][c] = nbs_w[k][c];
+    }
+    return true;
+}
+
 
 bool OptiClass::writebackmatrix(Mat1T & do_mat){
 // according to optimization type, stores the regularised matrix from the vectors to the sff class
@@ -101,7 +124,7 @@ bool OptiClass::build_rank4xy(void){
     int k=0;
     for(int i=0;i<height;i++){
     for(int j=0;j<width;j++){
-        getxy[k]=Point(j,i); //TODO warning 
+        getxy[k]=Point(j,i); 
         getrank.at<int>(i,j) = k;
         k++;        
     }}
@@ -142,6 +165,99 @@ bool OptiClass::convert_vec2mat(const vector<int> & vect, Mat1i & vmat){
     return true;
 }
 
+
+
+bool OptiClass::set_allneighbors(void){
+    // needed if optimisation type general graph
+    if(nbs_set == 1){
+        myLog->a("Warning, re-setting neighbors without freeing memory");
+        delete [] nbs_nb;
+        delete [] nbs_n1D;
+        delete [] nbs_n;
+        delete [] nbs_w1D;
+        delete [] nbs_w;
+        this->nbs_set=0;
+    }
+    // sets up neighbornumarray, neighborarray, weightarray !
+    // aka nbs_nb, nbs_n, nbs_w;
+    Mat1E borders = Mat::zeros(height,width,CV_TE)+1;
+    this->neighbor_mat = Mat::zeros(5,5,CV_TE);
+    if(connexity=4)
+    {
+        neighbor_mat.at<eType>(2,1) = 1;
+        neighbor_mat.at<eType>(1,2) = 1;
+        neighbor_mat.at<eType>(3,2) = 1;
+        neighbor_mat.at<eType>(2,3) = 1;
+    }
+
+    filter2D(borders, borders, -1, this->neighbor_mat, Point(2,2), 0, BORDER_CONSTANT );
+    
+    nbs_nb  = new int[nb_pixels];
+    nbs_n1D = new int[nb_pixels*connexity];
+    nbs_w1D = new eType[nb_pixels*connexity];
+    nbs_wk1D = new eType[nb_pixels*connexity];
+    
+    nbs_n   = new int*[nb_pixels];
+    nbs_w   = new eType*[nb_pixels];
+    nbs_wk   = new eType*[nb_pixels];
+
+
+    for(int k=0; k<nb_pixels; k++){
+        nbs_n[k] = &nbs_n1D[k*connexity];
+        nbs_w[k] = &nbs_w1D[k*connexity];
+        nbs_wk[k] = &nbs_wk1D[k*connexity];
+    }
+
+
+    int nbs_tmp_nb;
+
+    for(int k=0; k<nb_pixels; k++)
+    {
+        nbs_tmp_nb = 0; // Number of neighbors
+        for(int i=-2; i<3; i++) for(int j=-2; j<3; j++)
+        {
+            if( neighbor_mat.at<eType>(2+i,2+j) != 0 )
+            if( getxy[k].y+i >= 0 && getxy[k].y+i < height )
+            if( getxy[k].x+j >= 0 && getxy[k].x+j < width  )
+            {
+                nbs_n[k][nbs_tmp_nb]=getrank.at<int>
+				(getxy[k].y+i,getxy[k].x+j);
+                nbs_w[k][nbs_tmp_nb]=neighbor_mat.at<eType>(2+i,2+j);
+                nbs_tmp_nb++;
+            }
+        }
+        nbs_nb[k]=nbs_tmp_nb;
+    }
+    
+/*
+    for (int y = 0; y < nb_pixels; ++y)
+    {
+        for (int x = 0; x < connexity; ++x)
+        {
+            std::cout << std::hex << &(nbs_n[y][x]) << ' ';
+        }
+    }
+    std::cout << "\n\n";
+
+    // Print the array
+    for (int y = 0; y < nb_pixels; y++)
+    {
+        std::cout << std::hex << &(nbs_n[y][0]) << std::dec;
+        std::cout <<  "; " << (nbs_nb[y]);
+        std::cout << ": ";
+        for (int x = 0; x < connexity; x++)
+        {
+            std::cout << nbs_n[y][x] << ' ';
+        }
+        std::cout << std::endl;
+    }
+*/
+    
+    
+    
+    nbs_set = 1;
+    return true;
+}
 
 /////////////// graph cuts
 bool OptiClass::set_optimization_gco_grid(void){
@@ -290,6 +406,7 @@ bool OptiClass::compute_opt_binary(void){
 	    e.Report();
             return false;
 	}
+
         convert_vec2mat(data_out,N);
         M = M+N;
     }
@@ -312,7 +429,98 @@ bool OptiClass::compute_opt_multiscale(void){
 //     - L mat energie labels.
 //     - start !
 // Loop
+    Mat1i M = Mat::zeros(height,width,CV_32S);
+    Mat1i N = Mat::zeros(height,width,CV_32S);
+    Mat1E Dp = Mat::zeros(height,width,CV_TE);
+    Mat1E Dn = Mat::zeros(height,width,CV_TE);
+    int I = 1; int J;
+    double range = floor(log2(nb_labels-1)+1); //nb of digits necessary
+    Mat1E lmat = Mat::zeros(nb_labels,nb_labels,CV_TE);
+    energyClass->getCrossLabelMatrix(labels,lmat);
+    smoothvect.resize(2*2);
+    
+    vector<Mat1E> Edata(nb_labels);
+    energyClass->getDataEnergy_3DMatrix(this->labels,Edata);
+    vector<Mat1E> Edata_slice(2);
+    Edata_slice[0] = Mat::zeros(height,width,CV_TE);
+    Edata_slice[1] = Mat::zeros(height,width,CV_TE);
 
+    for(int i=0; i<2; i++) for(int j=0; j<2; j++)
+    {
+        smoothvect[i*2+j]=lmat.at<eType>(0+i,0+j);
+    }
+    for(int n=(int)range-1; n>=0; n--)
+    {
+        I = 1<<n; J = I-1;
+        //CPING2("passe n",n);
+        //CPING2("I(n)",I);
+        for(int i=0; i<height; i++) for(int j=0; j<width; j++)
+        {
+            // TODO check dp or dn (orientation du delta)
+            if(M.at<int>(i,j)+I >= nb_labels)
+            {
+                Edata_slice[0].at<eType>(i,j)=Edata[M.at<int>(i,j)-1]
+			.at<eType>(i,j)+Dn.at<eType>(i,j);
+                Edata_slice[1].at<eType>(i,j)=Edata[M.at<int>(i,j)]
+			.at<eType>(i,j)+Dp.at<eType>(i,j);
+            }
+            else
+            {
+                Edata_slice[0].at<eType>(i,j) = Edata[M.at<int>(i,j)+J]
+			.at<eType>(i,j)+Dn.at<eType>(i,j);
+                Edata_slice[1].at<eType>(i,j) = Edata[M.at<int>(i,j)+I]
+			.at<eType>(i,j)+Dp.at<eType>(i,j);
+            }
+        }
+        this->convert_mat2labvec(Edata_slice,data_in);
+
+        try{
+            gco = new GCoptimizationGeneralGraph(this->nb_pixels,2);
+            ((GCoptimizationGeneralGraph*)gco)
+			->setAllNeighbors(nbs_nb,nbs_n,nbs_wk);
+            gco->setDataCost(&data_in[0]);
+            gco->setSmoothCost(&smoothvect[0]);
+            gco->expansion(10);
+            data_out.resize(nb_pixels);
+            for(int i=0; i<nb_pixels; i++){
+                data_out[i] = gco->whatLabel(i);
+            }
+            delete gco;
+            
+	}
+        catch (GCException e){
+	    e.Report();
+            return false;
+	}
+
+        for(int k=0; k<nb_pixels; k++) for(int i=0; i<nbs_nb[k]; i++)
+        {
+            if(nbs_wk[k][i]!=0)
+            if(data_out[k]!=data_out[ nbs_n[k][i]])
+            {//i°th neighbor j of k°th pixel is different => break w_jk
+                nbs_wk[k][i] = 0;
+                if(data_out[k]>data_out[ nbs_n[k][i] ])
+                    Dp.at<eType>(getxy[k]) += smoothvect[1];
+                else
+                    Dn.at<eType>(getxy[k]) += smoothvect[1];
+            }
+
+        }
+        
+        convert_vec2mat(data_out,N);
+        N = N*I;
+        M = M+N;
+    }
+    //output = Mat::zeros(height,width,CV_TF);
+    // go back to original output.
+    for(int i=0; i<height; i++) for(int j=0; j<width; j++)
+    {
+        data_out[i*width+j] = M.at<int>(i,j);
+    }
+    
+    
+    
+    
     
     
     
