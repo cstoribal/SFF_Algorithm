@@ -254,7 +254,7 @@ bool MySFF::optimize(void){
 
 
         try{
-            optiClass.do_optimization();
+            if(!optiClass.do_optimization() ) continue;
         }
         catch(const GCException & error)
         {

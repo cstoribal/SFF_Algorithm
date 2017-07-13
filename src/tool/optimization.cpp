@@ -271,7 +271,7 @@ bool OptiClass::set_optimization_gco_grid(void){
 
     convert_mat2labvec(tmp_data_energy,data_in);
     tmp_mat = Mat::zeros(nb_labels,nb_labels,CV_TE);
-    energyClass->getCrossLabelMatrix(labels,tmp_mat);
+    if(!energyClass->getCrossLabelMatrix(labels,tmp_mat)) return false;
     smoothvect.resize(nb_labels*nb_labels);
     for(int i=0; i<nb_labels; i++){
     for(int j=0; j<nb_labels; j++){

@@ -163,6 +163,7 @@ bool EnergyClass::getCrossLabelMatrix(const vector<fType> & lvect, Mat1E & lmat)
     if(!l_checkmetric(lmat)){
         myLog->a("regularisation term is not a metric\n");
         COUT("regularisation term is not a metric");
+        return false;
     }
     return true;
 }
