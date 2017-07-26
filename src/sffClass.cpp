@@ -194,15 +194,15 @@ bool MySFF::setMultifocusRmat(void){
 
 bool MySFF::testEnergy(void){
 
-    energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r,sharpSet, dmat, this->nb_labels, 1, 1);
+    energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r,sharpSet, dmat, 1, 1);
     Mat1T rmattmp;
     dmat.copyTo(rmattmp);
 
     //energyClass.computeMatEnergy(E_BOTH,rmattmp,vector<Point>() );
     //energyClass.updateEnergy(E_BOTH);
     
-    ioWizard.showImage("scale","energy", energyClass.ed_mat,1000);
-    ioWizard.showImage("scale","energy", energyClass.er_mat,1000);
+    //ioWizard.showImage("scale","energy", energyClass.ed_mat,1000);
+    //ioWizard.showImage("scale","energy", energyClass.er_mat,1000);
     
 }
     
@@ -247,14 +247,18 @@ bool MySFF::optimize(void){
         fType lambda_d = input_prts.vect_lambda_d[i];
         COUT2("Starting optimization at lambda_r = ",lambda_r);
         COUT2("Starting optimization at lambda_d = ",lambda_d);
-        energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r, sharpSet, dmat, this->nb_labels, lambda_d, lambda_r);
+        energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r, sharpSet, dmat, lambda_d, lambda_r);
         //set
 
         optiClass.reset();
 
 
         try{
-            if(!optiClass.do_optimization() ) continue;
+            if(!optiClass.do_optimization() ) 
+            {
+                CPING("continue");
+                continue;
+            }
         }
         catch(const GCException & error)
         {
@@ -270,6 +274,7 @@ bool MySFF::optimize(void){
             COUT("\n");
             continue;
         }
+        CPING("ping!");
         optiClass.writebackmatrix(rmat);
         string tmp = "Dep-D" + to_string2(lambda_d) + "R" + to_string2(lambda_r);
         ioWizard.img_setscale(1);

@@ -30,6 +30,11 @@ MySFF mySFF; // global eurk variable
 
 int main( int argc, char** argv )
 {
+    /*
+    TestClass myTest;
+    myTest.gethalfindex(10);
+    return 0;
+    */
     mySFF.setlogs();
     MyLog* myLog = &mySFF.myLog; //alias
     std::time_t t0 = std::time(0);

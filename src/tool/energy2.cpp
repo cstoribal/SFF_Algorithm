@@ -21,14 +21,13 @@ bool EnergyClass::set_class(DepthClass* p_depthclass, IOWizard* p_io){
     return true;
 }
 
-bool EnergyClass::set_parameters(const string & typeD, const string & typeR, const tdf_imgset & sharpStruct, const Mat1T & dmat, int nb_labels, fType scale_d, fType scale_r){
+bool EnergyClass::set_parameters(const string & typeD, const string & typeR, const tdf_imgset & sharpStruct, const Mat1T & dmat, fType scale_d, fType scale_r){
     // TODO MODIFIER avec un energy_prts. ici c'est nul.
-    // also initialises Matrix flag_Mat (& ROI as part), exxxxij, var_exij
 
     this->eParams.typeD = typeD;
     this->eParams.typeR = typeR;
     this->eParams.autoroi = 1;
-    this->eParams.dmat  = dmat;      // not needed anymore
+    this->eParams.dmat  = dmat;      //  needed
     this->eParams.dim1  = dmat.rows; // ?
     this->eParams.dim2  = dmat.cols; 
 
@@ -191,6 +190,10 @@ bool EnergyClass::getDataEnergy_3DMatrix(const vector<fType> & lvect, vector<Mat
     return true;
 }
 
+bool EnergyClass::get_pointer_dmat( Mat1T* & matrix){
+    matrix = &(this->eParams.dmat);
+    return true;
+}
 
 /*
 /////////////////////////////////////////////////////////////////////

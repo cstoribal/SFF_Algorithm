@@ -54,6 +54,7 @@ public:
     bool cmatToArraymat(Mat3f M, vector<Mat1f>& Vm);
     bool fillSharpPoly(tdf_imgset & sharpSet);
     bool fillAMatrix(Mat1d & imat);
+    bool gethalfindex(int range);
     int polyfit();
     
 

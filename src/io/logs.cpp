@@ -46,6 +46,17 @@ bool MyLog::a(const string & addstring){
     return true;
 }
 
+bool MyLog::av(const string & addstring){
+    logs += addstring;
+    cout<<addstring;
+    return true;
+}
+
+bool MyLog::as(const string & addstring){
+    logs += addstring;
+    return true;
+}
+
 bool MyLog::write(void){
     ofstream out(this->filepath.c_str());
     out << this->logs;
