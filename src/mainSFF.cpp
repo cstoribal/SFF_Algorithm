@@ -32,8 +32,9 @@ int main( int argc, char** argv )
 {
 
     TestClass myTest;
-    myTest.seekmedian(51);
+    myTest.gethalfindex(51);
     return 0;
+
 
     mySFF.setlogs();
     MyLog* myLog = &mySFF.myLog; //alias

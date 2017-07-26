@@ -144,6 +144,53 @@ bool TestClass::seekmedian(int rank)
     return true;
 }
 
+bool TestClass::gethalfindex(int range)
+{
+    int nbdigits = (int)floor(log2(range-1)+1);
+    if(nbdigits>=16){
+        COUT("warning, switch to long long int");
+        //return false;
+    }
+    
+    long int range_ext = (long int)range<<nbdigits;
+    long int * index = new long int[(int)floor(pow(2,nbdigits))];
+    index[0]=0;
+    for(int i=0; i<nbdigits; i++)
+    {
+        for(int j=0; j<(int)pow(2,i); j++)
+        {
+            index[(int)floor(pow(2,i)+j)]=index[j]+(range_ext>>i+1);
+            
+        }
+    }
+    //Check if all(range) in index
+    for(int i=0; i<(int)floor(pow(2,nbdigits)); i++)
+    {
+        int tmp = (int)(index[i]>>nbdigits);
+        CPING(tmp);
+    }
+    int failure=0;
+    int notfound=1;
+    for(int i=0; i<range; i++)
+    {
+        notfound=1;
+        for(int j=0; (j<(int)floor(pow(2,nbdigits)) && notfound==1) ; j++)
+        {
+            long int tmp=index[j]>>nbdigits;
+            if((int)tmp == i) notfound=0;
+        }
+        if(notfound)
+        {
+            COUT2("not found ",i);
+            failure=1;
+        }
+    }
+    if (failure==1) COUT("failed");
+    else COUT("cool");
+    
+    return true;
+}
+
 
 
 int TestClass::polyfit()

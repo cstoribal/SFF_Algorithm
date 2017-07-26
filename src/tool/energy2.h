@@ -47,12 +47,12 @@ public:
 
     bool setlogs(MyLog* mylog);
     bool set_class(DepthClass* p_depthclass, IOWizard* p_io);
-    bool set_parameters(const string & typeD, const string & typeR, const tdf_imgset & sharpStruct, const Mat1T & dmat, int nb_labels, fType scale_d, fType scale_r);
+    bool set_parameters(const string & typeD, const string & typeR, const tdf_imgset & sharpStruct, const Mat1T & dmat, fType scale_d, fType scale_r);
 
-    Mat1T  ed_mat ;
-    Mat1T  er_mat ;
-    fType  eData  ;
-    fType  eRegu  ;
+    //Mat1T  ed_mat ;
+    //Mat1T  er_mat ;
+    //fType  eData  ;
+    //fType  eRegu  ;
 
 /*
 // Ajout d'un paramètre stype : stype :: 1=data, 2=Regularisation, 3=both
@@ -70,6 +70,7 @@ public:
     
     bool getCrossLabelMatrix(const vector<fType> & lvect, Mat1E & lmat);
     bool getDataEnergy_3DMatrix(const vector<fType> & lvect, vector<Mat1E> & emat);
+    bool get_pointer_dmat( Mat1T* & matrix); 
 
 /*
     Rect  roi_D,      roi_R;

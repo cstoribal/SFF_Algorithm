@@ -34,11 +34,60 @@
 #include "../tool/energy2.h"
 #include "../io/logs.h"
 
+extern "C"{
+    #include <unistd.h>
+}
+
 using namespace std;
 using namespace cv;
 
 
+class OptiIterate{
+public:
+    OptiIterate(); ~OptiIterate();
+    
+    bool set(int* sortedlabel_in, int** adaptindex_in, int maxseek_in, int nblabels_in, int maxiteration_in, int max_sortedrank); // builds the vectors
+    bool update(int i); // iterate one more time. start's -1+1, set active & flags
 
+    bool active; //set to false when all instances are at maxseek or labelmax
+    bool flag;   // something needs to be checked ? init to 0
+
+    int getlabelp(int state); // pixel call for label number
+    int getlabeln(int state); // pixel call for label number
+
+    int getoutlabel(int state);      // résultat = dernier résultat à 1
+    int getnext_outlabel(int state); // variante, suppose le résultat = prochain label à 1
+                   // => SI il y a un seek supplémentaire à state, le prendre
+                   // => SI il n'y a pas de seek supplémentaire, prendre la sortie 0 ou 1
+
+
+private:
+    // at setup
+    int maxseek;
+    int maxiteration; // to get sizes
+    int* sorted_label_img;
+    int** adapt_index;
+    int nblabels;
+    int max_sortedrank;
+
+    int getprevious(int current, int iter);
+    bool duplicate_to(int prev_iter, int prev_state, int iter, int state);
+    
+    // other
+    int iteration;    // init to zero
+    vector<vector<int> > path; // init to zero
+    vector<vector<int> > lmin; // init to zero           -  those values are forbidden
+    vector<vector<int> > lmax; // init to maximum label
+    vector<vector<int> > seek; // get local depth of iteration
+    vector<vector<int> > labelp; // get label corresponding to binary process (01001101)
+    vector<vector<int> > labeln; // get label corresponding to binary process (01001101)
+    vector<vector<bool> > enabled;// set to false when over maxseek
+    vector<vector<int> > labelout;
+
+    int lastiteration;
+    
+    
+};
 
 
 
@@ -103,9 +152,15 @@ private:
     int** nbs_n;
     eType* nbs_w1D;
     eType** nbs_w;
-    eType* nbs_wk1D;
+    eType* nbs_wk1D; //iteratively destructed by gco opti
     eType** nbs_wk;
-
+    
+    //adaptative optimisation
+    bool sort_img_set;
+    int* sorted_label_img;
+    int* adapt_index1D;
+    int** adapt_index;
+    OptiIterate* adapt_Iterator;
 
     bool set_optimization_gco_grid(void);
     bool compute_gco_grid(void);
@@ -115,12 +170,11 @@ private:
 
     bool compute_opt_binary(void);
     bool compute_opt_multiscale(void);
+    bool set_optimization_gco_adapt(void);
     bool compute_opt_adapt(void);
 
 // others
     
-
-
 
     
 };

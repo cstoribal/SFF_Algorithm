@@ -55,6 +55,7 @@ public:
     bool fillSharpPoly(tdf_imgset & sharpSet);
     bool fillAMatrix(Mat1d & imat);
     bool seekmedian(int size);
+    bool gethalfindex(int range);
     int polyfit();
     
 
