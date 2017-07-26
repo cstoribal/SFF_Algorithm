@@ -30,11 +30,11 @@ MySFF mySFF; // global eurk variable
 
 int main( int argc, char** argv )
 {
-
-    TestClass myTest;
-    myTest.gethalfindex(51);
-    return 0;
-
+    
+    //TestClass myTest;
+    //myTest.gethalfindex(58);
+    //return 0;
+    
 
     mySFF.setlogs();
     MyLog* myLog = &mySFF.myLog; //alias

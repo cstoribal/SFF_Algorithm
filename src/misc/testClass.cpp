@@ -187,6 +187,8 @@ bool TestClass::gethalfindex(int range)
     }
     if (failure==1) COUT("failed");
     else COUT("cool");
+
+    delete [] index;
     
     return true;
 }

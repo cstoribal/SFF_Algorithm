@@ -69,7 +69,7 @@ bool OptiClass::set_param(tdfp_opti popti){ //const void* param){
 }
 
 bool OptiClass::do_optimization(void){
-    if(1){
+    if(0){
         set_optimization_gco_grid();
         return compute_gco_grid();
     }
@@ -84,9 +84,9 @@ bool OptiClass::do_optimization(void){
         return compute_opt_multiscale();
     }
     if(1){
-        CPING("HOOO");
+        CPING("setting");
         set_optimization_gco_adapt();
-        CPING("HEE");
+        CPING("start computation");
         return compute_opt_adapt();
     }
     return false;
@@ -566,9 +566,9 @@ bool OptiClass::set_optimization_gco_adapt(void){
     int range = this->nb_pixels+this->nb_labels;
     int nbdigits = (int)floor(log2(range-1)+1);
 
-    this->sorted_label_img  = new int[(int)pow(2,floor(log2(this->nb_pixels+this->nb_labels-1)+1))];    // warning, modded recently, check.
+    this->sorted_label_img  = new int[range];    // warning, modded recently, check.
     this->adapt_index1D     = new int[(int)floor(pow(2,nbdigits))];
-    this->adapt_index       = new int*[nbdigits]; //TODO check; +1 ?
+    this->adapt_index       = new int*[nbdigits+1]; //TODO check; +1 ?
     this->adapt_Iterator    = new OptiIterate;
     
     //build histogram
@@ -590,6 +590,7 @@ bool OptiClass::set_optimization_gco_adapt(void){
     
 	CPING("building index");
     //build index routing
+    adapt_index1D[0]=0;
     if(nbdigits>64)
     {
         myLog->av("What kind of monster are you ? \n"
@@ -641,7 +642,8 @@ bool OptiClass::set_optimization_gco_adapt(void){
     }
     
     //build 2D indexing
-    for(int i=0; i<nbdigits; i++) adapt_index[i] = &adapt_index1D[(int)(pow(2,i)-1)];
+    for(int i=0; i<nbdigits+1; i++) 
+        adapt_index[i] = &adapt_index1D[(int)(pow(2,i))];
     
     
     this->sort_img_set = true;
@@ -701,7 +703,7 @@ bool OptiIterate::set(int* sortedlabel_in, int** adaptindex_in, int maxseek_in, 
     enabled[0][0] = true;
     lmin[0][0]=0;
     lmax[0][0]=nblabels;
-    seek[0][0]= 0;
+    seek[0][0]=-1;
     path[0][0]=0;
     if(seek[0][0]==maxseek-1) 
     {
@@ -738,13 +740,17 @@ bool OptiIterate::set(int* sortedlabel_in, int** adaptindex_in, int maxseek_in, 
     labeln[0][0] = labelp[0][0]-1;
     labelout[0][0]=0;
     // assert : should not be negative... actually should end as enabled == true;
-    CPING("Starting in tieragtion mode");
+    CPING("Starting iterations for labels building");
     for(int iter=1; iter<maxiteration+1; iter++)
     {
         for(int state =0; state<(int)pow(2,iter); state++)
-        {
+        { //TODO checksize
             int prevstate = getprevious(state, iter);
             this->duplicate_to(iter-1,prevstate,iter,state);
+            if(state==prevstate)
+                labelout[iter][state]=labelout[iter-1][prevstate];
+            else
+                labelout[iter][state]=labelp[iter-1][prevstate];
             if(seek[iter][state]==maxseek-1)
             {
                 enabled[iter][state]=false;
@@ -752,8 +758,15 @@ bool OptiIterate::set(int* sortedlabel_in, int** adaptindex_in, int maxseek_in, 
 
             if(enabled[iter][state])
             {
-                if(prevstate==state)  lmax[iter][state]=labelp[iter][state];
-                else  lmin[iter][state]=labelp[iter][state];
+                if(prevstate==state)
+                {
+                    lmax[iter][state]=labelp[iter][state];
+                }
+                else
+                {
+                    lmin[iter][state]=labelp[iter][state];
+                    path[iter][state]+= (1 << seek[iter][state]);
+                }
 
                 int tmp=1;
                 while(seek[iter][state]<(maxseek-1) & tmp)
@@ -762,7 +775,7 @@ bool OptiIterate::set(int* sortedlabel_in, int** adaptindex_in, int maxseek_in, 
                     seek[iter][state]+=1; //TODO check exceed index
                     // iter, state,                       seek, it st   path it st
                     labelp[iter][state]=sorted_label_img
-                          [ adapt_index[seek[iter][state]][path[iter][state]] ];
+                    [ adapt_index[seek[iter][state]][path[iter][state]] ];
                     if(labelp[iter][state]>=lmax[iter][state])
                     {
                         tmp=1; 
@@ -773,7 +786,7 @@ bool OptiIterate::set(int* sortedlabel_in, int** adaptindex_in, int maxseek_in, 
                         path[iter][state] += 1 << seek[iter][state];
                     }
                 }
-                if(tmp==0) //il n'y avait aucune autre proposition de label distincte
+                if(tmp==1) //il n'y avait aucune autre proposition de label distincte
                 {
                     enabled[iter][state]=false;
                     labelp[iter][state]=labelp[iter-1][prevstate];
@@ -781,10 +794,6 @@ bool OptiIterate::set(int* sortedlabel_in, int** adaptindex_in, int maxseek_in, 
                 else
                 {
                     labeln[iter][state]=labelp[iter][state]-1;
-                    if(state==prevstate)
-                        labelout[iter][state]=labeln[iter-1][prevstate];
-                    else
-                        labelout[iter][state]=labelout[iter-1][prevstate];
                 }
             }
         
@@ -792,14 +801,16 @@ bool OptiIterate::set(int* sortedlabel_in, int** adaptindex_in, int maxseek_in, 
         }
     }
     // TODO labelout iter=maxiter+1
-    /*for(int state =0; state<(int)pow(2,maxiteration); state++)
+    for(int state =0; state<(int)pow(2,maxiteration); state++)
     {
         int prevstate = getprevious(state,maxiteration);
         if( state & (1<<maxiteration-1) )
             labelout[maxiteration][state] = labelp[maxiteration][prevstate];
         else
             labelout[maxiteration][state] = labeln[maxiteration][prevstate];
-    */
+    }
+
+    //this->display();
     
     return true; 
 }
@@ -845,6 +856,7 @@ int OptiIterate::getnext_outlabel(int state){
 
 bool OptiIterate::update(int iter){
     this->iteration = iter;
+    lastiteration>iter?lastiteration:iter;
     bool all_inactive = false;
     for(int state=0; state<(int)pow(2,iter); state++)
         all_inactive = all_inactive | enabled[iter][state];
@@ -852,6 +864,42 @@ bool OptiIterate::update(int iter){
     return true;
 }
 
+bool OptiIterate::display(void){
+    cout << "********** \n content of OptiIterate vectors \n ********** \n";
+    cout << "maxseek = " << maxseek << ", maxiteration = " << maxiteration << "\n";
+    cout << "nb_labels = " << nblabels << "max_sortedrank = " << max_sortedrank << "\n";
+    cout << "lastiteration " << lastiteration << "\n***********\n\n";
+    cout << "********      previous,lmin, lmax,   seek, path,   index, labelp,   labeln, labelout,  enabled \n";
+    for(int iter=0; iter<maxiteration+1; iter++)
+    {
+        cout << "********      previous,lmin, lmax,   seek, path,   index, labelp,   labeln, labelout,  enabled \n";
+        cout << "Iteration N°" << iter << " \n";
+        for(int state=0; state<(int)pow(2,iter); state++)
+        {
+            cout << "state N°" << state << "  :  ";
+            cout << getprevious(state,iter) << "       " << lmin[iter][state] << "       " << lmax[iter][state] << "       " << seek[iter][state] << "     " << path[iter][state] << "      " << adapt_index[seek[iter][state]][path[iter][state]] << "       " << labelp[iter][state] << "       " << labeln[iter][state] << "       " << labelout[iter][state] << "       " << enabled[iter][state] << "\n";
+        }
+        cout << "\n\n\n";
+    }
+
+    for(int i=0; i<max_sortedrank; i++)
+    {
+        cout << sorted_label_img[i] << "  " ;
+    }
+    cout << "\n\n\n";
+
+    cout << "**********\nadapt index & sorted label image \n**********\n";
+    for (int i=0; i<maxseek; i++)
+    {
+        cout << "\n***seek n°" << i << " :  ";
+        for(int j=0; j<(int)pow(2,i);j++)
+        {
+            
+            cout << adapt_index[i][j] << "[" << sorted_label_img[adapt_index[i][j]]<< "]    " ;
+        }
+    }
+    return true;
+}
 
 bool OptiClass::compute_opt_adapt(void){
 // Parcourt les labels en s'adaptant à la structure de l'image. 
@@ -868,10 +916,10 @@ bool OptiClass::compute_opt_adapt(void){
 //     - start !
 // Loop
     int maxseek = (int)floor(log2(this->nb_pixels+this->nb_labels-1)+1); //histogram
-    int maxiteration  = (int)floor(log2(this->nb_labels-1)+1); //an upper bound to iterations (to get faster results)
+    int maxiteration  = (int)floor(log2(this->nb_labels-1)+1)-2; //an upper bound to iterations (to get faster results)
     int maxsortedrank = this->nb_pixels+this->nb_labels;
     this->adapt_Iterator->set(this->sorted_label_img, this->adapt_index, maxseek, nb_labels, maxiteration, maxsortedrank);
-    CPING("heeee!");
+
 
     Mat1i M = Mat::zeros(height,width,CV_32S);
     Mat1i N = Mat::zeros(height,width,CV_32S);
@@ -901,7 +949,7 @@ bool OptiClass::compute_opt_adapt(void){
     {
         this->adapt_Iterator->update(n);
         I = 1<<n;
-        CPING2("passe n",n);
+        //CPING2("passe n",n);
         for(int i=0; i<height; i++) for(int j=0; j<width; j++)
         {
             Edata_slice[0].at<eType>(i,j) = Edata[this->adapt_Iterator->getlabeln(

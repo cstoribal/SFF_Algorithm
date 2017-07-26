@@ -72,6 +72,7 @@ private:
 
     int getprevious(int current, int iter);
     bool duplicate_to(int prev_iter, int prev_state, int iter, int state);
+    bool display(void); // just to show-off the work. And see what's wrong here
     
     // other
     int iteration;    // init to zero
