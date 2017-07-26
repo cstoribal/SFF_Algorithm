@@ -650,9 +650,21 @@ bool OptiClass::set_optimization_gco_adapt(void){
     return true;
 }
 
-OptiIterate::OptiIterate(){ };
+OptiIterate::OptiIterate(){
+    this->set = false;
+};
 OptiIterate::~OptiIterate(){};
-bool OptiIterate::set(int* sortedlabel_in, int** adaptindex_in, int maxseek_in, int nblabels_in, int maxiteration_in, int max_sortedrank_in){
+bool OptiIterate::setup(MyLog* mylog, int* sortedlabel_in, int** adaptindex_in, int maxseek_in, int nblabels_in, int maxiteration_in, int max_sortedrank_in){
+    if(this->set){
+        myLog->a("skipping OptiIterate reinit, switching to light reset. Use reset to enforce reinitialisation\n");
+        this->active = 1;
+        this->flag = 0;
+        this->lastiteration = 0;
+        this->iteration=0;
+        return false;
+    }
+    this->myLog = mylog;
+    this->set = true;
     this->sorted_label_img = sortedlabel_in;
     this->adapt_index  =adaptindex_in;
     this->maxseek      =maxseek_in;
@@ -857,10 +869,12 @@ int OptiIterate::getnext_outlabel(int state){
 bool OptiIterate::update(int iter){
     this->iteration = iter;
     lastiteration>iter?lastiteration:iter;
-    bool all_inactive = false;
+    bool any_active = false;
     for(int state=0; state<(int)pow(2,iter); state++)
-        all_inactive = all_inactive | enabled[iter][state];
-    this->active = ~all_inactive;
+    {
+        any_active = any_active | enabled[iter][state];
+    }
+    this->active = any_active;
     return true;
 }
 
@@ -916,9 +930,11 @@ bool OptiClass::compute_opt_adapt(void){
 //     - start !
 // Loop
     int maxseek = (int)floor(log2(this->nb_pixels+this->nb_labels-1)+1); //histogram
-    int maxiteration  = (int)floor(log2(this->nb_labels-1)+1)-2; //an upper bound to iterations (to get faster results)
+    int maxiteration  = (int)floor(log2(this->nb_labels-1)+1); //an upper bound to iterations (to get faster results)
+    // if maxseek > maxiteration alors cette méthode est sous optimale.
+    maxiteration += 10;
     int maxsortedrank = this->nb_pixels+this->nb_labels;
-    this->adapt_Iterator->set(this->sorted_label_img, this->adapt_index, maxseek, nb_labels, maxiteration, maxsortedrank);
+    this->adapt_Iterator->setup(this->myLog, this->sorted_label_img, this->adapt_index, maxseek, nb_labels, maxiteration, maxsortedrank);
 
 
     Mat1i M = Mat::zeros(height,width,CV_32S);
@@ -949,7 +965,7 @@ bool OptiClass::compute_opt_adapt(void){
     {
         this->adapt_Iterator->update(n);
         I = 1<<n;
-        //CPING2("passe n",n);
+        CPING2("passe n",n);
         for(int i=0; i<height; i++) for(int j=0; j<width; j++)
         {
             Edata_slice[0].at<eType>(i,j) = Edata[this->adapt_Iterator->getlabeln(
@@ -963,12 +979,9 @@ bool OptiClass::compute_opt_adapt(void){
             gco = new GCoptimizationGeneralGraph(this->nb_pixels,2);
             ((GCoptimizationGeneralGraph*)gco)
 			->setAllNeighbors(nbs_nb,nbs_n,nbs_wk);
-            CPING("afterinit");
             gco->setDataCost(&data_in[0]);
             gco->setSmoothCost(&smoothvect[0]);
-            CPING("aftercosts");
             gco->expansion(10);
-            CPING("afterexpansion");
             data_out.resize(nb_pixels);
             for(int i=0; i<nb_pixels; i++){
                 data_out[i] = gco->whatLabel(i);

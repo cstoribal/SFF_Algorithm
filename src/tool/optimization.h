@@ -46,7 +46,7 @@ class OptiIterate{
 public:
     OptiIterate(); ~OptiIterate();
     
-    bool set(int* sortedlabel_in, int** adaptindex_in, int maxseek_in, int nblabels_in, int maxiteration_in, int max_sortedrank); // builds the vectors
+    bool setup(MyLog* mylog, int* sortedlabel_in, int** adaptindex_in, int maxseek_in, int nblabels_in, int maxiteration_in, int max_sortedrank); // builds the vectors
     bool update(int i); // iterate one more time. start's -1+1, set active & flags
 
     bool active; //set to false when all instances are at maxseek or labelmax
@@ -63,6 +63,8 @@ public:
 
 private:
     // at setup
+    MyLog* myLog;
+    bool set;
     int maxseek;
     int maxiteration; // to get sizes
     int* sorted_label_img;
