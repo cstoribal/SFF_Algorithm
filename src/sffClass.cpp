@@ -254,7 +254,11 @@ bool MySFF::optimize(void){
 
 
         try{
-            if(!optiClass.do_optimization() ) continue;
+            if(!optiClass.do_optimization() ) 
+            {
+                CPING("continue");
+                continue;
+            }
         }
         catch(const GCException & error)
         {
@@ -270,6 +274,7 @@ bool MySFF::optimize(void){
             COUT("\n");
             continue;
         }
+        CPING("ping!");
         optiClass.writebackmatrix(rmat);
         string tmp = "Dep-D" + to_string2(lambda_d) + "R" + to_string2(lambda_r);
         ioWizard.img_setscale(1);

@@ -108,7 +108,41 @@ bool TestClass::fillAMatrix(Mat1d & imat)
 
 // c'est donc Rows - Cols. Sorry.
 
+bool TestClass::seekmedian(int rank)
+{
+    int indexsize = floor(log2(rank-1)+1);
+    COUT2("starting, indexsize =",indexsize);
+    if(indexsize>16) 
+    {
+        COUT("failure");
+        return false;
+    }
+    int rank_ext = rank << indexsize;
+    int* buffer = new int[(int)pow(2,indexsize)];
+    buffer[0]=0;
+    for(int iter=0; iter<indexsize ; iter ++)
+    {
+        for(int j=0; j<pow(2,iter); j++)
+        {
+            //COUT2( j , "reading");
+            //int tmp = buffer[j]>>indexsize;
+            //COUT( tmp );
+            //tmp = rank_ext>>((iter+1)+indexsize);
+            //COUT(tmp);
+            //COUT2( (int)floor(pow(2,iter)+j), "iteration" );
+            buffer[(int)floor(pow(2,iter)+j)] = buffer[j] + (rank_ext>>(iter+1));
+                
+        }
+    }
 
+    for(int i=0; i<(int)pow(2,indexsize); i++)
+    {
+        int tmp = buffer[i]>>indexsize;
+        COUT(tmp);
+    }
+    delete [] buffer;
+    return true;
+}
 
 
 

@@ -52,18 +52,18 @@ bool OptiClass::set_param(tdfp_opti popti){ //const void* param){
 }
 
 bool OptiClass::do_optimization(void){
-    if(0){
+    if(1){
         set_optimization_gco_grid();
         return compute_gco_grid();
     }
-    if(0){
+    if(0){ //unavailable
         set_optimization_gco_gen();
         return compute_gco_gen();
     }
     if(0){
         return compute_opt_binary();
     }
-    if(1){
+    if(0){
         return compute_opt_multiscale();
     }
     return false;
@@ -367,7 +367,7 @@ bool OptiClass::compute_opt_binary(void){
     Mat1i N = Mat::zeros(height,width,CV_32S);
         
     Mat1E lmat = Mat::zeros(nb_labels,nb_labels,CV_TE);
-    energyClass->getCrossLabelMatrix(labels,lmat);
+    if(!energyClass->getCrossLabelMatrix(labels,lmat)) return false;
     smoothvect.resize(2*2);
     
     vector<Mat1E> Edata(nb_labels);
@@ -436,7 +436,7 @@ bool OptiClass::compute_opt_multiscale(void){
     int I = 1; int J;
     double range = floor(log2(nb_labels-1)+1); //nb of digits necessary
     Mat1E lmat = Mat::zeros(nb_labels,nb_labels,CV_TE);
-    energyClass->getCrossLabelMatrix(labels,lmat);
+    if(!energyClass->getCrossLabelMatrix(labels,lmat)) return false;
     smoothvect.resize(2*2);
     
     vector<Mat1E> Edata(nb_labels);
@@ -444,7 +444,7 @@ bool OptiClass::compute_opt_multiscale(void){
     vector<Mat1E> Edata_slice(2);
     Edata_slice[0] = Mat::zeros(height,width,CV_TE);
     Edata_slice[1] = Mat::zeros(height,width,CV_TE);
-
+    CPING("gow");
     for(int i=0; i<2; i++) for(int j=0; j<2; j++)
     {
         smoothvect[i*2+j]=lmat.at<eType>(0+i,0+j);
@@ -452,11 +452,120 @@ bool OptiClass::compute_opt_multiscale(void){
     for(int n=(int)range-1; n>=0; n--)
     {
         I = 1<<n; J = I-1;
-        //CPING2("passe n",n);
+        CPING2("passe n",n);
         //CPING2("I(n)",I);
         for(int i=0; i<height; i++) for(int j=0; j<width; j++)
         {
-            // TODO check dp or dn (orientation du delta)
+            if(M.at<int>(i,j)+I >= nb_labels) //TODO presque inutile
+            // car déjà calculé. Pk ne pas laisser ces valeurs inchangées ?
+            {
+                Edata_slice[0].at<eType>(i,j)=Edata[M.at<int>(i,j)-1]
+			.at<eType>(i,j)+Dn.at<eType>(i,j);
+                Edata_slice[1].at<eType>(i,j)=Edata[M.at<int>(i,j)]
+			.at<eType>(i,j)+Dp.at<eType>(i,j);
+            }
+            else
+            {
+                Edata_slice[0].at<eType>(i,j) = Edata[M.at<int>(i,j)+J]
+			.at<eType>(i,j)+Dn.at<eType>(i,j);
+                Edata_slice[1].at<eType>(i,j) = Edata[M.at<int>(i,j)+I]
+			.at<eType>(i,j)+Dp.at<eType>(i,j);
+            }
+        }
+        this->convert_mat2labvec(Edata_slice,data_in);
+
+        try{
+            gco = new GCoptimizationGeneralGraph(this->nb_pixels,2);
+            ((GCoptimizationGeneralGraph*)gco)
+			->setAllNeighbors(nbs_nb,nbs_n,nbs_wk);
+            CPING("afterinit");
+            gco->setDataCost(&data_in[0]);
+            gco->setSmoothCost(&smoothvect[0]);
+            CPING("aftercosts");
+            gco->expansion(10);
+            CPING("afterexpansion");
+            data_out.resize(nb_pixels);
+            for(int i=0; i<nb_pixels; i++){
+                data_out[i] = gco->whatLabel(i);
+            }
+            delete gco;
+            
+	}
+        catch (GCException e){
+	    e.Report();
+            return false;
+	}
+
+        for(int k=0; k<nb_pixels; k++) for(int i=0; i<nbs_nb[k]; i++)
+        {
+            if(nbs_wk[k][i]!=0)
+            if(data_out[k]!=data_out[ nbs_n[k][i]])
+            {//i°th neighbor j of k°th pixel is different => break w_jk
+                nbs_wk[k][i] = 0;
+                if(data_out[k]>data_out[ nbs_n[k][i] ])
+                    Dp.at<eType>(getxy[k]) += smoothvect[1];
+                else
+                    Dn.at<eType>(getxy[k]) += smoothvect[1];
+            }
+
+        }
+        
+        convert_vec2mat(data_out,N);
+        N = N*I;
+        M = M+N;
+    }
+    //output = Mat::zeros(height,width,CV_TF);
+    // go back to original output.
+    for(int i=0; i<height; i++) for(int j=0; j<width; j++)
+    {
+        data_out[i*width+j] = M.at<int>(i,j);
+    }
+    
+    return true;
+}
+
+
+
+
+bool OptiClass::compute_opt_adapt(void){
+// Parcourt les labels en ciblant chaque médiane.
+//     - Construire l'histogramme de l'imageb
+//     - stocker dans un vecteur taille nbpixels-1
+//     - know label <-> focus ?
+//     - M matrice masque des labels en construction. (+I)
+//     - n indice d'itération ( n~log2(Nlabels)-1 -> 0 )
+//     - I labelshift rang n  ( '00001' << n )
+//     - E vectmat energie attache aux données 
+//     - L mat energie labels.
+//     - start !
+// Loop
+    Mat1i M = Mat::zeros(height,width,CV_32S);
+    Mat1i N = Mat::zeros(height,width,CV_32S);
+    Mat1E Dp = Mat::zeros(height,width,CV_TE);
+    Mat1E Dn = Mat::zeros(height,width,CV_TE);
+    int I = 1; int J;
+    double range = floor(log2(nb_labels-1)+1); //nb of digits necessary
+    Mat1E lmat = Mat::zeros(nb_labels,nb_labels,CV_TE);
+    if(!energyClass->getCrossLabelMatrix(labels,lmat)) return false;
+    smoothvect.resize(2*2);
+    
+    vector<Mat1E> Edata(nb_labels);
+    energyClass->getDataEnergy_3DMatrix(this->labels,Edata);
+    vector<Mat1E> Edata_slice(2);
+    Edata_slice[0] = Mat::zeros(height,width,CV_TE);
+    Edata_slice[1] = Mat::zeros(height,width,CV_TE);
+    CPING("gow");
+    for(int i=0; i<2; i++) for(int j=0; j<2; j++)
+    {
+        smoothvect[i*2+j]=lmat.at<eType>(0+i,0+j);
+    }
+    for(int n=(int)range-1; n>=0; n--)
+    {
+        I = 1<<n; J = I-1;
+        CPING2("passe n",n);
+        //CPING2("I(n)",I);
+        for(int i=0; i<height; i++) for(int j=0; j<width; j++)
+        {
             if(M.at<int>(i,j)+I >= nb_labels)
             {
                 Edata_slice[0].at<eType>(i,j)=Edata[M.at<int>(i,j)-1]
@@ -478,9 +587,12 @@ bool OptiClass::compute_opt_multiscale(void){
             gco = new GCoptimizationGeneralGraph(this->nb_pixels,2);
             ((GCoptimizationGeneralGraph*)gco)
 			->setAllNeighbors(nbs_nb,nbs_n,nbs_wk);
+            CPING("afterinit");
             gco->setDataCost(&data_in[0]);
             gco->setSmoothCost(&smoothvect[0]);
+            CPING("aftercosts");
             gco->expansion(10);
+            CPING("afterexpansion");
             data_out.resize(nb_pixels);
             for(int i=0; i<nb_pixels; i++){
                 data_out[i] = gco->whatLabel(i);
@@ -526,7 +638,6 @@ bool OptiClass::compute_opt_multiscale(void){
     
     return true;
 }
-
 
 
 

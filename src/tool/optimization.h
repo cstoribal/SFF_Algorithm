@@ -115,6 +115,7 @@ private:
 
     bool compute_opt_binary(void);
     bool compute_opt_multiscale(void);
+    bool compute_opt_adapt(void);
 
 // others
     
