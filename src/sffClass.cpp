@@ -218,6 +218,7 @@ bool MySFF::optimize(void){
     opti_prts.nb_labels = nb_labels;
     opti_prts.height    = dim1;
     opti_prts.width     = dim2;
+    opti_prts.connexity = input_prts.connexity;
     opti_prts.labels    = depthEst.getLabels();
     
     optiClass.set_param(opti_prts);

@@ -165,6 +165,7 @@ struct struct_input{
     
     int opti_set;  //9
     std::string opti;
+    int connexity;
 
     int lambda_r_set;   //10   //ex opti_set
     std::vector<fType> vect_lambda_r;  //ex optirange
@@ -236,7 +237,7 @@ typedef struct energy_sidestruct tdfp_energy ;
 struct set_param_opti{
     std::string      type;
     EnergyClass *energyclass;
-    int nb_pixels, nb_labels, width, height;
+    int nb_pixels, nb_labels, width, height, connexity;
     std::vector<fType> labels; // allows conversion label -> ranklabel
     
 };

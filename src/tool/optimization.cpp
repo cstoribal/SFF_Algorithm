@@ -63,6 +63,7 @@ bool OptiClass::set_param(tdfp_opti popti){ //const void* param){
     this->width     = popti.width;
     this->height    = popti.height;
     this->labels    = popti.labels;
+    this->connexity = popti.connexity;
 //TODO should use a different word for labels & focus
     build_rank4xy();
     
@@ -84,7 +85,8 @@ bool OptiClass::do_optimization(void){
     if(this->name_opti == "gco_scale"){
         return compute_opt_multiscale();
     }
-    if(this->name_opti == "gco_adapt"){
+    if(this->name_opti == "gco_adapt" | 
+       this->name_opti == "gco_custom_scale1"){
         set_optimization_gco_adapt();
         return compute_opt_adapt();
     }
@@ -208,12 +210,20 @@ bool OptiClass::set_allneighbors(void){
     // aka nbs_nb, nbs_n, nbs_w;
     Mat1E borders = Mat::zeros(height,width,CV_TE)+1;
     this->neighbor_mat = Mat::zeros(5,5,CV_TE);
-    if(connexity=4)
+    if(connexity==4 |
+       connexity==8)
     {
         neighbor_mat.at<eType>(2,1) = 1;
         neighbor_mat.at<eType>(1,2) = 1;
         neighbor_mat.at<eType>(3,2) = 1;
         neighbor_mat.at<eType>(2,3) = 1;
+    }
+    if(connexity==8)
+    {
+        neighbor_mat.at<eType>(1,1) = (eType)1.0/(eType)sqrt(2.0);
+        neighbor_mat.at<eType>(3,1) = (eType)1.0/(eType)sqrt(2.0);
+        neighbor_mat.at<eType>(1,3) = (eType)1.0/(eType)sqrt(2.0);
+        neighbor_mat.at<eType>(3,3) = (eType)1.0/(eType)sqrt(2.0);
     }
 
     filter2D(borders, borders, -1, this->neighbor_mat, Point(2,2), 0, BORDER_CONSTANT );
@@ -578,7 +588,7 @@ bool OptiClass::set_custom_adapt_histogram(int & range){
         }
         return true;
     }
-    if(this->gcotype == "gco_custom_scale"){
+    if(this->gcotype == "gco_custom_scale1"){
         range = this->nb_labels;
         this->sorted_label_img  = new int[range];
         this->histogram         = new int[this->nb_labels];

@@ -63,7 +63,7 @@ IOWizard::IOWizard() {
 		.sharp_set=0,.sharp="",
                 .depth_set=0,.depth="",
 		.nrj_set=0,.nrj_d="",.nrj_r="",
-		.opti_set=0,.opti="",
+		.opti_set=0,.opti="",.connexity=4,
                 .lambda_r_set=0,.vect_lambda_r={1,2,3},
                 .lambda_d_set=0,.vect_lambda_d={3,2,1.5}};
 
@@ -754,6 +754,9 @@ bool IOWizard::parsevect2struct(const vector<vector<string> > & fd, tdf_input & 
             case 1:
                 inp.opti = fd[l_idx][w_idx];
                 break;
+            case 2:
+                inp.connexity = atoi(fd[l_idx][w_idx].c_str());
+                break;
             default:break;
             }
             break;
@@ -820,7 +823,7 @@ bool IOWizard::storeParameters(void){
 
     textdata += to_string2(i.nrj_set) + " ; " + i.nrj_d+" ; "+i.nrj_r+"\n";
 
-    textdata += to_string2(i.opti_set) +" ; "+ i.opti + "\n";
+    textdata += to_string2(i.opti_set) +" ; "+ i.opti + " ; "+to_string2(i.connexity)+"\n";
 
     textdata += to_string2(i.lambda_r_set);
     for(int j=0; j<i.vect_lambda_r.size();j++)
