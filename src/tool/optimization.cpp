@@ -71,6 +71,7 @@ bool OptiClass::set_param(tdfp_opti popti){ //const void* param){
 }
 
 bool OptiClass::do_optimization(void){
+    CPING(this->name_opti);
     if(this->name_opti == "gco_grid"){
         set_optimization_gco_grid();
         return compute_gco_grid();
@@ -564,7 +565,8 @@ bool OptiClass::compute_opt_multiscale(void){
 bool OptiClass::set_custom_adapt_histogram(int & range){
     // builds histogram and sorted label img.
     // depending on the opt type
-    if(this->gcotype == "gco_adapt"){
+    CPING2("test what's the name ",this->name_opti);
+    if(this->name_opti == "gco_adapt"){
         range = this->nb_pixels+this->nb_labels;
         this->sorted_label_img  = new int[range];
         this->histogram         = new int[this->nb_labels];
@@ -588,7 +590,7 @@ bool OptiClass::set_custom_adapt_histogram(int & range){
         }
         return true;
     }
-    if(this->gcotype == "gco_custom_scale1"){
+    if(this->name_opti == "gco_custom_scale1"){
         range = this->nb_labels;
         this->sorted_label_img  = new int[range];
         this->histogram         = new int[this->nb_labels];
@@ -603,7 +605,7 @@ bool OptiClass::set_custom_adapt_histogram(int & range){
         }
         return true;
     }
-    
+    CPING2("custom adapt histogram built, range", range);
     
 } 
 
@@ -862,7 +864,6 @@ bool OptiIterate::setup(MyLog* mylog, int* sortedlabel_in, int** adaptindex_in, 
             labelout[maxiteration+1][state] = labelout[maxiteration][prevstate];
     }
     //this->display();
-    
     return true; 
 }
 

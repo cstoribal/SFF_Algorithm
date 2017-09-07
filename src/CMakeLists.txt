@@ -48,3 +48,6 @@ ADD_LIBRARY(gcoLIB SHARED ${GCO_CPP})
 add_executable(ProjSFF mainSFF.cpp)
 target_link_libraries(ProjSFF myLIB  gcoLIB  ${OpenCV_LIBS} ${MathGL_LIBRARIES} )
 
+add_executable(SFFDataMgmt ./io/filemgmt.cpp)
+target_link_libraries(SFFDataMgmt myLIB  gcoLIB  ${OpenCV_LIBS} ${MathGL_LIBRARIES} )
+
