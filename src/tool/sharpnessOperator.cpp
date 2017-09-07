@@ -37,19 +37,25 @@ bool Sharpness_Operator::optypeSelector(string type){
 }
 
 bool Sharpness_Operator::computeOp(string optype, const tdf_imgset & iset, tdf_imgset& sset){
-    tdf_imgset tmpset;
+    this->height = iset[0].ivmat[0].rows;
+    this->width  = iset[0].ivmat[0].cols;
+    sset.resize(iset.size());
     for(int i=0;i<iset.size();i++)
     {   
-        struct tagged_img tmpimg;
-        tmpset.push_back(tmpimg);
-        tmpset[i].name = iset[i].name;
-        tmpset[i].rank = iset[i].rank;
-        tmpset[i].focus= iset[i].focus;
-        tmpset[i].dpth = iset[i].dpth;
-        if(optype=="SMLAP") compute_SMLAP(iset[i].ivmat, tmpset[i].ivmat);
+        sset[i].name = iset[i].name;
+        sset[i].rank = iset[i].rank;
+        sset[i].focus= iset[i].focus;
+        sset[i].dpth = iset[i].dpth;
+        if(optype=="SMLAP"
+          |optype=="3DLAP") compute_SMLAP(iset[i].ivmat, sset[i].ivmat);
+        if(optype=="STA2")  compute_STA2( iset[i].ivmat, sset[i].ivmat);
     }
-
-    sset = tmpset;
+    
+    if(optype=="3DLAP") compute_3DLAP(sset);
+    
+    
+    
+    
     return true;
 }
 
@@ -85,10 +91,46 @@ bool Sharpness_Operator::compute_SMLAP(vector<Mat1T> ivmat, vector<Mat1T>& smat)
     }
     
     combinRule(svmat,smat);	//TODO Select a rule for
-					//combining different Laplacians
+				//combining different Laplacians
 
     fType seuil = 0;//1;			//TODO fixer seuil
     smat[0] = smat[0].setTo(0,smat[0]<seuil);
+    return true;
+}
+
+bool Sharpness_Operator::compute_3DLAP(tdf_imgset & ioset){
+    // Ayea
+    int indsize = ioset.size();
+    tdf_imgset tmpset;
+    tmpset=ioset;
+    tmpset[0].ivmat[0]=(2*ioset[0].ivmat[0]+ioset[1].ivmat[0])/3;
+    tmpset[indsize-1].ivmat[0]=(2*ioset[indsize-1].ivmat[0]+ioset[indsize-2].ivmat[0])/1;
+
+    for(int i=1; i<indsize-1; i++)
+    {
+        tmpset[i].ivmat[0] = (ioset[i-1].ivmat[0] + ioset[i].ivmat[0]
+						 + ioset[i+1].ivmat[0])/1;
+    }
+    ioset = tmpset;
+    return true;
+}
+
+bool Sharpness_Operator::compute_STA2(vector<Mat1T> ivmat, vector<Mat1T>& smat){
+    // 
+    int winsize = 10;
+    for(int i=0; i<this->height;i++) for(int j=0; j<this->width; j++)
+    {
+        Rect roi = Rect( Point((0>j-10)?0:(j-10),(0>i-10)?0:(i-10)),
+	Point(  (this->width-1 <=j+10)?this->width-1 :(j+10),
+		(this->height-1<=i+10)?this->height-1:(i+10)) );
+        
+        
+    }
+    
+    
+    
+    
+    
     return true;
 }
 

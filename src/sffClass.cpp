@@ -47,9 +47,8 @@ bool MySFF::loadProblem(int argc, char** argv){
     }
 
 
-    ioWizard.setArgs(input_prts); // andget args
-    
-
+    ioWizard.setArgs(this->input_prts); // get args
+    myLog.log_data_out->setup(this->input_prts); // set to logs.
 
     // Parsing done
     ioWizard.buildImageSet(imageSet);
@@ -172,7 +171,7 @@ bool MySFF::setMultifocusRmat(void){
     }
 
     // set a cross on the pointed pixel
-    
+    /*
     fType imin, imax;
     minMaxLoc(imatBGR[2], &imin, &imax);
     for(int i=-2; i<3; i++){
@@ -182,33 +181,18 @@ bool MySFF::setMultifocusRmat(void){
         imatBGR[1].at<fType>(A_tst.y+i,A_tst.x+j)=(fType)0;
         imatBGR[0].at<fType>(A_tst.y+i,A_tst.x+j)=(fType)0;
     }}}
-
+    */
     merge(imatBGR,this->image_MF);
     
+    CPING("pong");
     return true;
 }
 
-
-
-
-
-bool MySFF::testEnergy(void){
-
-    energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r,sharpSet, dmat, 1, 1);
-    Mat1T rmattmp;
-    dmat.copyTo(rmattmp);
-
-    //energyClass.computeMatEnergy(E_BOTH,rmattmp,vector<Point>() );
-    //energyClass.updateEnergy(E_BOTH);
-    
-    //ioWizard.showImage("scale","energy", energyClass.ed_mat,1000);
-    //ioWizard.showImage("scale","energy", energyClass.er_mat,1000);
-    
-}
     
 
 
 bool MySFF::optimize(void){
+    int timernk = 5;
     //for(fType lambda=1;lambda<8;lambda+=0.5)
     tdf_input& ip = input_prts; //alias. too complex
     if(ip.vect_lambda_d.size()<ip.vect_lambda_r.size()){
@@ -238,59 +222,155 @@ bool MySFF::optimize(void){
     
     optiClass.set_param(opti_prts);
     optiClass.set_allneighbors();
-    myLog.a("Optimisation class set");
+    myLog.a("Optimization class set");
     
-    for(int i=0;i<input_prts.vect_lambda_r.size();i++)
+    vector<int>   vectindex(3);
+    vector<fType> vectrmse(3);
+    vector<fType> vectlamb_d(3);
+    vectrmse[0]=1000000;
+    vectrmse[1]=1000000;
+    vectrmse[2]=1000000;
+
+    int recorded_states=3;
+    int higherRMSE_index=0;
+    int secondRMSE_index=1;
+    fType denom = 1;
+    fType precrmse = 0;
+    
+    int i=0;
+    int loop=1;
+    fType lambda_r;
+    fType lambda_d;
+
+    while((i<input_prts.vect_lambda_r.size()+20) & (loop>0)) 
+    {// 20 max iterations search
+    for(int maxiter=(int)floor(log2(this->nb_labels-1)+5); maxiter>0; maxiter--)
     {
+        if(i<input_prts.vect_lambda_r.size())
+        {
+            lambda_r = input_prts.vect_lambda_r[i];
+            lambda_d = input_prts.vect_lambda_d[i];
+        }
+        else if(i==input_prts.vect_lambda_r.size())
+        {
+            denom = input_prts.vect_lambda_r[vectindex[higherRMSE_index]]*
+                    input_prts.vect_lambda_r[vectindex[secondRMSE_index]];
+            vectlamb_d[higherRMSE_index]=
+                    input_prts.vect_lambda_d[vectindex[higherRMSE_index]]*
+                    input_prts.vect_lambda_r[vectindex[secondRMSE_index]];
+            vectlamb_d[secondRMSE_index]=
+                    input_prts.vect_lambda_d[vectindex[secondRMSE_index]]*
+                    input_prts.vect_lambda_r[vectindex[higherRMSE_index]];
+            vectlamb_d[2*(higherRMSE_index + secondRMSE_index)%3]=
+                    vectlamb_d[higherRMSE_index]*5.0/8.0+
+                    vectlamb_d[secondRMSE_index]*3.0/8.0;
+            lambda_r = denom;
+            lambda_d = vectlamb_d[2*(higherRMSE_index + secondRMSE_index)%3];
+            loop=2;
+        }
+        else
+        {
+            vectlamb_d[2*(higherRMSE_index + secondRMSE_index)%3]=
+                    vectlamb_d[higherRMSE_index]*5.0/8.0+
+                    vectlamb_d[secondRMSE_index]*3.0/8.0;
+            lambda_r = denom;
+            if(lambda_d ==vectlamb_d[2*(higherRMSE_index + secondRMSE_index)%3]) loop=0;
+            lambda_d = vectlamb_d[2*(higherRMSE_index + secondRMSE_index)%3];
+        }
+
+
+        string tmp = "Dep-D" + to_string2(lambda_d) + "R" + to_string2(lambda_r)+"It"+to_string2(maxiter);
         
-        fType lambda_r = input_prts.vect_lambda_r[i];
-        fType lambda_d = input_prts.vect_lambda_d[i];
-        COUT2("Starting optimization at lambda_r = ",lambda_r);
-        COUT2("Starting optimization at lambda_d = ",lambda_d);
-        energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r, sharpSet, dmat, lambda_d, lambda_r);
-        //set
-
-        optiClass.reset();
-
-
-        try{
-            if(!optiClass.do_optimization() ) 
-            {
-                CPING("continue");
-                continue;
-            }
-        }
-        catch(const GCException & error)
+        if(!this->launch_optimization(lambda_d,lambda_r,maxiter, rmat) ) continue;
+        evaluate();
+        
+        if(rmse<=vectrmse[higherRMSE_index])
         {
-            COUT2("\nGCException encounterd at lambda_r = ",lambda_r);
-            printf("\n%s\n",error.message);
-            COUT("\n");
-            continue;
-        } 
-       catch(const char* message)
-        {
-            COUT2("\n Error encounterd at lambda_r = ",lambda_r);
-            printf("\n%s\n",message);
-            COUT("\n");
-            continue;
+            CPING2("fattest RMSE : ",rmse);
+            higherRMSE_index = 2*(higherRMSE_index + secondRMSE_index)%3;
+            vectrmse[higherRMSE_index]=rmse;
+            vectindex[higherRMSE_index]=i;
+            secondRMSE_index = 2*(higherRMSE_index + secondRMSE_index)%3;
         }
-        CPING("ping!");
-        optiClass.writebackmatrix(rmat);
-        string tmp = "Dep-D" + to_string2(lambda_d) + "R" + to_string2(lambda_r);
+        else if(rmse<=vectrmse[secondRMSE_index])
+        {
+            CPING2("second RMSE : ",rmse);
+            secondRMSE_index = 2*(higherRMSE_index + secondRMSE_index)%3;
+            vectrmse[secondRMSE_index]=rmse;
+            vectindex[secondRMSE_index]=i;
+        }
+        else if(rmse<=vectrmse[2*(higherRMSE_index + secondRMSE_index)%3])
+        {
+            vectrmse[2*(higherRMSE_index + secondRMSE_index)%3]=rmse;
+            vectindex[2*(higherRMSE_index + secondRMSE_index)%3]=i;
+            if(loop==2) loop=0; //break;
+        }
+        else 
+        {
+            if(loop==2) loop=0;
+            CPING2("skipped, RMSE : ", rmse);
+        }
+
+        precrmse=rmse;
+
         ioWizard.img_setscale(1);
         ioWizard.writeImage("2D-"+tmp+ ".png",this->rmat);
-        ioWizard.showImage("scale",tmp,this->rmat,100);
+        //ioWizard.showImage("scale",tmp,this->rmat,100);
         ioWizard.write3DImage("3D-"+tmp+ ".png",this->rmat);
 
         ioWizard.img_unsetscale();
         ioWizard.write3DImage("3Ddiff-"+tmp+ ".png",10*(this->rmat-this->gt_dmat) );
         myLog.a(tmp+"\n");
-        evaluate();
+        myLog.time_r(timernk);
+        myLog.set_state(lambda_r,lambda_d,maxiter);
+        myLog.set_eval(rmse,psnr);
         myLog.write();
+        maxiter =0;
                
+    }
+    i++;
     }
     
     
+}
+
+
+
+
+bool MySFF::launch_optimization(fType l_d, fType l_r, int maxiter, Mat1T & output){
+
+    COUT2("Starting optimization at lambda_r = ",l_r);
+    COUT2("Starting optimization at lambda_d = ",l_d);
+
+    energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r, sharpSet, dmat, l_d, l_r);
+    //set
+    optiClass.reset(maxiter);
+
+
+    try{
+        if(!optiClass.do_optimization() ) 
+        {
+            CPING("continue");
+            return false;
+        }
+    }
+    catch(const GCException & error)
+    {
+        COUT2("\nGCException encounterd at lambda_r = ",l_r);
+        printf("\n%s\n",error.message);
+        COUT("\n");
+        return false;
+    } 
+   catch(const char* message)
+    {
+        COUT2("\n Error encounterd at lambda_r = ",l_r);
+        printf("\n%s\n",message);
+        COUT("\n");
+        return false;
+    }
+    optiClass.writebackmatrix(output);
+    
+    return true;
 }
 
 
@@ -298,6 +378,7 @@ bool MySFF::evaluate(void){
     evalClass.set_parameters(gt_dmat,depthEst.getLabels());
     evalClass.compute_RMSE(rmat,rmse,q_rmse);
     evalClass.compute_RMSE_label(rmat,rmse,q_rmse);
+    evalClass.compute_PSNR(rmat,psnr);
 }
 
 bool MySFF::setNewProblem(void){

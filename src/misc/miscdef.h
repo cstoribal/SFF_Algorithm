@@ -23,6 +23,7 @@ Defines - stores generic function, typedef & structures
 #include <fstream>
 #include <vector>
 #include <math.h>
+#include "../tool/timer.h"
 
 //  #include "../io/logs.h" //Forwards log class declaration for the whole program
 
@@ -173,6 +174,24 @@ struct struct_input{
 
 };
 typedef struct struct_input tdf_input;
+
+
+struct struct_log{
+    // holds structure from parameters and time and rmse
+    tdf_input* settings;
+    fType lambda_r;
+    fType lambda_d;
+    int   iterationlvl;
+    std::vector<double> time;
+    fType rmse;
+    fType psnr;
+
+};
+typedef struct struct_log tdf_log;
+    
+
+
+
 
 
 struct tagged_img{

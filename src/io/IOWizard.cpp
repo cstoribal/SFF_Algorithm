@@ -317,11 +317,20 @@ bool IOWizard::setArgs(tdf_input & clonedinput){
         input.opti_set=1;
     }
     switch(this->arg_opti){
+        case 4:
+            input.opti="gco_adapt";
+            break;
+        case 3:
+            input.opti="gco_scale";
+            break;
+        case 2:
+            input.opti="gco_bin";
+            break;
         case 1:
-            input.opti="";
+            input.opti="gco_gen";
             break;
         case 0:
-            input.opti="";
+            input.opti="gco_grid";
             break;
         case -1: break;
         default:
@@ -1200,7 +1209,7 @@ bool IOWizard::mkdir(const string directory){
 }
 
 bool IOWizard::set_auto_directory(string foldername){
-    //this function impacts every loaded image by adding a reference folder.
+    //this function impacts every saved/loaded img adding a reference folder.
     this->autofolder = foldername + "/";
     return true;
 }

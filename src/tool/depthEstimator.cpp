@@ -309,7 +309,7 @@ bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_ra
         
         dmat.at<fType>(i,j)= (fType)arg; //TODO uncomment
         dmat_score.at<fType>(i,j)= (fType)max; // usefull for scaling
-        if(max>1000)
+        if(max>1000)//why alert ?
         {
             CPING2("alleeeeert",max);
         }

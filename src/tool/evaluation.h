@@ -54,6 +54,8 @@ private:
     int height, width;
     vector<fType> labels;
     fType step;
+
+    Rect roi;
     
     
     

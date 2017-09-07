@@ -36,10 +36,11 @@ OptiClass::~OptiClass(){
         delete [] nbs_w;
         delete [] nbs_wk1D;
         delete [] nbs_wk;
+
         delete [] sorted_label_img;
         delete [] adapt_index1D;
         delete [] adapt_index;
-        this->nbs_set=0;
+        delete adapt_Iterator;
     }
 }
 
@@ -69,26 +70,25 @@ bool OptiClass::set_param(tdfp_opti popti){ //const void* param){
 }
 
 bool OptiClass::do_optimization(void){
-    if(0){
+    if(this->name_opti == "gco_grid"){
         set_optimization_gco_grid();
         return compute_gco_grid();
     }
-    if(0){ //unavailable
+    if(this->name_opti == "gco_gen"){ //unavailable
         set_optimization_gco_gen();
         return compute_gco_gen();
     }
-    if(0){
+    if(this->name_opti == "gco_bin"){
         return compute_opt_binary();
     }
-    if(0){
+    if(this->name_opti == "gco_scale"){
         return compute_opt_multiscale();
     }
-    if(1){
-        CPING("setting");
+    if(this->name_opti == "gco_adapt"){
         set_optimization_gco_adapt();
-        CPING("start computation");
         return compute_opt_adapt();
     }
+    myLog->av("Warning, gco not computed\n");
     return false;
 
 }
@@ -112,12 +112,13 @@ bool OptiClass::compute_optimization(void){
     return false;
 }
 */
-bool OptiClass::reset(void){
+bool OptiClass::reset(int maxiter){
     //copy weight matrix to reset it at initial status
     for(int k=0; k<nb_pixels; k++) for(int c=0; c<connexity; c++)
     {
         nbs_wk[k][c] = nbs_w[k][c];
     }
+    this->maxiteration=maxiter;
     return true;
 }
 
@@ -416,7 +417,6 @@ bool OptiClass::compute_opt_binary(void){
             //else
             //    printf("\nBefore optimization energy is %f",
 		//	gco->compute_energy());
-            //CPING("here");
             gco->expansion(10);
             data_out.resize(nb_pixels);
             for(int i=0; i<nb_pixels; i++){
@@ -452,11 +452,18 @@ bool OptiClass::compute_opt_multiscale(void){
 //     - L mat energie labels.
 //     - start !
 // Loop
+
+    if(maxiteration>floor(log2(nb_labels-1)+1))
+    {
+        myLog->a("GCO_multiscale error : can't start at higher iteration level than maximum, skipping this operation");
+        return false;
+    }
     Mat1i M = Mat::zeros(height,width,CV_32S);
     Mat1i N = Mat::zeros(height,width,CV_32S);
     Mat1E Dp = Mat::zeros(height,width,CV_TE);
     Mat1E Dn = Mat::zeros(height,width,CV_TE);
     int I = 1; int J;
+    
     double range = floor(log2(nb_labels-1)+1); //nb of digits necessary
     Mat1E lmat = Mat::zeros(nb_labels,nb_labels,CV_TE);
     if(!energyClass->getCrossLabelMatrix(labels,lmat)) return false;
@@ -473,18 +480,17 @@ bool OptiClass::compute_opt_multiscale(void){
     {
         smoothvect[i*2+j]=lmat.at<eType>(0+i,0+j);
     }
-    for(int n=(int)range-1; n>=0; n--)
+    for(int n=(int)range-1; n>=range-maxiteration; n--) //range-maxiteration
     {
         I = 1<<n; J = I-1;
         CPING2("passe n",n);
-        //CPING2("I(n)",I);
         for(int i=0; i<height; i++) for(int j=0; j<width; j++)
         {
             if(M.at<int>(i,j)+I >= nb_labels) //TODO presque inutile
             // car déjà calculé. Pk ne pas laisser ces valeurs inchangées ?
             {
-                Edata_slice[0].at<eType>(i,j)=Edata[M.at<int>(i,j)-1]
-			.at<eType>(i,j)+Dn.at<eType>(i,j);
+                Edata_slice[0].at<eType>(i,j)=0;//Edata[M.at<int>(i,j)-1]
+		//	.at<eType>(i,j)+Dn.at<eType>(i,j);
                 Edata_slice[1].at<eType>(i,j)=Edata[M.at<int>(i,j)]
 			.at<eType>(i,j)+Dp.at<eType>(i,j);
             }
@@ -502,12 +508,9 @@ bool OptiClass::compute_opt_multiscale(void){
             gco = new GCoptimizationGeneralGraph(this->nb_pixels,2);
             ((GCoptimizationGeneralGraph*)gco)
 			->setAllNeighbors(nbs_nb,nbs_n,nbs_wk);
-            CPING("afterinit");
             gco->setDataCost(&data_in[0]);
             gco->setSmoothCost(&smoothvect[0]);
-            CPING("aftercosts");
             gco->expansion(10);
-            CPING("afterexpansion");
             data_out.resize(nb_pixels);
             for(int i=0; i<nb_pixels; i++){
                 data_out[i] = gco->whatLabel(i);
@@ -548,12 +551,54 @@ bool OptiClass::compute_opt_multiscale(void){
     return true;
 }
 
+bool OptiClass::set_custom_adapt_histogram(int & range){
+    // builds histogram and sorted label img.
+    // depending on the opt type
+    if(this->gcotype == "gco_adapt"){
+        range = this->nb_pixels+this->nb_labels;
+        this->sorted_label_img  = new int[range];
+        this->histogram         = new int[this->nb_labels];
+        // build histogram
+        int tmpindex=0;
+        Mat1T* dmat;
+        this->energyClass->get_pointer_dmat(dmat);
+        for(int l=0; l<this->nb_labels; l++)
+        {
+            this->histogram[l]=0;
+            this->sorted_label_img[tmpindex++] = l;
+            for(int i=0; i<this->height; i++)
+            for(int j=0; j<this->width; j++)
+            {
+                if(dmat->at<fType>(i,j) == this->labels[l])
+                {
+                    this->histogram[l]++;
+                    sorted_label_img[tmpindex++] = l;
+                }
+            }
+        }
+        return true;
+    }
+    if(this->gcotype == "gco_custom_scale"){
+        range = this->nb_labels;
+        this->sorted_label_img  = new int[range];
+        this->histogram         = new int[this->nb_labels];
+        // build histogram
+        int tmpindex=0;
+        //Mat1T* dmat;
+        //this->energyClass->get_pointer_dmat(dmat);
+        for(int l=0; l<this->nb_labels; l++)
+        {
+            this->histogram[l]=1;
+            this->sorted_label_img[tmpindex++] = l;
+        }
+        return true;
+    }
+    
+    
+} 
 
 
 
-
-
-//////TODO TODO//TODO TODO//TODO TODO//TODO TODO//TODO TODO//TODO TODO//TODO TODO
 
 bool OptiClass::set_optimization_gco_adapt(void){
 // Will set the histogram of the image and store it.
@@ -563,32 +608,17 @@ bool OptiClass::set_optimization_gco_adapt(void){
         myLog->as("gco_adapt is already set, skipping. \n");
         return false;
     }
-    int range = this->nb_pixels+this->nb_labels;
-    int nbdigits = (int)floor(log2(range-1)+1);
-
-    this->sorted_label_img  = new int[range];    // warning, modded recently, check.
-    this->adapt_index1D     = new int[(int)floor(pow(2,nbdigits))];
-    this->adapt_index       = new int*[nbdigits+1]; //TODO check; +1 ?
     this->adapt_Iterator    = new OptiIterate;
+    int range;
+    //int range = this->nb_pixels+this->nb_labels;
+    //int nbdigits = (int)floor(log2(range-1)+1);
+    set_custom_adapt_histogram(range);
     
     //build histogram
-    int tmpindex=0;
-    Mat1T* dmat;
-    this->energyClass->get_pointer_dmat(dmat);
-    for(int l=0; l<this->nb_labels; l++)
-    {
-        this->sorted_label_img[tmpindex++] = l;
-        for(int i=0; i<this->height; i++) for(int j=0; j<this->width; j++)
-        {
-            if(dmat->at<fType>(i,j) == this->labels[l])
-            {
-                sorted_label_img[tmpindex++] = l;
-            }
-        }
-    }
-     
-    
-	CPING("building index");
+    int nbdigits            = (int)floor(log2(range-1)+1);
+    this->adapt_index       = new int*[nbdigits+1]; //TODO check; +1 ?
+    this->adapt_index1D     = new int[(int)floor(pow(2,nbdigits))];
+
     //build index routing
     adapt_index1D[0]=0;
     if(nbdigits>64)
@@ -612,7 +642,6 @@ bool OptiClass::set_optimization_gco_adapt(void){
     }
     if(nbdigits>=16 & nbdigits<32)
     {
-        CPING("wedoit 32 bit");
         long int range_ext  = (long int)range<<nbdigits;
         long int * index = new long int[(int)floor(pow(2,nbdigits))];
         index[0]=0;
@@ -655,8 +684,8 @@ OptiIterate::OptiIterate(){
 };
 OptiIterate::~OptiIterate(){};
 bool OptiIterate::setup(MyLog* mylog, int* sortedlabel_in, int** adaptindex_in, int maxseek_in, int nblabels_in, int maxiteration_in, int max_sortedrank_in){
-    if(this->set){
-        myLog->a("skipping OptiIterate reinit, switching to light reset. Use reset to enforce reinitialisation\n");
+    if(this->set & this->maxiteration>=maxiteration_in){
+        myLog->a("skipping OptiIterate reinit, switching to soft reset. Use reset to enforce reinitialisation\n");
         this->active = 1;
         this->flag = 0;
         this->lastiteration = 0;
@@ -675,7 +704,7 @@ bool OptiIterate::setup(MyLog* mylog, int* sortedlabel_in, int** adaptindex_in, 
     this->iteration = 0;
     this->active = 1;
     this->flag = 0;
-    CPING2("maxseek", maxseek);
+    //CPING2("maxseek", maxseek);
     /*for(int i=0; i<maxseek; i++)
     {
         for(int path=0; path<(int)pow(2,i); path++)
@@ -698,7 +727,7 @@ bool OptiIterate::setup(MyLog* mylog, int* sortedlabel_in, int** adaptindex_in, 
     labelp.resize(maxiteration+1);
     labeln.resize(maxiteration+1);
     enabled.resize(maxiteration+1);
-    labelout.resize(maxiteration+1);
+    labelout.resize(maxiteration+2);
     for(int i=0; i<maxiteration+1; i++)
     {
         path[i].resize( (int)pow(2,i) );
@@ -710,6 +739,7 @@ bool OptiIterate::setup(MyLog* mylog, int* sortedlabel_in, int** adaptindex_in, 
         enabled[i].resize( (int)pow(2,i) );
         labelout[i].resize( (int)pow(2,i) );
     }
+    labelout[maxiteration+1].resize((int)pow(2,maxiteration+1));
     CPING("yeeeeh");
     // maybe should find something more effective, duh. later. replace w/ **
     enabled[0][0] = true;
@@ -752,17 +782,16 @@ bool OptiIterate::setup(MyLog* mylog, int* sortedlabel_in, int** adaptindex_in, 
     labeln[0][0] = labelp[0][0]-1;
     labelout[0][0]=0;
     // assert : should not be negative... actually should end as enabled == true;
-    CPING("Starting iterations for labels building");
+    //CPING("Starting iterations for labels building");
     for(int iter=1; iter<maxiteration+1; iter++)
     {
         for(int state =0; state<(int)pow(2,iter); state++)
         { //TODO checksize
             int prevstate = getprevious(state, iter);
             this->duplicate_to(iter-1,prevstate,iter,state);
-            if(state==prevstate)
-                labelout[iter][state]=labelout[iter-1][prevstate];
-            else
-                labelout[iter][state]=labelp[iter-1][prevstate];
+            if(state!=prevstate & enabled[iter][state])
+                labelout[iter][state]=labelp[iter][state]; 
+                //copied from iter-1 prevstate
             if(seek[iter][state]==maxseek-1)
             {
                 enabled[iter][state]=false;
@@ -802,6 +831,7 @@ bool OptiIterate::setup(MyLog* mylog, int* sortedlabel_in, int** adaptindex_in, 
                 {
                     enabled[iter][state]=false;
                     labelp[iter][state]=labelp[iter-1][prevstate];
+                    labeln[iter][state]=labeln[iter-1][prevstate];
                 }
                 else
                 {
@@ -813,15 +843,14 @@ bool OptiIterate::setup(MyLog* mylog, int* sortedlabel_in, int** adaptindex_in, 
         }
     }
     // TODO labelout iter=maxiter+1
-    for(int state =0; state<(int)pow(2,maxiteration); state++)
+    for(int state =0; state<(int)pow(2,maxiteration+1); state++)
     {
-        int prevstate = getprevious(state,maxiteration);
-        if( state & (1<<maxiteration-1) )
-            labelout[maxiteration][state] = labelp[maxiteration][prevstate];
+        int prevstate = getprevious(state,maxiteration+1);
+        if( state != prevstate )
+            labelout[maxiteration+1][state] = labelout[maxiteration][prevstate];
         else
-            labelout[maxiteration][state] = labeln[maxiteration][prevstate];
+            labelout[maxiteration+1][state] = labelout[maxiteration][prevstate];
     }
-
     //this->display();
     
     return true; 
@@ -860,7 +889,7 @@ int OptiIterate::getoutlabel(int state){
 }
 int OptiIterate::getnext_outlabel(int state){
     if(iteration < maxiteration)
-        return labelp[iteration+1][state];//+(1<<iteration)];
+        return labelout[iteration+2][state+(1<<iteration+1)];
     else
         CPING("error");
     return 0;
@@ -916,7 +945,7 @@ bool OptiIterate::display(void){
 }
 
 bool OptiClass::compute_opt_adapt(void){
-// Parcourt les labels en s'adaptant à la structure de l'image. 
+// Parcourre les labels en s'adaptant à la structure de l'image. 
 //     - first, store the histogram. Label matrix has to be known. done done...
 //     - for each pixel, an iteration number, plus Lmax and Lmin keeping track label
 //     - know label <-> focus ?
@@ -930,9 +959,12 @@ bool OptiClass::compute_opt_adapt(void){
 //     - start !
 // Loop
     int maxseek = (int)floor(log2(this->nb_pixels+this->nb_labels-1)+1); //histogram
-    int maxiteration  = (int)floor(log2(this->nb_labels-1)+1); //an upper bound to iterations (to get faster results)
+    if (this->maxiteration==-1)
+    {
+        maxiteration  = (int)floor(log2(this->nb_labels-1)+1); //an upper bound to iterations (to get faster results)
     // if maxseek > maxiteration alors cette méthode est sous optimale.
-    maxiteration += 10;
+        maxiteration += 0;
+    }
     int maxsortedrank = this->nb_pixels+this->nb_labels;
     this->adapt_Iterator->setup(this->myLog, this->sorted_label_img, this->adapt_index, maxseek, nb_labels, maxiteration, maxsortedrank);
 
@@ -951,7 +983,6 @@ bool OptiClass::compute_opt_adapt(void){
     vector<Mat1E> Edata_slice(2);
     Edata_slice[0] = Mat::zeros(height,width,CV_TE);
     Edata_slice[1] = Mat::zeros(height,width,CV_TE);
-    CPING("gow");
     for(int i=0; i<2; i++) for(int j=0; j<2; j++)
     {
         smoothvect[i*2+j]=lmat.at<eType>(0+i,0+j);
@@ -968,10 +999,8 @@ bool OptiClass::compute_opt_adapt(void){
         CPING2("passe n",n);
         for(int i=0; i<height; i++) for(int j=0; j<width; j++)
         {
-            Edata_slice[0].at<eType>(i,j) = Edata[this->adapt_Iterator->getlabeln(
-			M.at<int>(i,j) )].at<eType>(i,j)+Dn.at<eType>(i,j);
-            Edata_slice[1].at<eType>(i,j) = Edata[this->adapt_Iterator->getlabelp(
-			M.at<int>(i,j) )].at<eType>(i,j)+Dp.at<eType>(i,j);
+            Edata_slice[0].at<eType>(i,j) = 0;//Edata[this->adapt_Iterator->getlabeln(M.at<int>(i,j) )].at<eType>(i,j)+Dn.at<eType>(i,j);
+            Edata_slice[1].at<eType>(i,j) = Edata[this->adapt_Iterator->getlabelp(M.at<int>(i,j) )].at<eType>(i,j)+Dp.at<eType>(i,j);
         }
         this->convert_mat2labvec(Edata_slice,data_in);
 
@@ -1016,7 +1045,8 @@ bool OptiClass::compute_opt_adapt(void){
     // go back to original output.
     for(int i=0; i<height; i++) for(int j=0; j<width; j++)
     {
-        data_out[i*width+j] = this->adapt_Iterator->getoutlabel( M.at<int>(i,j) );
+        data_out[i*width+j] = this->adapt_Iterator->getnext_outlabel( M.at<int>(i,j) );
+        //data_out[i*width+j] = this->adapt_Iterator->getoutlabel( M.at<int>(i,j) );
     }
     
     

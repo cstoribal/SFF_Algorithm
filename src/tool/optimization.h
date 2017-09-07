@@ -108,7 +108,7 @@ public:
     //bool compute_optimization(void);
     bool writebackmatrix(Mat1T & do_mat);
     bool set_allneighbors(void);
-    bool reset(void);
+    bool reset(int maxiter);
     
 
 private:
@@ -142,6 +142,7 @@ private:
 // used by graph cuts
     GCoptimization *gco;
     string gcotype;
+    int maxiteration;
 
     vector<eType> smoothvect;  //label*label
     int nb_neighbors;
@@ -159,6 +160,7 @@ private:
     eType** nbs_wk;
     
     //adaptative optimisation
+    int*  histogram;
     bool sort_img_set;
     int* sorted_label_img;
     int* adapt_index1D;
@@ -174,6 +176,7 @@ private:
     bool compute_opt_binary(void);
     bool compute_opt_multiscale(void);
     bool set_optimization_gco_adapt(void);
+    bool set_custom_adapt_histogram(int & range);
     bool compute_opt_adapt(void);
 
 // others

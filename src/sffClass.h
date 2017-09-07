@@ -104,9 +104,8 @@ public:
 
     bool setMultifocusRmat(void);
 
-    bool testEnergy(void);
-
     bool optimize(void);
+    bool launch_optimization(fType l_d, fType l_r, int maxiter, Mat1T & output);
 
     bool evaluate(void);
 
