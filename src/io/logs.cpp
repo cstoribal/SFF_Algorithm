@@ -152,7 +152,8 @@ bool MyLogOut::Format_txt(void){
 	+ (in->depth_set?  to_string2(in->depth)	:"") + ";"
 	+ (in->nrj_set?    to_string2(in->nrj_d)	:"") + ";"
 	+ (in->nrj_set?    to_string2(in->nrj_r)	:"") + ";"
-	+ (in->opti_set?   to_string2(in->opti) 	:"") + ";";
+	+ (in->opti_set?   to_string2(in->opti) 	:"") + ";"
+	+ (in->opti_set?   to_string2(in->connexity)	:"") + ";";
     
     strdata +=
 	  to_string2(o.lambda_d) + ";"
