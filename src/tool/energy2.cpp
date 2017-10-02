@@ -454,17 +454,18 @@ bool EnergyClass::e_nLx_Rw1( const vector<fType> & lvect, vector<Mat1T> & emat){
 
 ////
 bool EnergyClass::l_checkmetric(Mat1E & lmat){
+    eType sumenergy=0;
+    bool sep2=false;
     for(int i=0;i<lmat.rows;i++){
         for(int j=0;j<lmat.cols;j++){
+            sumenergy += lmat.at<eType>(i,j);
             if(i==j && lmat.at<eType>(i,j)!=0){
                 
                 COUT("Separation1");
                 return false;
             }
             if(i!=j && lmat.at<eType>(i,j)==0){
-                
-                COUT("Separation2");
-                return false;
+                sep2=true;
             }
             if(lmat.at<eType>(i,j)<0){
                 COUT("positivité");
@@ -487,6 +488,10 @@ bool EnergyClass::l_checkmetric(Mat1E & lmat){
                 }
             }
         }
+    }
+    if(sep2 & sumenergy != 0){
+        COUT("Separation2");
+        return false;
     }
     return true;    
 }

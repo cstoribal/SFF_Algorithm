@@ -241,12 +241,16 @@ bool MySFF::optimize(void){
     
     int i=0;
     int loop=1;
+    int delay_end=0;
     fType lambda_r;
     fType lambda_d;
 
+    int startiterationmax = input_prts.maxiteration<1?(int)floor(log2(this->nb_labels-1)-input_prts.maxiteration+10):input_prts.maxiteration;
+
+    myLog.time_r(5);
     while((i<input_prts.vect_lambda_r.size()+20) & (loop>0)) 
     {// 20 max iterations search
-    for(int maxiter=(int)floor(log2(this->nb_labels-1)+5); maxiter>0; maxiter--)
+    for(int maxiter=startiterationmax; maxiter>0; maxiter--)
     {
         if(i<input_prts.vect_lambda_r.size())
         {
@@ -255,6 +259,14 @@ bool MySFF::optimize(void){
         }
         else if(i==input_prts.vect_lambda_r.size())
         {
+            if(input_prts.vect_lambda_r[vectindex[higherRMSE_index]]==0){
+                input_prts.vect_lambda_r[vectindex[higherRMSE_index]]=1;
+                input_prts.vect_lambda_d[vectindex[higherRMSE_index]]=input_prts.vect_lambda_d[vectindex[higherRMSE_index]]*10;
+            }
+            if(input_prts.vect_lambda_r[vectindex[secondRMSE_index]]==0){
+                input_prts.vect_lambda_r[vectindex[secondRMSE_index]]==1;
+                input_prts.vect_lambda_d[vectindex[secondRMSE_index]]=input_prts.vect_lambda_d[vectindex[higherRMSE_index]]*10;
+            }
             denom = input_prts.vect_lambda_r[vectindex[higherRMSE_index]]*
                     input_prts.vect_lambda_r[vectindex[secondRMSE_index]];
             vectlamb_d[higherRMSE_index]=
@@ -312,7 +324,11 @@ bool MySFF::optimize(void){
             if(loop==2) loop=0;
             CPING2("skipped, RMSE : ", rmse);
         }
-
+        if(loop==2 & vectrmse[higherRMSE_index]<vectrmse[secondRMSE_index]*1.0001)
+        {
+            if(delay_end++>1) loop=0;
+        }
+        // significates that rmse don't go much higher.
         precrmse=rmse;
 
         ioWizard.img_setscale(1);
@@ -323,7 +339,7 @@ bool MySFF::optimize(void){
         ioWizard.img_unsetscale();
         ioWizard.write3DImage("3Ddiff-"+tmp+ ".png",10*(this->rmat-this->gt_dmat) );
         myLog.a(tmp+"\n");
-        myLog.time_r(timernk);
+        myLog.time_r(7);
         myLog.set_state(lambda_r,lambda_d,maxiter);
         myLog.set_eval(rmse,psnr);
         myLog.write();
@@ -334,6 +350,9 @@ bool MySFF::optimize(void){
     }
     
     
+    ioWizard.img_setscale(1);
+    ioWizard.writeImage("groundtruth.png",this->gt_dmat);
+    ioWizard.img_unsetscale();
 }
 
 

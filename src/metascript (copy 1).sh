@@ -5,7 +5,7 @@
 
 
 init="../src/ChangeParameters.sh "
-compute="../../src/script_autofolders.sh"
+compute="../src/script_autofolders.sh"
 LIST_PARAMS=("./*.param.txt")
 
 for param in ${LIST_PARAMS[*]}
@@ -13,11 +13,9 @@ for param in ${LIST_PARAMS[*]}
     linecode=$init""$param
     echo $linecode
     eval $linecode
-    mkdir ${param%??????????}
-    cd ${param%??????????}
     linecode=$compute
     echo $linecode
     eval $linecode
-    cd ..
   done
+done
 

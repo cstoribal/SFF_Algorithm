@@ -3,9 +3,8 @@
 
 # 1 default params
 
-
-init="./SFFDataMgmt -M "$1" -f "
-LIST_FOLD=("Simulations/s96serie/" "Simulations/s38serie/" "Simulations/" "" "Simulations/semireal_1/" "Simulations/semireal_2/")
+init="./ProjSFF -D "
+LIST_FOLD=("Simulations/s96serie/" "Simulations/" "" "Simulations/semireal_1/" "Simulations/semireal_2/")
 
 for fold in ${LIST_FOLD[*]}
   do

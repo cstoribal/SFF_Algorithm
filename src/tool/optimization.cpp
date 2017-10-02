@@ -315,6 +315,7 @@ bool OptiClass::set_optimization_gco_grid(void){
         smoothvect[i*nb_labels+j]=tmp_mat.at<eType>(i,j);
     }}
     
+        myLog->time_r(6);
     try{
         gco = new GCoptimizationGridGraph(width,height,nb_labels);
         gco->setDataCost(&data_in[0]);
@@ -355,7 +356,6 @@ bool OptiClass::compute_gco_grid(void){
     for(int i=0; i<nb_pixels; i++){
         data_out[i] = gco->whatLabel(i);
         }
-
     if(is_same<eType,int>::value)
         printf("\nAfter optimization energy is %lli \n",
 		gco->compute_energy());
@@ -408,6 +408,8 @@ bool OptiClass::compute_opt_binary(void){
     vector<Mat1E> Edata(nb_labels);
     vector<Mat1E> Edata_slice(2);
     energyClass->getDataEnergy_3DMatrix(this->labels,Edata);
+
+        myLog->time_r(6);
     for(int n=0; n<nb_labels-1; n++)
     {
         Edata_slice[0] = Edata[n];
@@ -428,7 +430,7 @@ bool OptiClass::compute_opt_binary(void){
             //else
             //    printf("\nBefore optimization energy is %f",
 		//	gco->compute_energy());
-            gco->expansion(10);
+            gco->expansion(2);
             data_out.resize(nb_pixels);
             for(int i=0; i<nb_pixels; i++){
                 data_out[i] = gco->whatLabel(i);
@@ -491,6 +493,8 @@ bool OptiClass::compute_opt_multiscale(void){
     {
         smoothvect[i*2+j]=lmat.at<eType>(0+i,0+j);
     }
+
+        myLog->time_r(6);
     for(int n=(int)range-1; n>=range-maxiteration; n--) //range-maxiteration
     {
         I = 1<<n; J = I-1;
@@ -521,7 +525,7 @@ bool OptiClass::compute_opt_multiscale(void){
 			->setAllNeighbors(nbs_nb,nbs_n,nbs_wk);
             gco->setDataCost(&data_in[0]);
             gco->setSmoothCost(&smoothvect[0]);
-            gco->expansion(10);
+            gco->expansion(2);
             data_out.resize(nb_pixels);
             for(int i=0; i<nb_pixels; i++){
                 data_out[i] = gco->whatLabel(i);
@@ -552,6 +556,11 @@ bool OptiClass::compute_opt_multiscale(void){
         N = N*I;
         M = M+N;
     }
+    if(I>1) //centers to the next value
+    {
+        M=M+(I>>1);
+    }
+    
     //output = Mat::zeros(height,width,CV_TF);
     // go back to original output.
     for(int i=0; i<height; i++) for(int j=0; j<width; j++)
@@ -588,6 +597,7 @@ bool OptiClass::set_custom_adapt_histogram(int & range){
                 }
             }
         }
+        CPING2("custom adapt histogram built, range", range);
         return true;
     }
     if(this->name_opti == "gco_custom_scale1"){
@@ -603,9 +613,9 @@ bool OptiClass::set_custom_adapt_histogram(int & range){
             this->histogram[l]=1;
             this->sorted_label_img[tmpindex++] = l;
         }
+        CPING2("custom scale1 histogram built, range", range);
         return true;
     }
-    CPING2("custom adapt histogram built, range", range);
     
 } 
 
@@ -999,7 +1009,8 @@ bool OptiClass::compute_opt_adapt(void){
         smoothvect[i*2+j]=lmat.at<eType>(0+i,0+j);
     }
 
-    
+
+    myLog->time_r(6);    
 
 
 
@@ -1010,18 +1021,21 @@ bool OptiClass::compute_opt_adapt(void){
         CPING2("passe n",n);
         for(int i=0; i<height; i++) for(int j=0; j<width; j++)
         {
-            Edata_slice[0].at<eType>(i,j) = 0;//Edata[this->adapt_Iterator->getlabeln(M.at<int>(i,j) )].at<eType>(i,j)+Dn.at<eType>(i,j);
+            Edata_slice[0].at<eType>(i,j) = Edata[this->adapt_Iterator->getlabeln(M.at<int>(i,j) )].at<eType>(i,j)+Dn.at<eType>(i,j);
+            //Edata_slice[0].at<eType>(i,j) = 0;//Edata[this->adapt_Iterator->getlabeln(M.at<int>(i,j) )].at<eType>(i,j)+Dn.at<eType>(i,j);
             Edata_slice[1].at<eType>(i,j) = Edata[this->adapt_Iterator->getlabelp(M.at<int>(i,j) )].at<eType>(i,j)+Dp.at<eType>(i,j);
+            //CPING(Edata_slice[1].at<eType>(i,j));
         }
         this->convert_mat2labvec(Edata_slice,data_in);
 
         try{
+            
             gco = new GCoptimizationGeneralGraph(this->nb_pixels,2);
             ((GCoptimizationGeneralGraph*)gco)
 			->setAllNeighbors(nbs_nb,nbs_n,nbs_wk);
             gco->setDataCost(&data_in[0]);
             gco->setSmoothCost(&smoothvect[0]);
-            gco->expansion(10);
+            gco->expansion(2);
             data_out.resize(nb_pixels);
             for(int i=0; i<nb_pixels; i++){
                 data_out[i] = gco->whatLabel(i);
@@ -1052,6 +1066,7 @@ bool OptiClass::compute_opt_adapt(void){
         N = N*I;
         M = M+N;
     }
+
     //output = Mat::zeros(height,width,CV_TF);
     // go back to original output.
     for(int i=0; i<height; i++) for(int j=0; j<width; j++)

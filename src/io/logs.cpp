@@ -13,7 +13,7 @@ and the results under the format of a csv
 #include "logs.h"
 
 MyLog::MyLog(){
-    logversion = "v0.1";
+    logversion = "v0.3";
     logs = "Starting log file \n "+logversion+" \n";
 }
 MyLog::~MyLog(){
@@ -120,7 +120,7 @@ MyLogOut::MyLogOut(){};MyLogOut::~MyLogOut(){};
 
 bool MyLogOut::setup(tdf_input & input){
     this->output.settings = &input;
-    this->output.time.resize(10);
+    this->output.time.resize(15);
     return true;
 }
 
@@ -153,7 +153,8 @@ bool MyLogOut::Format_txt(void){
 	+ (in->nrj_set?    to_string2(in->nrj_d)	:"") + ";"
 	+ (in->nrj_set?    to_string2(in->nrj_r)	:"") + ";"
 	+ (in->opti_set?   to_string2(in->opti) 	:"") + ";"
-	+ (in->opti_set?   to_string2(in->connexity)	:"") + ";";
+	+ (in->opti_set?   to_string2(in->connexity)	:"") + ";"
+	+ (in->opti_set?   to_string2(in->maxiteration)	:"") + ";";
     
     strdata +=
 	  to_string2(o.lambda_d) + ";"
@@ -173,7 +174,7 @@ bool MyLogOut::Format_txt(void){
 bool MyLogOut::write(void){
     this->Format_txt();
     std::ofstream outfile;
-    outfile.open("1data/logout.csv", std::ios_base::app);
+    outfile.open("../1data/logout.csv", std::ios_base::app);
     outfile << strdata;
     outfile.close();
 }

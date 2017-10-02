@@ -3,12 +3,12 @@
 
 # 1 default params
 
-init="./ProjSFF -D "
-LIST_FOLD=("Simulations/s96serie/" "Simulations/" "" "Simulations/semireal_1/" "Simulations/semireal_2/")
+init="../ProjSFF -D "
+LIST_FOLD=( "Simulations/s38serie/" ) #"Simulations/semireal_1/")      #"Simulations/s38serie/" "Simulations/s96serie/") # "Simulations/semireal_1/" "Simulations/semireal_2/")
 
 for fold in ${LIST_FOLD[*]}
   do
-  LIST_SAMP=("../Samples/"$fold*.txt)
+  LIST_SAMP=("../../Samples/"$fold*.txt)
   #echo $LIST_SAMP
   #echo $fold
   for samp in ${LIST_SAMP[*]}
