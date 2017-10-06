@@ -27,7 +27,7 @@ public:
     bool set_param(string settype);
     bool buildEstimation(void);
     bool buildEstimation(const tdf_imgset & sharpSet, tdfp_depth & pdmat);
-    bool buildDepthmat(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score);
+    bool buildDepthmat(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score, vector<unsigned int>& histogram);
     bool          getVmatSharpI(vector<Mat1T> & vmat);
     int           getRankFromDepth(fType input);
     int           getNbLabels(void);

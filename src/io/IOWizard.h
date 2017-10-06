@@ -98,6 +98,8 @@ public:
     bool write3DImage(const string filename, const Mat & image);
     bool show3DImage(const string filename, const Mat & image);
 
+    bool draw_histogram(const vector<unsigned int> & histogram);
+
 
     bool mkdir(const string directory);
     bool set_auto_directory(string foldername);

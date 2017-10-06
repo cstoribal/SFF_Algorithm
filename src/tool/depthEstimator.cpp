@@ -87,10 +87,24 @@ bool DepthClass::buildEstimation(const tdf_imgset & sharpSet, tdfp_depth & pmat)
     return true;
 }
 
-bool DepthClass::buildDepthmat(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score ){
+bool DepthClass::buildDepthmat(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score, vector<unsigned int>& histogram ){
 
     if(type=="polynome") d_poly(dparam, dmat, dmat_rank, dmat_score);
     cout << "depthmap built" << endl;
+
+    
+    
+    // build histogram
+    histogram.resize(set_dim[2]);
+    for(int k=0; k<set_dim[2]; k++)
+    {
+        histogram[k]=0;
+    }
+    for(int i=0; i<set_dim[0]; i++) for(int j=0; j<set_dim[1]; j++)
+    {
+        histogram[(unsigned int)round(dmat_rank.at<fType>(i,j))]++;
+    }
+
     return true;
 }
 

@@ -1196,13 +1196,62 @@ bool IOWizard::show3DImage(const string filename, const Mat & image){
 
     //gr.WritePNG((autofolder + filename).c_str());
     gr.Run();    
-    
-    
-
-    return true;
-    
-    
+    return true;   
 }
+
+
+
+bool IOWizard::draw_histogram(const vector<unsigned int> & histogram){
+    // calls gnuplot in order to sketch the evolution of sharpness and sharpness interpolated on one pixel.
+    
+    // build a vector holding sharpness vs depth (actually not that will just be the call)
+    // build a vector holding polynomial interpolation X D(oversampled)
+    //     peut on se contenter du vecteur DepthToRank OUI devrait être renommer depthlist
+    FILE *gnuplot = popen("gnuplot", "w");
+    for(int i=0; i<1; i++)
+    {
+        fprintf(gnuplot, "set term 'pngcairo' \n");
+        fprintf(gnuplot, "set output '%shistogram.png'\n",this->autofolder.c_str());
+        fprintf(gnuplot, "plot '-' with lines\n"); //, '-' with lines, '-' with lines\n");
+        
+        
+        for(int k=0;k<histogram.size();k++){
+            fprintf(gnuplot, "%i %i\n", k, (unsigned int)histogram[k]);
+            }
+        fflush(gnuplot);
+        fprintf(gnuplot, "e\n");
+        /*
+        for(int k=0;k<DepthToRank.size();k++){
+            fType tmp3 =0;
+            tmp3 =0;
+            for(int l=0;l<dparam.degree+1;l++){
+                tmp3+=dparam.vmat[l].at<fType>(vP[i].y,vP[i].x)*pow(DepthToRank[k][0],l);
+                }
+            fprintf(gnuplot, "%g %g\n", DepthToRank[k][0],tmp3);
+            }
+        fflush(gnuplot);
+        fprintf(gnuplot, "e\n");
+
+        // chosen rank
+        for(int k=0;k<10;k+=3){
+            fType tmp3 = dmat.at<fType>(vP[i].y,vP[i].x);
+            fprintf(gnuplot, "%g %g\n", tmp3, (fType) k);
+            }
+        fflush(gnuplot);
+        fprintf(gnuplot, "e\n");
+        */
+        fprintf(gnuplot,"unset output \n");
+
+    }  
+    fprintf(gnuplot,"exit \n"); 
+    pclose(gnuplot);
+    
+    return true;
+}
+
+
+
+
 
 
 

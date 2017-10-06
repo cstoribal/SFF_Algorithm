@@ -99,15 +99,20 @@ bool MySFF::doDepth(void){
     // test 
     //testClass.fillSharpPoly(sharpSet);
     depthEst.buildEstimation(sharpSet, depth_parameters);
-    depthEst.buildDepthmat(depth_parameters, dmat, dmat_rank, dmat_score);
+    depthEst.buildDepthmat(depth_parameters, dmat, dmat_rank, dmat_score, histogram);
+    CPING2("histogram size",histogram.size());
+    ioWizard.draw_histogram(histogram);
     vector<fType> labels = depthEst.getLabels();
     this->nb_labels = labels.size();
     // set dmat next outputs
+    CPING("test depth");
     assert(this->nb_labels == (this->sharpSet.size()-1)*depthEst.getOversampling()); // Check Oversampling
     fType d_min = labels[0];
     fType d_max = labels[this->nb_labels-1];
     ioWizard.img_setscale(d_min,d_max,1);
+    CPING("test depth");
     dmat.copyTo(rmat);
+    CPING("end Do depth");
     return true;
 }
 
@@ -170,18 +175,7 @@ bool MySFF::setMultifocusRmat(void){
         }}
     }
 
-    // set a cross on the pointed pixel
-    /*
-    fType imin, imax;
-    minMaxLoc(imatBGR[2], &imin, &imax);
-    for(int i=-2; i<3; i++){
-    for(int j=-2; j<3; j++){
-    if(i*j==0){
-        imatBGR[2].at<fType>(A_tst.y+i,A_tst.x+j)=imax;
-        imatBGR[1].at<fType>(A_tst.y+i,A_tst.x+j)=(fType)0;
-        imatBGR[0].at<fType>(A_tst.y+i,A_tst.x+j)=(fType)0;
-    }}}
-    */
+    
     merge(imatBGR,this->image_MF);
     
     CPING("pong");
@@ -220,6 +214,7 @@ bool MySFF::optimize(void){
     opti_prts.width     = dim2;
     opti_prts.connexity = input_prts.connexity;
     opti_prts.labels    = depthEst.getLabels();
+    opti_prts.histogram = histogram;
     COUT2("nb_pixels", opti_prts.nb_pixels);
     
     optiClass.set_param(opti_prts);
@@ -281,6 +276,7 @@ bool MySFF::optimize(void){
             lambda_r = denom;
             lambda_d = vectlamb_d[2*(higherRMSE_index + secondRMSE_index)%3];
             loop=2;
+            loop=0; // No alpha search ! 
         }
         else
         {
@@ -326,7 +322,7 @@ bool MySFF::optimize(void){
         }
         if(loop==2 & vectrmse[higherRMSE_index]<vectrmse[secondRMSE_index]*1.0001)
         {
-            if(delay_end++>1) loop=0;
+            if(delay_end++>0) loop=0;
         }
         // significates that rmse don't go much higher.
         precrmse=rmse;

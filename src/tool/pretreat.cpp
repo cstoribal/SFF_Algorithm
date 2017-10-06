@@ -73,17 +73,17 @@ bool PreTreatment::compute_noises(Mat_<fType> & image){
     }
 
     if(noise_a){
-        myLog->a( "Computing noise_mult "+to_string(noise_a)+"\n");
+        //myLog->a( "Computing noise_mult "+to_string(noise_a)+"\n");
         this->compute_nmult(image);
     }
 
     if(noise_b){
-        myLog->a( "Computing noise_add "+to_string(noise_b)+"\n");
+        //myLog->a( "Computing noise_add "+to_string(noise_b)+"\n");
         this->compute_nunif(image);
     }
 
     if(noise_ca){
-        myLog->a( "Computing noise_gauss "+to_string(noise_ca)+ "sigma " +to_string2(noise_cs)+"\n");
+        //myLog->a( "Computing noise_gauss "+to_string(noise_ca)+ "sigma " +to_string2(noise_cs)+"\n");
         this->compute_ngauss(image);
     }
     

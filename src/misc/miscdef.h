@@ -240,6 +240,7 @@ struct set_param_opti{
     EnergyClass *energyclass;
     int nb_pixels, nb_labels, width, height, connexity, maxiteration;
     std::vector<fType> labels; // allows conversion label -> ranklabel
+    std::vector<unsigned int> histogram;
     
 };
 typedef struct set_param_opti tdfp_opti;

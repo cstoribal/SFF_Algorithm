@@ -81,6 +81,7 @@ public:
     fType psnr;
     Point A_tst;  
 
+    vector<unsigned int> histogram;
 
 
 
@@ -117,6 +118,7 @@ public:
 private:
     int dim1, dim2;
     int nb_labels;
+
     
 
 };
