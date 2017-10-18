@@ -64,6 +64,7 @@ bool OptiClass::set_param(tdfp_opti popti){ //const void* param){
     this->height    = popti.height;
     this->labels    = popti.labels;
     this->connexity = popti.connexity;
+    //this->histogram = popti.histogram;
 //TODO should use a different word for labels & focus
     build_rank4xy();
     
@@ -91,7 +92,11 @@ bool OptiClass::do_optimization(void){
         set_optimization_gco_adapt();
         return compute_opt_adapt();
     }
-    myLog->av("Warning, gco not computed\n");
+    if(this->name_opti == "gco_kmeans"){
+        set_gco_kmeans();
+        return compute_gco_kmeans();
+    }
+    myLog->av("Warning, gco" + this->name_opti + "not computed\n");
     return false;
 
 }
@@ -458,9 +463,9 @@ bool OptiClass::compute_opt_binary(void){
 bool OptiClass::compute_opt_multiscale(void){
 // Parcourt les labels en opérant une dichotomie. 
 //     - know label <-> focus ?
-//     - M matrice masque des labels en construction. (+I)
+//     - M matrice masque des labels en construction. (+II)
 //     - n indice d'itération ( n~log2(Nlabels)-1 -> 0 )
-//     - I labelshift rang n  ( '00001' << n )
+//     - II labelshift rang n  ( '00001' << n )
 //     - E vectmat energie attache aux données 
 //     - L mat energie labels.
 //     - start !
@@ -475,7 +480,8 @@ bool OptiClass::compute_opt_multiscale(void){
     Mat1i N = Mat::zeros(height,width,CV_32S);
     Mat1E Dp = Mat::zeros(height,width,CV_TE);
     Mat1E Dn = Mat::zeros(height,width,CV_TE);
-    int I = 1; int J;
+    int II = 1; 
+    int J;
     
     double range = floor(log2(nb_labels-1)+1); //nb of digits necessary
     Mat1E lmat = Mat::zeros(nb_labels,nb_labels,CV_TE);
@@ -497,11 +503,11 @@ bool OptiClass::compute_opt_multiscale(void){
         myLog->time_r(6);
     for(int n=(int)range-1; n>=range-maxiteration; n--) //range-maxiteration
     {
-        I = 1<<n; J = I-1;
+        II = 1<<n; J = II-1;
         CPING2("passe n",n);
         for(int i=0; i<height; i++) for(int j=0; j<width; j++)
         {
-            if(M.at<int>(i,j)+I >= nb_labels) //TODO presque inutile
+            if(M.at<int>(i,j)+II >= nb_labels) //TODO presque inutile
             // car déjà calculé. Pk ne pas laisser ces valeurs inchangées ?
             {
                 Edata_slice[0].at<eType>(i,j)=0;//Edata[M.at<int>(i,j)-1]
@@ -513,7 +519,7 @@ bool OptiClass::compute_opt_multiscale(void){
             {
                 Edata_slice[0].at<eType>(i,j) = Edata[M.at<int>(i,j)+J]
 			.at<eType>(i,j)+Dn.at<eType>(i,j);
-                Edata_slice[1].at<eType>(i,j) = Edata[M.at<int>(i,j)+I]
+                Edata_slice[1].at<eType>(i,j) = Edata[M.at<int>(i,j)+II]
 			.at<eType>(i,j)+Dp.at<eType>(i,j);
             }
         }
@@ -553,12 +559,12 @@ bool OptiClass::compute_opt_multiscale(void){
         }
         
         convert_vec2mat(data_out,N);
-        N = N*I;
+        N = N*II;
         M = M+N;
     }
-    if(I>1) //centers to the next value
+    if(II>1) //centers to the next value
     {
-        M=M+(I>>1);
+        M=M+(II>>1);
     }
     
     //output = Mat::zeros(height,width,CV_TF);
@@ -972,9 +978,9 @@ bool OptiClass::compute_opt_adapt(void){
 //     - know label <-> focus ?
 
 //     - 
-//     - M matrice masque des labels en construction. (+I)
+//     - M matrice masque des labels en construction. (+II)
 //     - n indice d'itération ( n~log2(Nlabels)-1 -> 0 )
-//     - I labelshift rang n  ( '00001' << n )
+//     - II labelshift rang n  ( '00001' << n )
 //     - E vectmat energie attache aux données 
 //     - L mat energie labels.
 //     - start !
@@ -994,7 +1000,7 @@ bool OptiClass::compute_opt_adapt(void){
     Mat1i N = Mat::zeros(height,width,CV_32S);
     Mat1E Dp = Mat::zeros(height,width,CV_TE);
     Mat1E Dn = Mat::zeros(height,width,CV_TE);
-    int I = 1;
+    int II = 1;
 
     Mat1E lmat = Mat::zeros(nb_labels,nb_labels,CV_TE);
     if(!energyClass->getCrossLabelMatrix(labels,lmat)) return false;
@@ -1017,7 +1023,7 @@ bool OptiClass::compute_opt_adapt(void){
     for(int n=0; (n<maxiteration & this->adapt_Iterator->active) ; n++)
     {
         this->adapt_Iterator->update(n);
-        I = 1<<n;
+        II = 1<<n;
         CPING2("passe n",n);
         for(int i=0; i<height; i++) for(int j=0; j<width; j++)
         {
@@ -1063,7 +1069,7 @@ bool OptiClass::compute_opt_adapt(void){
         }
         
         convert_vec2mat(data_out,N);
-        N = N*I;
+        N = N*II;
         M = M+N;
     }
 
@@ -1075,17 +1081,25 @@ bool OptiClass::compute_opt_adapt(void){
         //data_out[i*width+j] = this->adapt_Iterator->getoutlabel( M.at<int>(i,j) );
     }
     
-    
-    
-    
-    
-    
-    
     return true;
 }
 
 
+bool OptiClass::set_gco_kmeans(void){
 
+}
+
+bool OptiClass::compute_gco_kmeans(void){
+
+}
+
+bool OptiClass::set_gco_k2means(void){
+
+}
+
+bool OptiClass::compute_gco_k2means(void){
+
+}
 
 
 

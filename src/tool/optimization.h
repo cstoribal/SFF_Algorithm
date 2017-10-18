@@ -33,6 +33,7 @@
 #include "../gco/GCoptimization.h"
 #include "../tool/energy2.h"
 #include "../io/logs.h"
+#include "../tool/optiplan.h"
 
 extern "C"{
     #include <unistd.h>
@@ -145,6 +146,7 @@ private:
     int maxiteration;
 
     vector<eType> smoothvect;  //label*label
+    //vector<unsigned int> histogram;
     int nb_neighbors;
     Mat1E neighbor_mat; //other way of describing neighbors? weights
     //vector<vector<Point> >  neighborhoods; //wow
@@ -167,6 +169,16 @@ private:
     int** adapt_index;
     OptiIterate* adapt_Iterator;
 
+
+    // kmeans optimization
+    OptiPlan* p_Planner;
+    
+    
+    
+    
+    
+    // Functions
+
     bool set_optimization_gco_grid(void);
     bool compute_gco_grid(void);
 
@@ -178,6 +190,12 @@ private:
     bool set_optimization_gco_adapt(void);
     bool set_custom_adapt_histogram(int & range);
     bool compute_opt_adapt(void);
+
+    bool set_gco_kmeans(void);
+    bool compute_gco_kmeans(void);
+
+    bool set_gco_k2means(void);
+    bool compute_gco_k2means(void);
 
 // others
     
