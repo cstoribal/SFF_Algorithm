@@ -162,7 +162,7 @@ private:
     eType** nbs_wk;
     
     //adaptative optimisation
-    int*  histogram;
+    size_t*  histogram;
     bool sort_img_set;
     int* sorted_label_img;
     int* adapt_index1D;

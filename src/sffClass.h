@@ -54,6 +54,7 @@ public:
     Sharpness_Operator sharpOP;
     DepthClass depthEst;
     EnergyClass energyClass;
+    OptiPlan  optiPlan;
     OptiClass optiClass;
     EvalClass evalClass;
 
@@ -81,7 +82,7 @@ public:
     fType psnr;
     Point A_tst;  
 
-    vector<unsigned int> histogram;
+    vector<size_t> histogram;
 
 
 
@@ -96,6 +97,8 @@ public:
     bool doSharpness(void);
 
     bool doDepth(void);
+    
+    bool prepare_optimization_plan(void);
    
     bool showInterpolationAt(void);   
     bool clickInterpolation(Mat image, int timer);
