@@ -444,6 +444,9 @@ bool EnergyClass::e_nLx_Rw1( const vector<fType> & lvect, vector<Mat1T> & emat){
     {
         emat[k] = emat[k].mul(this->eParams.rmat);
     }
+
+    
+    (p_ioW)->writeImage("I_reliability.png",this->eParams.rmat);
     //fType maxmax,minmin;
     //minMaxLoc(this->eParams.rmat,&minmin,&maxmax);
     //CPING("rmat");CPING2(minmin,maxmax);

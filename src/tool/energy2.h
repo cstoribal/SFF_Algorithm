@@ -37,6 +37,7 @@ and to regularisation
 #include "../tool/depthEstimator.h"
 #include "../io/logs.h"
 #include "../misc/miscdef.h"
+#include "../io/IOWizard.h"
 
 using namespace std;
 using namespace cv;

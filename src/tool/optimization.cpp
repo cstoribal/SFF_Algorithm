@@ -584,7 +584,7 @@ bool OptiClass::set_custom_adapt_histogram(int & range){
     if(this->name_opti == "gco_adapt"){
         range = this->nb_pixels+this->nb_labels;
         this->sorted_label_img  = new int[range];
-        this->histogram         = new int[this->nb_labels];
+        this->histogram         = new size_t[this->nb_labels];
         // build histogram
         int tmpindex=0;
         Mat1T* dmat;
@@ -609,7 +609,7 @@ bool OptiClass::set_custom_adapt_histogram(int & range){
     if(this->name_opti == "gco_custom_scale1"){
         range = this->nb_labels;
         this->sorted_label_img  = new int[range];
-        this->histogram         = new int[this->nb_labels];
+        this->histogram         = new size_t[this->nb_labels];
         // build histogram
         int tmpindex=0;
         //Mat1T* dmat;

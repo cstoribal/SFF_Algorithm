@@ -29,6 +29,8 @@ Defines - stores generic function, typedef & structures
 
 #define CPING(f) (std::cout << f << std::endl)
 #define CPING2(x,y) (std::cout << x << "  " << y << std::endl)
+#define CPINGIF2(x,y,z,t) ( z==t ? (std::cout << x << "  " << y << std::endl) : (std::cout << "") )
+#define CPINGIF4(w,x,y,z,t) ( t==true ? (std::cout << w << "  " << x << "  " << y << "  " << z << std::endl) : (std::cout << "") )
 
 #define COUT(f) (std::cout << f << std::endl)
 #define COUT2(x,y) (std::cout << x << "  " << y << std::endl)
@@ -240,7 +242,7 @@ struct set_param_opti{
     EnergyClass *energyclass;
     int nb_pixels, nb_labels, width, height, connexity, maxiteration;
     std::vector<fType> labels; // allows conversion label -> ranklabel
-    std::vector<unsigned int> histogram;
+    std::vector<size_t> histogram;
     
 };
 typedef struct set_param_opti tdfp_opti;

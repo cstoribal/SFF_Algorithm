@@ -16,51 +16,120 @@
 #include "../misc/miscdef.h"
 #include "../io/IOWizard.h"
 
-using namespace std;
 using namespace cv;
 
-
+class OptiStored {
+private:
+    std::string type;
+    size_t   stored_label;
+    size_t   nb_iterations;
+    bool     h_thresh;
+    //size_t*  a_thresh;
+    vector<vector<size_t> > vv_thresh;
+    bool     h_centroid;
+    //size_t*  a_centroid;
+    vector<vector<size_t> > vv_centroid;
+    bool     h_rmse;
+    vector<float>   v_rmse;
+public:
+    OptiStored(); ~OptiStored();
+    bool copy_from_plan(std::string& _type, size_t _label, 
+	size_t _nb_iter, 
+	const vector<vector<size_t> > 	& _vv_thresh, 
+	const vector<vector<size_t> > 	& _vv_centroid, 
+	const vector<float> 		& _v_rmse);
+    bool get_data_pointers(std::string& _type, size_t& _nb_iter,
+	vector<vector<size_t> >	& _vv_thresh, 
+	vector<vector<size_t> >	& _vv_centroid, 
+	vector<float>		& _v_rmse);
+    bool get_rmse_at_iter(const size_t & iter, float & rmse);
+    
+};
 
 
 class OptiPlan{
 private:
     IOWizard* ioWizard;
     MyLog* myLog;
-    string type;
+    std::string type;
     size_t nb_labels;
     size_t nb_pixels;
-    size_t nb_iterations; // à fixer. Dans les getters, créer une règle pour jeter une alerte en cas de tentative d'accès incorrecte.
-    bool     h_thresh; //handler
-    size_t*  a_thresh; // full set of thresholds
-    size_t** aa_thresh; //pointeurs vers tableaux. A initialiser aussi.
-    bool     h_histogram;
-    size_t*  a_histogram; //modified histogram for optimization
+    size_t nb_iterations; // fixé après le set_thresh. Dans les getters, créer une règle pour jeter une alerte en cas de tentative d'accès incorrect. ça carrive
+    size_t nb_storedplans;
+    size_t idx_bestplan;
+    bool verbose; //debug;
 
-
+///////////////////////////////////
+    bool            h_thresh; //handler
+    //vector<size_t>  v_thresh; // full set of thresholds
+    vector<vector<size_t> > vv_thresh;
+    bool            h_centroid;
+    //vector<size_t>  v_centroid;
+    vector<vector<size_t> > vv_centroid;
+    //size_t** aa_thresh; //pointeurs vers tableaux. A initialiser aussi.
+    bool            h_histogram;
+    bool            h_histogram0;
+    vector<size_t>  v_histogram0;
+    vector<size_t>  v_histogram; //modified histogram for optimization
+    bool            h_rmse;
+    vector<float>   v_rmse;   // RMSE théorique % iteration pour une méthode donnée
+///////////////////////////////////
+    
+    std::vector<OptiStored> stored_set;
+    
     bool error(void); //shouts handler state : where dit it fail.
+    bool error(const std::string& text); 
     bool set_histomod(void); // pour l'instant, +1 tout le temps, if type
     bool set_thresh(void); // fill in the threshold values
-
-    bool get_cluster(vector<size_t> thresh, int path, size_t& min, size_t& max);
-
-    bool search_kmean_in(int k, int path, size_t min, size_t max, vector<size_t>& means);
-    bool search_otsu(int k, int path, size_t min, size_t max, vector<size_t>& means);
+    bool compute_RMSE(void); // okay !
+    bool show_RMSE_elt_n(FILE* gnuplot, size_t idx);
 
 
+    bool generic_2Dvector_to_1Darray(const vector<vector<size_t> >& vect, bool& handler, size_t*& array);
+    bool generic_2Dvector_to_2Darray(const vector<vector<size_t> >& vect, bool& handler, size_t*& array, size_t**& aarray);
 
-    bool (OptiPlan::* pf_search)(int k, int path, size_t min, size_t max, vector<size_t>& means) ;
+
+    // Fonctions de recherche de threshold : 
+    // appartenant au cluster ]min;max]
+    // renvoyer 
+    bool (OptiPlan::* pIT_search_thresh)(
+	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
+    bool IT_search_binary(
+	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
+    bool IT_search_binary_v2(
+	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
+    bool IT_search_adapt( // définition ?
+	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
+    bool IT_search_mean(
+	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
+    bool IT_search_otsu(
+	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
+    bool IT_search_otsu_v0(
+	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
+    bool IT_search_1surX( // non itératif ?
+	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
     
-    // kmeans, 
-    // k2means,
-    // adaptative...
+    
+    bool IT_sets_centroids; //Check if centroids are set or not
 
-    // calculer l'erreur rmse théorique.
     // print that in a file.
     // log that
 
 public:
     OptiPlan(); ~OptiPlan();
-    bool set_param(string _type, IOWizard* _ioWizard, MyLog* _myLog, size_t _labels, size_t _pixels, vector<unsigned int> histogram);
+    bool set_logs(IOWizard* _ioWizard, MyLog* _myLog);
+    bool set_param(string _type, size_t _labels, size_t _pixels, std::vector<size_t> histogram, bool store=false, bool reset=true);
+    bool store_setting(bool reset=true);
+    bool get_best_method_at_it(size_t it, std::string& type); //TODO
+    bool access_best_method_pointers(void);//TODO);
+    
+    bool show_RMSE(const string& filename);
+    bool show_all_RMSE(const string& filename);
+
+    bool show_thresh_plan(std::string filename, int kplan);
+    bool show_all_thresh_plans(std::string filename);
+    
+    
     
 };
 

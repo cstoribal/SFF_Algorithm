@@ -31,9 +31,9 @@ bool MySFF::setlogs(void){
     sharpOP.setlogs(&myLog);
     depthEst.setlogs(&myLog);
     energyClass.setlogs(&myLog);
+    optiPlan.set_logs(&ioWizard,&myLog);
     optiClass.setlogs(&myLog);
     evalClass.setup(&myLog,&depthEst);
-
     energyClass.set_class(&depthEst, &ioWizard);
 }
 
@@ -106,13 +106,36 @@ bool MySFF::doDepth(void){
     this->nb_labels = labels.size();
     // set dmat next outputs
     CPING("test depth");
-    assert(this->nb_labels == (this->sharpSet.size()-1)*depthEst.getOversampling()); // Check Oversampling
+    assert(this->nb_labels == (this->sharpSet.size())*depthEst.getOversampling()); // Check Oversampling
     fType d_min = labels[0];
     fType d_max = labels[this->nb_labels-1];
     ioWizard.img_setscale(d_min,d_max,1);
     CPING("test depth");
     dmat.copyTo(rmat);
     CPING("end Do depth");
+    return true;
+}
+
+
+
+bool MySFF::prepare_optimization_plan(void){
+    std::vector<std::string> typelist(5);
+    typelist[0]="binary";
+    typelist[1]="binary_v2";
+    typelist[2]="otsu";
+    typelist[3]="otsu_v0";
+    typelist[4]="mean";
+    COUT("starting optimization plan");
+    for(int i=0; i<typelist.size(); i++){
+        optiPlan.set_param(typelist[i],nb_labels,dim1*dim2,histogram,1,1);
+    }
+    //COUT("optiplan set");
+    CPING("showallRMSE");
+    optiPlan.show_all_RMSE("RMSEall");
+    //CPING("show_one");
+    //optiPlan.show_RMSE("RMSE0");
+    COUT("optiplan RMSE computed");
+    optiPlan.show_all_thresh_plans("Threshplan_");
     return true;
 }
 
