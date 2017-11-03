@@ -37,7 +37,7 @@ For convenience, some scripts can run such executables alternatively.
 Those scripts are currently written in *relative paths*.
 *Metascript.sh* detects all *.param.txt files ($1) and calls :
     *ChangeParameters.sh* finds .txt in (LIST_FOLD) and changes them to ($1).
-    *script_autofolders.sh* does the same (1 directory ahead) and compute.
+    *script_autofolders.sh* does the same in the appropriate subfolder and compute.
 
 
 
