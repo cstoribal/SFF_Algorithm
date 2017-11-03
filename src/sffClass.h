@@ -116,6 +116,7 @@ public:
     bool setNewProblem(void);
 
     //bool testPrintDepths(void);
+    bool debug_MMCheck(const cv::Mat & matrix, std::string name);
     
     
 private:

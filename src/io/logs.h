@@ -53,6 +53,7 @@ public:
     void   time_i(void); // calls init timer.
     bool   set_state(fType lr, fType ld, int iter);
     bool   set_eval(fType rmse, fType psnr);
+    bool   set_bestplans(std::vector<std::string> types);
     
 private:
     CTimer timer;

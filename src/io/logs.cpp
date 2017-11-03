@@ -13,7 +13,7 @@ and the results under the format of a csv
 #include "logs.h"
 
 MyLog::MyLog(){
-    logversion = "v0.3";
+    logversion = "v0.4";
     logs = "Starting log file \n "+logversion+" \n";
 }
 MyLog::~MyLog(){
@@ -112,6 +112,15 @@ bool MyLog::set_eval(fType rmse, fType psnr){
     return true;
 }
 
+bool MyLog::set_bestplans(std::vector<std::string> types){
+    this->log_data_out->output.types = types;
+    this->log_data_out->output.types.resize(8);
+    for(int i=types.size(); i<8; i++){
+        this->log_data_out->output.types[i] = "end";
+    }
+    return true;
+}
+
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -165,6 +174,13 @@ bool MyLogOut::Format_txt(void){
 
     for(int k=0;k<o.time.size();k++)
         strdata += ";" + to_string2(o.time[k]);
+
+
+    for(int k=0;k<o.time.size();k++)
+        strdata += ";" + to_string2(o.time[k]);
+
+    for(int k=0;k<o.types.size();k++)
+        strdata += ";" + to_string2(o.types[k]);
 
     
     strdata += "\n";

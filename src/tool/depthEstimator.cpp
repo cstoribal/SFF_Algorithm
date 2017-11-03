@@ -135,6 +135,48 @@ int DepthClass::getRankFromDepth(fType input){
     return rank;
 }
 
+bool DepthClass::getMRankFromMDepth(const Mat1T& minput, cv::Mat1i & moutput){
+    moutput = cv::Mat::zeros(minput.rows,minput.cols,CV_32S);
+    cv::Mat1i m_zero = cv::Mat::zeros(minput.rows,minput.cols,CV_32S);
+    cv::Mat1i m_hold = cv::Mat::zeros(minput.rows,minput.cols,CV_32S);
+    cv::Mat1i m_mask = cv::Mat::zeros(minput.rows,minput.cols,CV_32S);
+    fType tempvalA,tempvalB;
+    int   temprank;
+    for(int i=1; i<this->DepthToRank.size();i++){
+        m_mask = m_mask*0;
+        temprank=this->DepthToRank[i][1];
+        
+        tempvalA=this->DepthToRank[i-1][0];
+        tempvalB=this->DepthToRank[i][0];
+        m_hold=m_zero+temprank;
+        m_hold.copyTo(m_mask, (minput<=tempvalB) );
+        m_zero.copyTo(m_mask, (minput<=tempvalA) );
+        m_mask.copyTo(moutput,(m_mask>0));
+    }
+    return true;
+}
+
+bool DepthClass::getMLabelFromMDepth(const Mat1T& minput, cv::Mat1i & moutput){
+    moutput = cv::Mat::zeros(minput.rows,minput.cols,CV_32S);
+    cv::Mat1i m_zero = cv::Mat::zeros(minput.rows,minput.cols,CV_32S);
+    cv::Mat1i m_hold = cv::Mat::zeros(minput.rows,minput.cols,CV_32S);
+    cv::Mat1i m_mask = cv::Mat::zeros(minput.rows,minput.cols,CV_32S);
+    fType tempvalA,tempvalB;
+    //int   temprank;
+    for(int i=1; i<this->DepthToRank.size();i++){
+        m_mask = m_mask*0;
+        //temprank=this->DepthToRank[i][1];
+        
+        tempvalA=this->DepthToRank[i-1][0];
+        tempvalB=this->DepthToRank[i][0];
+        m_hold=m_zero+i;
+        m_hold.copyTo(m_mask, (minput<=tempvalB) );
+        m_zero.copyTo(m_mask, (minput<=tempvalA) );
+        m_mask.copyTo(moutput,(m_mask>0));
+    }
+    return true;
+}
+
 int DepthClass::getNbLabels(void){
     return DepthToRank.size();
 }
@@ -289,6 +331,9 @@ bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_ra
             X[k*oversampling*degree+j*degree+i] = (fType)pow(DR[oversampling*k+j][0],i+1);
         }
     }}
+    DR[oversampling*(set_dim[2]-1)+0][0] = (fType)focus[ (set_dim[2]-1) ];
+    DR[oversampling*(set_dim[2]-1)+0][1] = (fType) (set_dim[2]-1) ;
+    
 
     fType tmp;
     fType max=0;

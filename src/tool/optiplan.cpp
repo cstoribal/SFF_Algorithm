@@ -88,6 +88,11 @@ bool OptiStored::get_rmse_at_iter(const size_t & iter, float & rmse){
     return true;
 }
 
+bool OptiStored::get_type(std::string & _type){
+    _type = type;
+    return true;
+}
+
 
 
 
@@ -134,12 +139,14 @@ bool OptiPlan::set_param(string _type, size_t _labels, size_t _pixels, vector<si
         pIT_search_thresh=&OptiPlan::IT_search_otsu;
     if(type == "otsu_v0") 
         pIT_search_thresh=&OptiPlan::IT_search_otsu_v0;
-    if(type == "mean")
-        pIT_search_thresh=&OptiPlan::IT_search_mean;
+    if(type == "median")
+        pIT_search_thresh=&OptiPlan::IT_search_median;
+    if(type == "2means")
+        pIT_search_thresh=&OptiPlan::IT_search_2means;
     if(type == "1surX")
         pIT_search_thresh=&OptiPlan::IT_search_1surX;
 
-    IT_sets_centroids = type=="otsu"||type=="binary_v2";
+    IT_sets_centroids = type=="otsu"||type=="binary_v2"||type=="2means";
 
     if(pIT_search_thresh==NULL){return error("pIT_search init failed");}
     
@@ -244,9 +251,6 @@ bool OptiPlan::set_thresh(void){
 
     h_thresh=true;
     h_centroid=true;
-    //CPING("end thresh");
-
-
     return true;
 }
 
@@ -265,27 +269,11 @@ bool OptiPlan::compute_RMSE(void){
         {
             for(size_t label=vv_thresh[iter][path]; label<vv_thresh[iter][path+1]; label++)
             {
-                //CPING2("rmse, iter", v_rmse[iter]);
-                //CPING2("rmse, v_histogram",v_histogram[label]);
-                //CPING2("rmse, label-vvcentroid", (long int)label-(long int)vv_centroid[iter][path]);
-                //CPING2("path",path);
                 v_rmse[iter]+=v_histogram[label]*
 			pow((long int)label-(long int)vv_centroid[iter][path],2);
             }
         }
         v_rmse[iter]=sqrt(v_rmse[iter])/(float)nb_pixels;
-
-        /*
-        for(size_t rank = 0; rank<nb_labels; rank++)
-        {
-            // échantillon - centroid. comparer rank 
-            //à centroid[iter] et centroid[iter+1]
-            while(vv_thresh[iter][path+1]<=rank){path+=1;}
-            v_rmse[iter]+=v_histogram[rank]*
-                  pow(rank-vv_centroid[iter][path],2);
-		//pow(rank-aa_thresh[iter+1][2*path+1],2);
-        }
-        */
     }
     
     return true;
@@ -296,26 +284,42 @@ bool OptiPlan::store_setting(bool reset){
     if(!h_thresh||!h_histogram||!h_rmse)
 		{return error("store_setting_error");}
     stored_set.resize(nb_storedplans+1);
-    //stored_set[nb_storedplans]=OptiStored();
-
     if(!stored_set[nb_storedplans].copy_from_plan(type,  nb_storedplans,
 		nb_iterations, vv_thresh, vv_centroid, v_rmse))
          {return error("copy_from_plan returned false");}
 
     nb_storedplans++;
     if(!reset){return true;}
+    return reset_memory();
+}
 
-    vv_thresh.resize(0); h_thresh = false;
-    vv_centroid.resize(0); h_centroid = false;
-    //v_histogram0.resize(0); h_histogram0=false;
-    v_histogram.resize(0); h_histogram = false;
-    v_rmse.resize(0); h_rmse = false;
+bool OptiPlan::load_method(size_t idx_storage){
+    if(h_thresh||h_histogram||h_rmse){
+        myLog->a("Warning, loading a method over a pre_existing one");
+        reset_memory();
+    }
+    if(idx_storage>=nb_storedplans){
+        return error("loading idx>nb_stored");}
+    
+    stored_set[idx_storage].get_data_pointers
+	(type,nb_iterations,vv_thresh,vv_centroid,v_rmse);
+    h_thresh = true; h_centroid=true; h_rmse=true;
+    
+    return true;
+}
+
+bool OptiPlan::reset_memory(void){
+    bool output;
+    if(!h_thresh && !h_histogram && !h_rmse)
+	{output=error("Non critical : nothing to erase");}
+    if(h_thresh) { vv_thresh.resize(0); h_thresh = false; }
+    if(h_centroid){ vv_centroid.resize(0); h_centroid = false; }
+    if(h_histogram){v_histogram.resize(0); h_histogram = false;}
+    if(h_rmse){v_rmse.resize(0); h_rmse = false;}
     pIT_search_thresh = NULL;
     type = ""; nb_iterations = 0; 
     return true;
 }
-
-
 
 /////////////////////////////////////////////////
 /////// Algorithmes de recherche itératifs //////
@@ -324,7 +328,6 @@ bool OptiPlan::IT_search_binary(size_t _min, size_t _max, size_t& thresh, size_t
 
     thresh = (size_t)((((float)(_min+_max+1))/2.0f));
     thresh = max(_min+1,thresh);
-    //CPING2("thresh binaire set",thresh);
     return true;
 }
 
@@ -345,14 +348,12 @@ bool OptiPlan::IT_search_binary_v2(size_t _min, size_t _max, size_t& thresh, siz
     }
     c1=(meanA/(float) nbA)+0.5f;
     c2=(meanB/(float) nbB)+0.5f;
-
-    //CPING2("thresh binaire set",thresh);
     return true;
 }
 
 
 
-bool OptiPlan::IT_search_mean(size_t _min, size_t _max, size_t& thresh, size_t& c1, size_t& c2){
+bool OptiPlan::IT_search_median(size_t _min, size_t _max, size_t& thresh, size_t& c1, size_t& c2){
     //trouver la valeur médiane :
     // get nb_px dans l'intervalle [_min,max];
     // trouver label médian dans ]min,max]
@@ -438,11 +439,108 @@ bool OptiPlan::IT_search_otsu_v0(size_t _min, size_t _max, size_t& thresh, size_
     return IT_search_otsu(_min, _max, thresh, fc1, fc2);
 }
 
+
+bool OptiPlan::IT_search_2means(size_t _min, size_t _max, size_t& thresh, size_t& c1, size_t& c2){
+    float tmpthresh =((((float)(_min+1+_max))/2.0f));
+    long int nb_A(0),nb_B(0);
+    float sumA(0.0f), sumB(0.0f),meanA,meanB;
+    float newthresh=tmpthresh;
+    bool new_is_sup;
+    //CPING("in");
+
+    for(size_t i=_min; i<tmpthresh; i++){
+        nb_A+=v_histogram[i];
+        sumA+=v_histogram[i]*i;
+        meanA=sumA/(float)nb_A;
+    }
+    for(size_t i=tmpthresh; i<=_max; i++){
+        nb_B+=v_histogram[i];
+        sumB+=v_histogram[i]*i;
+        meanB=sumB/(float)nb_B;
+    }
+    newthresh =  ((meanA+meanB+1.0f)/2.0f);
+    //ComputeCentroid
+    while(newthresh!=tmpthresh){
+        new_is_sup = (newthresh>tmpthresh);
+        for(long int i=(long int)min(tmpthresh,newthresh);i<(long int)max(tmpthresh,newthresh);i++){
+            long int tmp=(long int)v_histogram[i]; //TODO check consistency.
+            nb_A+=  new_is_sup?tmp   :-tmp;
+            nb_B+= !new_is_sup?tmp   :-tmp;
+            sumA+=  new_is_sup?tmp*i :-tmp*i;
+            sumB+= !new_is_sup?tmp*i :-tmp*i;
+        }
+        meanA=sumA/(float)nb_A;
+        meanB=sumB/(float)nb_B;
+        tmpthresh = newthresh;
+        newthresh = ((meanA+meanB+1.0f)/2.0f);
+    }
+    c1=meanA;
+    c2=meanB;
+    thresh = newthresh;
+    return true;
+}
+
+
 bool OptiPlan::IT_search_1surX(size_t _min, size_t _max, size_t& thresh, size_t& c1, size_t& c2){
     
     
     thresh = _min+1;
+    return error("1 sur X not implemented yet");
     return true;
+}
+
+
+////////////////////////////
+//      CONSULTATION      //
+////////////////////////////
+bool OptiPlan::get_best_method_at_it(size_t iter, size_t & idx_storage, std::string& type, bool& active){
+    type="";
+    if(nb_storedplans==0){return error("No storedplans to compare");}
+    bool rmseinit=false;
+    active=true;
+    float rmse,rmse_best;
+    size_t idx_plan=0;
+    idx_storage=0;
+    while(!rmseinit && idx_plan<nb_storedplans){
+        if(stored_set[idx_plan].get_rmse_at_iter(iter,rmse)){
+            rmseinit=true;
+            rmse_best=rmse;
+            idx_storage=idx_plan;
+        }
+        else { active=false; }
+        idx_plan++;
+    }
+    while(idx_plan<nb_storedplans){
+        if(stored_set[idx_plan].get_rmse_at_iter(iter,rmse)){
+            if(rmse<rmse_best){
+                rmse_best=rmse;
+                idx_storage=idx_plan;
+            }
+        }
+        else { active=false; }
+        idx_plan++;
+    }
+    
+    stored_set[idx_storage].get_type(type);
+    if(!rmseinit){return error("No method at it, to get RMSE from");}
+    
+    return true;
+}
+
+
+bool OptiPlan::get_best_method_at_it_pointers(size_t iter,
+	std::string& _type, size_t& _nb_iter,
+	vector<vector<size_t> >	& _vv_thresh, 
+	vector<vector<size_t> >	& _vv_centroid, 
+	vector<float>		& _v_rmse){
+    if(nb_storedplans==0){return error("no plan stored for bestmatit");}
+    size_t idx_bestplan;
+    bool active;
+    if(!get_best_method_at_it(iter,idx_bestplan,_type,active))
+        {return error("Get Best Method failed");}
+    if(!active){return false;}
+    return stored_set[idx_bestplan].get_data_pointers
+	(_type,_nb_iter,_vv_thresh,_vv_centroid,_v_rmse);
 }
 
 
@@ -459,7 +557,7 @@ bool OptiPlan::show_RMSE(const std::string& filename){
     fprintf(gnuplot, "plot '-' with lines\n");
     //COUT(nb_iterations);
     //CPING2("rmsesize",v_rmse.size());
-    for(int k=0; k<nb_iterations; k++)
+    for(int k=1; k<nb_iterations; k++)
     {
         //CPING2("rmse",v_rmse[k]);
         //for(int j=0; j<vv_thresh[k].size()-1;j++)
@@ -495,7 +593,6 @@ bool OptiPlan::show_all_RMSE(const std::string& filename){
     if(!stored_set[0].get_data_pointers(_tmptype, nb_iter, 
       vvs1, vvs2, vf))
         {return error("get_data_pointers at step showall0");}
-    //_tmptype="-"; //TODO comprendre la labellisation gnuplot
     initplot_msg += "'-' title '"+_tmptype+"' with lines";
     for(int k=1;k<nb_storedplans; k++){
         if(!stored_set[k].get_data_pointers(_tmptype, nb_iter,
@@ -527,7 +624,7 @@ bool OptiPlan::show_RMSE_elt_n(FILE* gnuplot, size_t idx){
     vector<vector<size_t> > vvs1, vvs2;
     
     if(!stored_set[idx].get_data_pointers(type, nb_iter, vvs1, vvs2, vector_rmse)){return error("get_data_pointers fail at show_rmse_elt_" + to_string2(idx) );}
-    for(int i=0; i<nb_iter; i++){
+    for(int i=1; i<nb_iter; i++){
         fprintf(gnuplot, "%i %g\n", i, vector_rmse[i]);
     }
     fflush(gnuplot);
@@ -577,6 +674,7 @@ bool OptiPlan::show_thresh_plan(std::string filename, int kplan){
   "set style line 3 linecolor rgb '#dd181f' linetype 1 linewidth 2 pt 6\n"+
   "set style line 4 linecolor rgb '#aaffaa' linetype 1 linewidth 1\n"+
   "set key at "+to_string2(nb_labels-10)+",3\n"+
+  "set title 'Optimization with "+to_string2(t_type)+"' font 'Helvetica,15' enhanced\n"+
   "set xlabel 'label'\n"+
   "set ylabel 'iteration'\n"+
   "set xrange[0:"+to_string2(nb_labels)+"]\n"+
@@ -654,7 +752,23 @@ bool OptiPlan::show_thresh_plan(std::string filename, int kplan){
 
 
 
-
+bool OptiPlan::addToLog(void){
+    std::vector<std::string> v_types;
+    v_types.resize(0);
+    size_t iter=0;
+    size_t idx;
+    std::string _type;
+    bool active=true;
+    while(active)
+    {
+        get_best_method_at_it(iter,idx,_type,active);
+        iter++;
+        v_types.push_back(_type);
+    }
+    
+    myLog->set_bestplans(v_types);
+    return true;
+}
 
 
 

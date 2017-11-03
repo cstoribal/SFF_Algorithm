@@ -71,7 +71,6 @@ bool MySFF::preTreat(void){
         pretreatClass.compute_scale(imageSet[i].ivmat[j]);
         pretreatClass.compute_noises(imageSet[i].ivmat[j]);
         pretreatClass.compute_blur(imageSet[i].ivmat[j]);
-        //GaussianBlur(imageSet[i].ivmat[j],imageSet[i].ivmat[j], Size(3,3),0,0);
     }
     }
     
@@ -110,21 +109,21 @@ bool MySFF::doDepth(void){
     fType d_min = labels[0];
     fType d_max = labels[this->nb_labels-1];
     ioWizard.img_setscale(d_min,d_max,1);
-    CPING("test depth");
     dmat.copyTo(rmat);
-    CPING("end Do depth");
+    CPINGIF4("End Depth, scale1 : ", d_min, d_max, " !",true);
     return true;
 }
 
 
 
 bool MySFF::prepare_optimization_plan(void){
-    std::vector<std::string> typelist(5);
+    std::vector<std::string> typelist(6);
     typelist[0]="binary";
     typelist[1]="binary_v2";
     typelist[2]="otsu";
     typelist[3]="otsu_v0";
-    typelist[4]="mean";
+    typelist[4]="median";
+    typelist[5]="2means";
     COUT("starting optimization plan");
     for(int i=0; i<typelist.size(); i++){
         optiPlan.set_param(typelist[i],nb_labels,dim1*dim2,histogram,1,1);
@@ -132,10 +131,15 @@ bool MySFF::prepare_optimization_plan(void){
     //COUT("optiplan set");
     CPING("showallRMSE");
     optiPlan.show_all_RMSE("RMSEall");
+    //récupérer une groundtruth en labels
+    Mat1i gt_dmat_label;
+    //optiPlan.show_all_RMSE_GT(gt_dmat_label,"RMSE_GT");
     //CPING("show_one");
     //optiPlan.show_RMSE("RMSE0");
     COUT("optiplan RMSE computed");
     optiPlan.show_all_thresh_plans("Threshplan_");
+    optiPlan.addToLog();
+    
     return true;
 }
 
@@ -209,6 +213,15 @@ bool MySFF::setMultifocusRmat(void){
 
 
 bool MySFF::optimize(void){
+
+
+    //debug_MMCheck(this->gt_dmat,"gt_dmatrix _stage3");
+    //debug_MMCheck(this->rmat,"rmatrix _stage3");
+    //debug_MMCheck(this->dmat,"dmatrix _stage3");
+    //debug_MMCheck(this->dmat_rank,"drankmatrix _stage3");
+
+
+
     int timernk = 5;
     //for(fType lambda=1;lambda<8;lambda+=0.5)
     tdf_input& ip = input_prts; //alias. too complex
@@ -430,25 +443,16 @@ bool MySFF::setNewProblem(void){
     // reset classes, relink to logs,
     // call loadProblem with a new int argc, char** argv
     // basically argc = 2, (?), argv = [-D,../../Samples/.....]
-
-
-
-
-
-
-    return true;
+    
+    
+    return false;
 }
 
-//bool forwarder(void* context, Point A) {
-//    static_cast<MySFF*>(context)->showInterpolation(A);
-//}
 
 
-
-//bool MySFF::clickInterpolation(Mat image, int timer){ //TODO interpolation non fonctionnelle
-//    ioWizard.clickImage("scale", image, timer, &forwarder, this );
-//    return true;
-//}
-
-
-
+bool MySFF::debug_MMCheck(const cv::Mat & matrix, std::string name){
+    double _min,_max;
+    minMaxLoc(matrix,&_min,&_max);
+    CPINGIF4("matrix min max : ",name, _min, _max, true);
+    return true;
+}

@@ -189,7 +189,7 @@ struct struct_log{
     std::vector<double> time;
     fType rmse;
     fType psnr;
-
+    std::vector<std::string> types;
 };
 typedef struct struct_log tdf_log;
     

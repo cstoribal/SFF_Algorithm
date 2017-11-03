@@ -43,6 +43,7 @@ public:
 	vector<vector<size_t> >	& _vv_centroid, 
 	vector<float>		& _v_rmse);
     bool get_rmse_at_iter(const size_t & iter, float & rmse);
+    bool get_type(std::string & _type);
     
 };
 
@@ -100,12 +101,16 @@ private:
 	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
     bool IT_search_adapt( // définition ?
 	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
-    bool IT_search_mean(
+    bool IT_search_median(
 	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
     bool IT_search_otsu(
 	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
     bool IT_search_otsu_v0(
 	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
+    bool IT_search_2means(
+	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
+    
+
     bool IT_search_1surX( // non itératif ?
 	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
     
@@ -120,14 +125,22 @@ public:
     bool set_logs(IOWizard* _ioWizard, MyLog* _myLog);
     bool set_param(string _type, size_t _labels, size_t _pixels, std::vector<size_t> histogram, bool store=false, bool reset=true);
     bool store_setting(bool reset=true);
-    bool get_best_method_at_it(size_t it, std::string& type); //TODO
-    bool access_best_method_pointers(void);//TODO);
+    bool load_method(size_t idx_storage);
+    bool reset_memory(void);
+    bool get_best_method_at_it(size_t iter, size_t & idx_storage, std::string& type, bool& active);
+    bool get_best_method_at_it_pointers(size_t iter,
+	std::string& _type, size_t& _nb_iter,
+	vector<vector<size_t> >	& _vv_thresh, 
+	vector<vector<size_t> >	& _vv_centroid, 
+	vector<float>		& _v_rmse);
     
     bool show_RMSE(const string& filename);
     bool show_all_RMSE(const string& filename);
 
     bool show_thresh_plan(std::string filename, int kplan);
     bool show_all_thresh_plans(std::string filename);
+
+    bool addToLog(void);
     
     
     
