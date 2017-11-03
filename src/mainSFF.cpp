@@ -13,12 +13,11 @@
 //#include <mgl2/qt.h>
 #include <mgl2/mgl.h>
 
-#include <opencv2/core.hpp>
-#include <opencv2/imgcodecs.hpp>
-#include <opencv2/highgui.hpp>
+//#include <opencv2/core.hpp>
+//#include <opencv2/highgui.hpp>
 
 
-#include "misc/testClass.h"
+//#include "misc/testClass.h"
 #include "sffClass.h"
 
 

@@ -48,7 +48,7 @@ class MySFF{
 public:
     MySFF();~MySFF();
     MyLog     myLog;
-    TestClass testClass;
+    //TestClass testClass;
     IOWizard ioWizard;
     PreTreatment pretreatClass;
     Sharpness_Operator sharpOP;
