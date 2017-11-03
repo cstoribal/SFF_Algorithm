@@ -35,7 +35,7 @@ Aimed at holding test functions
 #include "tool/sharpnessOperator.h"
 #include "tool/depthEstimator.h"
 #include "tool/energy2.h"
-#include "misc/testClass.h"
+//#include "misc/testClass.h"
 #include "tool/optimization.h"
 #include "tool/evaluation.h"
 
@@ -48,7 +48,7 @@ class MySFF{
 public:
     MySFF();~MySFF();
     MyLog     myLog;
-    TestClass testClass;
+    //TestClass testClass;
     IOWizard ioWizard;
     PreTreatment pretreatClass;
     Sharpness_Operator sharpOP;
@@ -118,6 +118,7 @@ public:
     //bool testPrintDepths(void);
     bool debug_MMCheck(const cv::Mat & matrix, std::string name);
     
+    bool debug_check_all(std::string context = "");
     
 private:
     int dim1, dim2;

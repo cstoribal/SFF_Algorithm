@@ -18,7 +18,7 @@
 #include <opencv2/highgui.hpp>
 
 
-#include "misc/testClass.h"
+//#include "misc/testClass.h"
 #include "sffClass.h"
 
 

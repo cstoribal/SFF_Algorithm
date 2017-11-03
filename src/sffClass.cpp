@@ -385,6 +385,9 @@ bool MySFF::optimize(void){
     ioWizard.img_setscale(1);
     ioWizard.writeImage("groundtruth.png",this->gt_dmat);
     ioWizard.img_unsetscale();
+
+    
+    debug_check_all("end");
 }
 
 
@@ -448,6 +451,15 @@ bool MySFF::setNewProblem(void){
     return false;
 }
 
+bool MySFF::debug_check_all(std::string context){
+    debug_MMCheck(this->gt_dmat,"gt_dmatrix "+context);
+    debug_MMCheck(this->dmat,"dmatrix "+context);
+    debug_MMCheck(this->dmat_rank,"drankmatrix "+context);
+    debug_MMCheck(this->dmat_score,"dscorematrix "+context);
+    debug_MMCheck(this->rmat,"rmatrix "+context);
+    //debug_MMCheck(this->image_MF,"MF_image "+context);
+    
+}
 
 
 bool MySFF::debug_MMCheck(const cv::Mat & matrix, std::string name){
