@@ -316,6 +316,7 @@ bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_ra
     }
     
     dmat = cv::Mat::zeros(set_dim[0],set_dim[1],CV_TF);
+    dmat = dmat + 20.0;
     dmat_score = cv::Mat::zeros(set_dim[0],set_dim[1],CV_TF);
     dmat_rank = cv::Mat::zeros(set_dim[0],set_dim[1],CV_TF);
 
@@ -346,7 +347,7 @@ bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_ra
     for(int i=0; i<set_dim[0]; i++) for(int j=0; j<set_dim[1]; j++)
     {
         max = -1;
-        arg = 0;
+        arg = 20;
 
         for(int f=0; f<oversampling*(set_dim[2]-1);f++){
 
@@ -390,7 +391,19 @@ bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_ra
 
 
 bool DepthClass::interpolate(const vector<fType> & x, const vector<fType> & y, int n, int N, vector<fType> X, vector<fType> & z){
+    vector<fType> x2(x.size()+2),y2(y.size()+2);
+    x2[0]=x[0]-0.01f; y2[0]=y[0];
+    for(int l=1; l<x2.size()-1; ++l){
+        x2[l]=x[l-1];
+        y2[l]=y[l-1];
+    }
+    x2[x2.size()-1]=x[x.size()-1]+0.01f; y2[y2.size()-1]=y[y.size()-1];
+    N=N+2;
+    
     int i,j,k;
+    
+
+
     vector<fType> tmp;
 // n is the degree of Polynomial, B is the Normal matrix(augmented) that will store the equations, 'a' is for value of the final coefficients
     fType B[n+1][n+2],a[n+1];
@@ -403,7 +416,7 @@ bool DepthClass::interpolate(const vector<fType> & x, const vector<fType> & y, i
     {    
         Y[i]=0;
         for (j=0;j<N;j++)
-        Y[i]=Y[i]+pow(x[j],i)*y[j];
+        Y[i]=Y[i]+pow(x2[j],i)*y2[j];
     }
     for (i=0;i<=n;i++)
         B[i][n+1]=Y[i];

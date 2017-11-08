@@ -63,7 +63,10 @@ int main( int argc, char** argv )
     myLog->a(to_string2(t0)+" seconds for computing interpolation\n");
     
     //mySFF.testEnergy();
+    mySFF.ioWizard.img_setscale(1);
+    //mySFF.ioWizard.showImage("scale","Idist.png",mySFF.dmat,0);
     mySFF.ioWizard.writeImage("Idist.png",mySFF.dmat); // brut depth image
+    //mySFF.showInterpolationAt();
     mySFF.ioWizard.img_unsetscale();
     Mat1T tmpmat;
     log(mySFF.dmat_score,tmpmat);
@@ -80,7 +83,6 @@ int main( int argc, char** argv )
     mySFF.ioWizard.img_setscale(1);
     //mySFF.clickInterpolation(mySFF.image_MF,0);
     //mySFF.ioWizard.showImage("scale","dmat",mySFF.dmat,1000);
-    mySFF.showInterpolationAt();
     t0 = myLog->time_r(4);
     myLog->a(to_string2(t0)+" seconds for misc (multifocus & dmatscore)\n");
 
