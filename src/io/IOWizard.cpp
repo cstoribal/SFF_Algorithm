@@ -1067,7 +1067,8 @@ bool IOWizard::showImage(const string param, const string name, const Mat & imag
     if(0){return false;}
     fType imin, imax, scale;
     Mat imat;
-    image.copyTo(imat);
+    //image.copyTo(imat);
+    image.convertTo(imat,CV_TF,1);
     if(img_dout_scaleselect)
     {
         imat = (imat - this->img_dout_scb[img_dout_scaleselect-1])*this->img_dout_sca[img_dout_scaleselect-1];
@@ -1100,7 +1101,8 @@ bool IOWizard::writeImage(const string filename, const Mat & image){
     fType imin, imax, scale;
     fType omin, omax;
     Mat imat;
-    image.copyTo(imat);
+    // image.copyTo(imat);  // Versions 1.0
+    image.convertTo(imat,CV_TF,1);
     if(img_dout_scaleselect)
     {
         imat = (imat - this->img_dout_scb[img_dout_scaleselect-1])*this->img_dout_sca[img_dout_scaleselect-1];
@@ -1123,11 +1125,12 @@ bool IOWizard::writeImage(const string filename, const Mat & image){
 bool IOWizard::write3DImage(const string filename, const Mat & image){
     
     //TODO perpare vector evolution (vector mat &)
-
+    Mat1T imat;
+    image.convertTo(imat,CV_TF,1);
     fType imin, imax;
     int resolution;
-    int rows = image.rows;
-    int cols = image.cols;
+    int rows = imat.rows;
+    int cols = imat.cols;
     mglGraph gr;//(NULL,filename);
     //Mat imat;
     //image copyTo(imat);
@@ -1139,14 +1142,14 @@ bool IOWizard::write3DImage(const string filename, const Mat & image){
     }
     else
     {
-        cv::minMaxLoc(image,&imin,&imax);
+        cv::minMaxLoc(imat,&imin,&imax);
         
     }
     // Data computation for sketching
-    a.Create(image.rows,image.cols);
+    a.Create(imat.rows,image.cols);
     for(int i=0; i<rows; i++)    for(int j=0; j<cols; j++)
     {
-        a.a[i+rows*j] = image.at<fType>(i,j);
+        a.a[i+rows*j] = imat.at<fType>(i,j);
     }
     // data import
     gr.Title(filename.c_str());
@@ -1203,14 +1206,12 @@ bool IOWizard::show3DImage(const string filename, const Mat & image){
 
 bool IOWizard::draw_histogram(const vector<size_t> & histogram){
     // calls gnuplot in order to sketch the evolution of sharpness and sharpness interpolated on one pixel.
-    
     FILE *gnuplot = popen("gnuplot", "w");
     for(int i=0; i<1; i++)
     {
         fprintf(gnuplot, "set term 'pngcairo' \n");
         fprintf(gnuplot, "set output '%shistogram.png'\n",this->autofolder.c_str());
-        fprintf(gnuplot, "plot '-' with lines\n"); //, '-' with lines, '-' with lines\n");
-        
+        fprintf(gnuplot, "plot '-' with lines\n");
         
         for(int k=0;k<histogram.size();k++){
             fprintf(gnuplot, "%i %lu\n", k, (size_t)histogram[k]);
@@ -1222,7 +1223,32 @@ bool IOWizard::draw_histogram(const vector<size_t> & histogram){
     }  
     fprintf(gnuplot,"exit \n"); 
     pclose(gnuplot);
-    
+    return true;
+}
+bool IOWizard::draw_histogram(const vector<size_t> & histogram1, const vector<size_t> & histogram2){
+    // calls gnuplot in order to sketch the evolution of sharpness and sharpness interpolated on one pixel.
+    FILE *gnuplot = popen("gnuplot", "w");
+    for(int i=0; i<1; i++)
+    {
+        fprintf(gnuplot, "set term 'pngcairo' \n");
+        fprintf(gnuplot, "set output '%shistogram.png'\n",this->autofolder.c_str());
+        fprintf(gnuplot, "set title 'Histograms' font 'Helvetica,15' enhanced\n");
+        fprintf(gnuplot, "plot '-' title 'ground truth' with lines, '-' title 'first guess estimation' with lines\n");
+        
+        for(int k=0;k<histogram1.size();k++){
+            fprintf(gnuplot, "%i %lu\n", k, (size_t)histogram1[k]);
+            }
+        fflush(gnuplot);
+        fprintf(gnuplot, "e\n");
+        for(int k=0;k<histogram2.size();k++){
+            fprintf(gnuplot, "%i %lu\n", k, (size_t)histogram2[k]);
+            }
+        fflush(gnuplot);
+        fprintf(gnuplot, "e\n");
+        fprintf(gnuplot,"unset output \n");
+    }  
+    fprintf(gnuplot,"exit \n"); 
+    pclose(gnuplot);
     return true;
 }
 
@@ -1234,14 +1260,18 @@ bool IOWizard::set_gnuplot_output( FILE* & gnuplot, const std::string& filename)
 }
 
 
-
-
-
 bool IOWizard::mkdir(const string directory){
     string var = string("mkdir \"") + directory + string("\"");
     const char * c = var.c_str();
     system(c);
-    
+    return true;
+}
+
+
+bool IOWizard::mksubdir(const string directory){
+    string var = string("mkdir \"") + this->autofolder + "" +directory + string("\"");
+    const char * c = var.c_str();
+    system(c);
     return true;
 }
 
@@ -1280,48 +1310,6 @@ void CallBackFunc(int event, int x, int y, int flags, void* userdata){
     }
 
 }
-
-/*
-void CallBackFunc2(int event, int x, int y, int flags, void* userdata){
-    // TODO debug here
-    if  ( event == EVENT_RBUTTONDOWN )
-    {
-        cout << "Right button of the mouse is clicked - position (" << x << ", " << y << ")" << endl;
-        //(*)(Point) userdata;
-        (*(interpol_func*) userdata).fptr( (*(interpol_func*) userdata).context, Point(x,y));
-    }
-}
-
-*/
-
-
-/*
-bool IOWizard::clickImage(const string param, const Mat & image, int timer, bool (*fptr)(void*,Point), void* context) {
-    if(0){return false;}
-    fType imin, imax, scale;
-    Mat imat;
-    image.copyTo(imat);
-    cv::minMaxLoc(imat, &imin, &imax);
-    scale = 1;
-    if(imin != imax) scale = 1/(imax-imin);
-    imat = (imat-imin)*scale;
-    imat.convertTo(imat,CV_8UC1,255);
-    normalize(imat, imat, 0, 255, NORM_MINMAX);
-    if(param == "scale") namedWindow( "View", WINDOW_NORMAL );
-    else namedWindow( "View", WINDOW_AUTOSIZE);
-    
-    interpol_func tmp;
-    tmp.fptr = fptr;
-    tmp.context = context;
-    setMouseCallback("View", CallBackFunc2, &(tmp) );
-
-    imshow( "View", imat );
-    //resizeWindow( "View" , 900,600);
-    waitKey(timer);
-    
-    return true;
-}
-*/
 
 
 

@@ -99,9 +99,12 @@ public:
     bool show3DImage(const string filename, const Mat & image);
 
     bool draw_histogram(const vector<size_t> & histogram);
+    bool draw_histogram(const vector<size_t> & histogram1,
+                        const vector<size_t> & histogram2);
     bool set_gnuplot_output( FILE* & gnuplot, const std::string& filename);
 
     bool mkdir(const string directory);
+    bool mksubdir(const string directory);
     bool set_auto_directory(string foldername);
 
     

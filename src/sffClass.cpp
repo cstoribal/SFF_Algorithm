@@ -98,9 +98,7 @@ bool MySFF::doDepth(void){
     // test 
     //testClass.fillSharpPoly(sharpSet);
     depthEst.buildEstimation(sharpSet, depth_parameters);
-    depthEst.buildDepthmat(depth_parameters, dmat, dmat_rank, dmat_score, histogram);
-    CPING2("histogram size",histogram.size());
-    ioWizard.draw_histogram(histogram);
+    depthEst.buildDepthmat(depth_parameters, dmat, dmat_rank, dmat_score);
     vector<fType> labels = depthEst.getLabels();
     this->nb_labels = labels.size();
     // set dmat next outputs
@@ -109,7 +107,32 @@ bool MySFF::doDepth(void){
     fType d_min = labels[0];
     fType d_max = labels[this->nb_labels-1];
     ioWizard.img_setscale(d_min,d_max,1);
+    ioWizard.img_setscale(10.0*(d_min-d_max),10.0*(d_max-d_min),2);
+    ioWizard.img_setscale(0,nb_labels,3);
+    
+    depthEst.getMLabelFromMDepth(dmat,dmat_label);
+    depthEst.getMLabelFromMDepth(gt_dmat,gt_label_mat);
+    Utils::build_int_histogram(dmat_label,nb_labels,histogram_dmat);
+    Utils::build_int_histogram(gt_label_mat,nb_labels,histogram_gtmat);
+    CPING2("histogram size",histogram_dmat.size());
+    ioWizard.draw_histogram(histogram_gtmat,histogram_dmat);
+
+    
+    
+    
+    ioWizard.mksubdir("data");
+    ioWizard.img_setscale(1);
+    ioWizard.writeImage("data/groundtruth.png",this->gt_dmat);
+    ioWizard.img_setscale(3);
+    ioWizard.writeImage("data/dmat_label.png",this->dmat_label);
+    ioWizard.img_unsetscale();
+    Mat1T tmpmat;
+    log(dmat_score,tmpmat);
+    ioWizard.writeImage("data/Iscore.png",tmpmat);
+    
+    debug_check_all("end doDepth");
     dmat.copyTo(rmat);
+    CPING2("nblabels", nb_labels);
     CPINGIF4("End Depth, scale1 : ", d_min, d_max, " !",true);
     return true;
 }
@@ -117,6 +140,7 @@ bool MySFF::doDepth(void){
 
 
 bool MySFF::prepare_optimization_plan(void){
+    optiPlan.set_groundtruth(gt_label_mat);
     std::vector<std::string> typelist(6);
     typelist[0]="binary";
     typelist[1]="binary_v2";
@@ -126,18 +150,19 @@ bool MySFF::prepare_optimization_plan(void){
     typelist[5]="2means";
     COUT("starting optimization plan");
     for(int i=0; i<typelist.size(); i++){
-        optiPlan.set_param(typelist[i],nb_labels,dim1*dim2,histogram,1,1);
+        optiPlan.set_param(typelist[i],nb_labels,dim1*dim2,histogram_dmat,1,1);
     }
     //COUT("optiplan set");
     CPING("showallRMSE");
     optiPlan.show_all_RMSE("RMSEall");
-    //récupérer une groundtruth en labels
     Mat1i gt_dmat_label;
-    //optiPlan.show_all_RMSE_GT(gt_dmat_label,"RMSE_GT");
-    //CPING("show_one");
-    //optiPlan.show_RMSE("RMSE0");
+    
     COUT("optiplan RMSE computed");
     optiPlan.show_all_thresh_plans("Threshplan_");
+    optiPlan.write_all_ThreshedMatrix(dmat_label);
+    //optiPlan.write_all_ThreshedMatrix_set_RMSE_gt(dmat_label);
+
+    optiPlan.show_all_RMSE2("RMSEall2");
     optiPlan.addToLog();
     
     return true;
@@ -220,8 +245,8 @@ bool MySFF::optimize(void){
     //debug_MMCheck(this->dmat,"dmatrix _stage3");
     //debug_MMCheck(this->dmat_rank,"drankmatrix _stage3");
 
-
-
+    ioWizard.mksubdir("optimized");
+    
     int timernk = 5;
     //for(fType lambda=1;lambda<8;lambda+=0.5)
     tdf_input& ip = input_prts; //alias. too complex
@@ -250,7 +275,7 @@ bool MySFF::optimize(void){
     opti_prts.width     = dim2;
     opti_prts.connexity = input_prts.connexity;
     opti_prts.labels    = depthEst.getLabels();
-    opti_prts.histogram = histogram;
+    opti_prts.histogram = histogram_dmat;
     COUT2("nb_pixels", opti_prts.nb_pixels);
     
     optiClass.set_param(opti_prts);
@@ -364,12 +389,14 @@ bool MySFF::optimize(void){
         precrmse=rmse;
 
         ioWizard.img_setscale(1);
-        ioWizard.writeImage("2D-"+tmp+ ".png",this->rmat);
+        ioWizard.writeImage("optimized/2D-"+tmp+ ".png",this->rmat);
         //ioWizard.showImage("scale",tmp,this->rmat,100);
-        ioWizard.write3DImage("3D-"+tmp+ ".png",this->rmat);
+        ioWizard.write3DImage("optimized/3D-"+tmp+ ".png",this->rmat);
 
+        ioWizard.img_setscale(2);
+        ioWizard.writeImage("optimized/2Ddiff-"+tmp+ ".png",10*(this->rmat-this->gt_dmat));
+        ioWizard.write3DImage("optimized/3Ddiff-"+tmp+ ".png",10*(this->rmat-this->gt_dmat) );
         ioWizard.img_unsetscale();
-        ioWizard.write3DImage("3Ddiff-"+tmp+ ".png",10*(this->rmat-this->gt_dmat) );
         myLog.a(tmp+"\n");
         myLog.time_r(7);
         myLog.set_state(lambda_r,lambda_d,maxiter);
@@ -382,9 +409,7 @@ bool MySFF::optimize(void){
     }
     
     
-    ioWizard.img_setscale(1);
-    ioWizard.writeImage("groundtruth.png",this->gt_dmat);
-    ioWizard.img_unsetscale();
+
 
     
     debug_check_all("end");
@@ -456,6 +481,8 @@ bool MySFF::debug_check_all(std::string context){
     debug_MMCheck(this->dmat,"dmatrix "+context);
     debug_MMCheck(this->dmat_rank,"drankmatrix "+context);
     debug_MMCheck(this->dmat_score,"dscorematrix "+context);
+    debug_MMCheck(this->dmat_label,"dlabelmatrix "+context);
+    //debug_MMCheck(this->dmat_labelfloat,"dlabelfloatmatrix "+context);
     debug_MMCheck(this->rmat,"rmatrix "+context);
     //debug_MMCheck(this->image_MF,"MF_image "+context);
     

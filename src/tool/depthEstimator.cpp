@@ -87,13 +87,13 @@ bool DepthClass::buildEstimation(const tdf_imgset & sharpSet, tdfp_depth & pmat)
     return true;
 }
 
-bool DepthClass::buildDepthmat(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score, vector<size_t>& histogram ){
+bool DepthClass::buildDepthmat(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score){
 
     if(type=="polynome") d_poly(dparam, dmat, dmat_rank, dmat_score);
     cout << "depthmap built" << endl;
 
     
-    
+    /*
     // build histogram
     histogram.resize(set_dim[2]);
     for(int k=0; k<set_dim[2]; k++)
@@ -104,6 +104,7 @@ bool DepthClass::buildDepthmat(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & 
     {
         histogram[(size_t)round(dmat_rank.at<fType>(i,j))]++;
     }
+*/
 
     return true;
 }
@@ -136,6 +137,7 @@ int DepthClass::getRankFromDepth(fType input){
 }
 
 bool DepthClass::getMRankFromMDepth(const Mat1T& minput, cv::Mat1i & moutput){
+    // renvoie la matrice des rangs (parmi les images d'origine)
     moutput = cv::Mat::zeros(minput.rows,minput.cols,CV_32S);
     cv::Mat1i m_zero = cv::Mat::zeros(minput.rows,minput.cols,CV_32S);
     cv::Mat1i m_hold = cv::Mat::zeros(minput.rows,minput.cols,CV_32S);
@@ -157,6 +159,7 @@ bool DepthClass::getMRankFromMDepth(const Mat1T& minput, cv::Mat1i & moutput){
 }
 
 bool DepthClass::getMLabelFromMDepth(const Mat1T& minput, cv::Mat1i & moutput){
+    // renvoie la matrice des labels (parmi les labels interpolés)
     moutput = cv::Mat::zeros(minput.rows,minput.cols,CV_32S);
     cv::Mat1i m_zero = cv::Mat::zeros(minput.rows,minput.cols,CV_32S);
     cv::Mat1i m_hold = cv::Mat::zeros(minput.rows,minput.cols,CV_32S);
@@ -325,7 +328,7 @@ bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_ra
     for(int k = 0; k<set_dim[2]-1; k++){
     for(int j = 0; j<oversampling; j++){
         DR[oversampling*k+j][0] = (fType)(j*focus[k+1]+(oversampling-j)*focus[k]) / oversampling;
-        if(j<oversampling/2) DR[oversampling*k+j][1] = k;
+        if(j<=oversampling/2) DR[oversampling*k+j][1] = k;
         else DR[oversampling*k+j][1] = k+1;
         for(int i=0; i<degree; i++){
             X[k*oversampling*degree+j*degree+i] = (fType)pow(DR[oversampling*k+j][0],i+1);

@@ -37,7 +37,7 @@ endif(MathGL_FOUND)
 
 
 ##################################################
-file(GLOB LIB_CPP  ./misc/miscdef.cpp ./io/IOWizard.cpp ./io/logs.cpp ./tool/evaluation.cpp ./tool/optiplan.cpp ./tool/optimization.cpp ./tool/sharpnessOperator.cpp ./tool/depthEstimator.cpp ./tool/energy2.cpp ./tool/pretreat.cpp ./tool/timer.cpp ./sffClass.cpp  ./misc/testClass.cpp)
+file(GLOB LIB_CPP  ./misc/miscdef.cpp ./io/IOWizard.cpp ./io/logs.cpp ./tool/evaluation.cpp ./tool/optiplan.cpp ./tool/optimization.cpp ./tool/sharpnessOperator.cpp ./tool/depthEstimator.cpp ./tool/energy2.cpp ./tool/pretreat.cpp ./tool/timer.cpp ./tool/utils.cpp ./sffClass.cpp)
 ADD_LIBRARY(myLIB SHARED ${LIB_CPP} )
 file(GLOB GCO_CPP  ./gco/GCoptimization.cpp ./gco/LinkedBlockList.cpp)
 ADD_LIBRARY(gcoLIB SHARED ${GCO_CPP})

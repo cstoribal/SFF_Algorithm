@@ -38,6 +38,7 @@ Aimed at holding test functions
 //#include "misc/testClass.h"
 #include "tool/optimization.h"
 #include "tool/evaluation.h"
+#include "tool/utils.h"
 
 using namespace cv;
 using namespace std;
@@ -69,7 +70,9 @@ public:
     Mat1T gt_dmat;    // ground truth matrix
     Mat1T dmat;       // local depth matrix
     Mat1T dmat_rank;  // how to compute multifocus
-    Mat1T dmat_score; // 
+    Mat1T dmat_score; //
+    cv::Mat1i gt_label_mat;    // ground truth matrix
+    cv::Mat1i dmat_label; 
     //Mat3f imat;
     //vector<Mat1f> ivmat;
     //Mat1T gmat;
@@ -82,7 +85,8 @@ public:
     fType psnr;
     Point A_tst;  
 
-    vector<size_t> histogram;
+    vector<size_t> histogram_dmat;
+    vector<size_t> histogram_gtmat;
 
 
 

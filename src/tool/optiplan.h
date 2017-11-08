@@ -15,6 +15,7 @@
 
 #include "../misc/miscdef.h"
 #include "../io/IOWizard.h"
+#include "../tool/utils.h"
 
 using namespace cv;
 
@@ -31,6 +32,8 @@ private:
     vector<vector<size_t> > vv_centroid;
     bool     h_rmse;
     vector<float>   v_rmse;
+    bool     h_rmsegt;
+    vector<float>   v_rmsegt;
 public:
     OptiStored(); ~OptiStored();
     bool copy_from_plan(std::string& _type, size_t _label, 
@@ -42,9 +45,15 @@ public:
 	vector<vector<size_t> >	& _vv_thresh, 
 	vector<vector<size_t> >	& _vv_centroid, 
 	vector<float>		& _v_rmse);
+    bool get_data_pointers(std::string& _type, size_t& _nb_iter,
+	vector<vector<size_t> >	& _vv_thresh, 
+	vector<vector<size_t> >	& _vv_centroid, 
+	vector<float>		& _v_rmse, 
+	vector<float>		& _v_rmsegt);
     bool get_rmse_at_iter(const size_t & iter, float & rmse);
     bool get_type(std::string & _type);
-    
+    size_t get_iter(void);
+    bool set_rmsegt(vector<float> _v_rmsegt);
 };
 
 
@@ -54,10 +63,12 @@ private:
     MyLog* myLog;
     std::string type;
     size_t nb_labels;
+    size_t upperbound_iterations;
     size_t nb_pixels;
     size_t nb_iterations; // fixé après le set_thresh. Dans les getters, créer une règle pour jeter une alerte en cas de tentative d'accès incorrect. ça carrive
     size_t nb_storedplans;
     size_t idx_bestplan;
+    cv::Mat1i gtl_mat;
     bool verbose; //debug;
 
 ///////////////////////////////////
@@ -74,6 +85,8 @@ private:
     vector<size_t>  v_histogram; //modified histogram for optimization
     bool            h_rmse;
     vector<float>   v_rmse;   // RMSE théorique % iteration pour une méthode donnée
+    bool            h_rmsegt;
+    vector<float>   v_rmsegt; // RMSE réel. Doit être set avec une mat ext
 ///////////////////////////////////
     
     std::vector<OptiStored> stored_set;
@@ -84,6 +97,7 @@ private:
     bool set_thresh(void); // fill in the threshold values
     bool compute_RMSE(void); // okay !
     bool show_RMSE_elt_n(FILE* gnuplot, size_t idx);
+    bool gnuplot_vect(FILE* gnuplot, vector<float> vect);
 
 
     bool generic_2Dvector_to_1Darray(const vector<vector<size_t> >& vect, bool& handler, size_t*& array);
@@ -123,6 +137,7 @@ private:
 public:
     OptiPlan(); ~OptiPlan();
     bool set_logs(IOWizard* _ioWizard, MyLog* _myLog);
+    bool set_groundtruth(cv::Mat1i gt_label_mat);
     bool set_param(string _type, size_t _labels, size_t _pixels, std::vector<size_t> histogram, bool store=false, bool reset=true);
     bool store_setting(bool reset=true);
     bool load_method(size_t idx_storage);
@@ -133,14 +148,26 @@ public:
 	vector<vector<size_t> >	& _vv_thresh, 
 	vector<vector<size_t> >	& _vv_centroid, 
 	vector<float>		& _v_rmse);
-    
+
+    //process external data 
+    bool get_ThreshedMatrix(const cv::Mat1i & mat_in, cv::Mat1i & mat_out, size_t iteration, int method=-1);
+
+    // Visualisation
     bool show_RMSE(const string& filename);
     bool show_all_RMSE(const string& filename);
+    bool show_all_RMSE2(const string& filename);
 
     bool show_thresh_plan(std::string filename, int kplan);
     bool show_all_thresh_plans(std::string filename);
 
+    bool write_all_ThreshedMatrix(
+	cv::Mat1i & mat_in, std::string folder="threshed", bool set_rgt=true);
+
     bool addToLog(void);
+    
+
+    
+    
     
     
     

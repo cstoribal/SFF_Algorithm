@@ -12,7 +12,7 @@
 /////////////////////////////
 /////////////////////////////
 
-OptiStored::OptiStored():type(""),stored_label(0),nb_iterations(0),h_thresh(false),h_centroid(false),h_rmse(false){}
+OptiStored::OptiStored():type(""),stored_label(0),nb_iterations(0),h_thresh(false),h_centroid(false),h_rmse(false),h_rmsegt(false){}
 OptiStored::~OptiStored(){
     if(h_thresh){
         //delete [] a_thresh;
@@ -81,6 +81,22 @@ bool OptiStored::get_data_pointers(std::string& _type, size_t& _nb_iter,
     return true;
 }
 
+bool OptiStored::get_data_pointers(std::string& _type, size_t& _nb_iter,
+	vector<vector<size_t> >	& _vv_thresh, 
+	vector<vector<size_t> >	& _vv_centroid, 
+	vector<float>		& _v_rmse,
+        vector<float>		& _v_rmsegt){
+    if(!h_thresh||!h_rmse||!h_centroid||!h_rmsegt){return false;}
+    if(type==""){return false;}
+    
+    _type = type; _nb_iter=nb_iterations;
+    _vv_thresh = vv_thresh; 
+    _vv_centroid = vv_centroid;
+    _v_rmse = v_rmse;
+    _v_rmsegt = v_rmsegt;
+    return true;
+}
+
 
 bool OptiStored::get_rmse_at_iter(const size_t & iter, float & rmse){
     if(iter>=nb_iterations||!h_rmse||!h_thresh||!h_centroid){return false;}
@@ -93,13 +109,24 @@ bool OptiStored::get_type(std::string & _type){
     return true;
 }
 
+size_t OptiStored::get_iter(void){
+    return nb_iterations;
+}
+
+bool OptiStored::set_rmsegt(vector<float> _v_rmsegt){
+    if(h_rmsegt) return false;
+    h_rmsegt=true;
+    v_rmsegt=_v_rmsegt;
+    return true;
+}
+
 
 
 
 /////////////////////////////
 /////////////////////////////
 /////////////////////////////
-OptiPlan::OptiPlan():type(""),nb_labels(0),nb_pixels(0),h_thresh(false),h_centroid(false),h_histogram(false),h_histogram0(false),h_rmse(false),nb_storedplans(0), stored_set(){}
+OptiPlan::OptiPlan():type(""),nb_labels(0),nb_pixels(0),h_thresh(false),h_centroid(false),h_histogram(false),h_histogram0(false),h_rmse(false),h_rmsegt(false),nb_storedplans(0), stored_set(){}
 // initialisation
 
 OptiPlan::~OptiPlan(){
@@ -119,10 +146,16 @@ bool OptiPlan::set_logs(IOWizard* _ioWizard, MyLog* _myLog){
     myLog = _myLog;
 }
 
+bool OptiPlan::set_groundtruth(cv::Mat1i gt_label_mat){
+    gt_label_mat.copyTo(gtl_mat);
+    return true;
+}
+
 bool OptiPlan::set_param(string _type, size_t _labels, size_t _pixels, vector<size_t> histogram, bool store, bool reset){
     if(type == ""){type=_type;}
     else {return error("type already set");}
     nb_labels = _labels;
+    upperbound_iterations = floor(log2(nb_labels-1)+4);
     nb_pixels = _pixels;
     if(histogram.size()!=nb_labels){return error("histogram size  "+to_string2(histogram.size())+" , label size "+to_string2(nb_labels) );}
     if(!h_histogram0){
@@ -240,13 +273,14 @@ bool OptiPlan::set_thresh(void){
                 }}
             }
             vv_centroid[iter-1][vv_thresh[iter-1].size()-1]=66666;
+            if(iter>=upperbound_iterations){fin=true;}
         }
         //if(!IT_sets_centroids){
-            for(int i=0; i<vv_thresh[iter].size()-1;i++){
-                vv_centroid[iter][i]=vv_thresh[iter][i];
-            }
+        //    for(int i=0; i<vv_thresh[iter].size()-1;i++){
+        //        vv_centroid[iter][i]=vv_thresh[iter][i];
+        //    }
         //}
-        this->nb_iterations=iter+1;
+        this->nb_iterations=iter;
     }
 
     h_thresh=true;
@@ -545,6 +579,54 @@ bool OptiPlan::get_best_method_at_it_pointers(size_t iter,
 
 
 ////////////////////////////
+//      TRAITEMENT        //
+////////////////////////////
+
+bool OptiPlan::get_ThreshedMatrix(const cv::Mat1i & mat_in, cv::Mat1i & mat_out, size_t iteration, int method){
+    // if method=-1, on utilise la méthode stockée en mémoire, si elle existe.
+    std::string _type;
+    size_t _nb_iterations;
+    vector<vector<size_t> > _vv_thresh;
+    vector<vector<size_t> > _vv_centroid;
+    vector<float>   _v_rmse;
+    //gestion des erreurs et chargement des données
+    if(method==-1){
+        if(!h_thresh||!h_centroid||!h_rmse){
+            return error("ThreshMatrix: failure, no plan stored");
+        } else {
+            _type = type;_nb_iterations=nb_iterations; _vv_thresh = vv_thresh;
+            _vv_centroid = vv_centroid; _v_rmse = v_rmse;
+    }} else {
+        if(method>=nb_storedplans||method<-1){
+            return error("ThreshedMatrix: invprt method |"+to_string2(method));
+        } else {
+            stored_set[method].get_data_pointers(
+              _type, _nb_iterations, _vv_thresh, _vv_centroid, _v_rmse);
+    }   }
+    if(iteration>=_nb_iterations){
+        return error("ThreshedMatrix : invprt iteration |"+to_string2(iteration));}
+    // renvoie la matrice des labels (parmi les labels interpolés)
+    mat_out = cv::Mat::zeros(mat_in.rows,mat_in.cols,CV_32S);
+    cv::Mat1i m_zero = cv::Mat::zeros(mat_in.rows,mat_in.cols,CV_32S);
+    cv::Mat1i m_hold = cv::Mat::zeros(mat_in.rows,mat_in.cols,CV_32S);
+    cv::Mat1i m_mask = cv::Mat::zeros(mat_in.rows,mat_in.cols,CV_32S);
+    size_t tempvalA,tempvalB;
+    //int   temprank;
+    for(int i=1; i<_vv_thresh[iteration].size();i++){
+        m_mask = m_mask*0;
+        //temprank = _vv_centroid[iteration][i-1];
+        
+        tempvalA=_vv_thresh[iteration][i-1];
+        tempvalB=_vv_thresh[iteration][i];
+        m_hold  = m_zero + _vv_centroid[iteration][i-1];
+        m_hold.copyTo(m_mask,  (mat_in<tempvalB) );
+        m_zero.copyTo(m_mask,  (mat_in<tempvalA) );
+        m_mask.copyTo(mat_out, (m_mask>0) );
+    }
+    return true;
+}
+
+////////////////////////////
 //      VISUALISATION     //
 ////////////////////////////
 
@@ -559,15 +641,8 @@ bool OptiPlan::show_RMSE(const std::string& filename){
     //CPING2("rmsesize",v_rmse.size());
     for(int k=1; k<nb_iterations; k++)
     {
-        //CPING2("rmse",v_rmse[k]);
-        //for(int j=0; j<vv_thresh[k].size()-1;j++)
-        //{
-        //    CPING2("threshold",vv_thresh[k][j]);
-        //    CPING2("centroid",vv_thresh[k][j]);
-        //}
-        //CPING2("threshold",vv_thresh[k][vv_thresh[k].size()-1]);
+
         fprintf(gnuplot, "%i %g\n", k, v_rmse[k]);
-        //fprintf(stdout, "%i %g\n", k, v_rmse[k]);
     }
     fflush(gnuplot);fprintf(gnuplot, "e\n");
     fprintf(gnuplot,"unset output \n");
@@ -578,6 +653,7 @@ bool OptiPlan::show_RMSE(const std::string& filename){
     return true;
 }
 
+///// BEGIN TODO recoder show_rmse en plus simple
 bool OptiPlan::show_all_RMSE(const std::string& filename){
     //même chose que show mais pour toutes les méthodes. 
     FILE* gnuplot = popen("gnuplot","w");
@@ -631,8 +707,63 @@ bool OptiPlan::show_RMSE_elt_n(FILE* gnuplot, size_t idx){
     fprintf(gnuplot, "e\n");
     return true;
 }
+//////END TODO
+//////Start TODO.ing
+
+bool OptiPlan::show_all_RMSE2(const std::string& filename){
+    FILE* gnuplot = popen("gnuplot","w");
+    fprintf(gnuplot, "set term 'pngcairo' size 950,600 enhanced font 'Verdana,10'\n");
+    ioWizard->set_gnuplot_output(gnuplot,filename+".png");
+
+    std::string initplot_msg = "plot ";
+    std::string _tmptype;
+    size_t nb_iter;
+    vector<vector<size_t> > vvs1;
+    vector<vector<size_t> > vvs2;
+    vector<float> _v_rmse;
+    vector<float> _v_rmsegt;
+    if(!stored_set[0].get_data_pointers(_tmptype, nb_iter, 
+      vvs1, vvs2, _v_rmse, _v_rmsegt))
+        {return error("get_data_pointers at step showall0");}
+    initplot_msg += "'-' title '"+_tmptype+"' with lines";
+    initplot_msg += ",'-' title '"+_tmptype+" vs gt' with lines";
+    for(int k=1;k<nb_storedplans; k++){
+        if(!stored_set[k].get_data_pointers(_tmptype, nb_iter,
+	  vvs1, vvs2, _v_rmse, _v_rmsegt) )
+            {return error("get_data_pointers at step showall");}
+        //_tmptype="-";
+        initplot_msg += ", '-' title '"+_tmptype+"' with lines";
+        initplot_msg += ", '-' title '"+_tmptype+" vs gt' with lines";
+    }
+    initplot_msg += "\n";
+    fprintf(gnuplot, "%s",initplot_msg.c_str());
+
+
+    for(int k=0;k<nb_storedplans;k++){
+        stored_set[k].get_data_pointers(_tmptype, nb_iter,
+	  vvs1, vvs2, _v_rmse, _v_rmsegt);        
+        gnuplot_vect(gnuplot,_v_rmse);   
+        gnuplot_vect(gnuplot,_v_rmsegt);
+    }
+    
+    fprintf(gnuplot,"unset output \n");
+    fprintf(gnuplot,"exit \n"); 
+    pclose(gnuplot);
+    return true;
+}
+
+bool OptiPlan::gnuplot_vect(FILE* gnuplot, vector<float> vect){
+    for(int i=1; i<vect.size(); i++){
+        fprintf(gnuplot, "%i %g\n", i, vect[i]);
+    }
+    fflush(gnuplot);
+    fprintf(gnuplot, "e\n");
+    return true;
+}
 
 bool OptiPlan::show_all_thresh_plans(std::string filename){
+    ioWizard->mksubdir("threshplans");
+    filename=string("threshplans/")+filename;
     if(nb_storedplans<1){return error("no plan set! no thresh to show");}
     for(int k = 0; k<nb_storedplans; k++){
         show_thresh_plan(filename,k);
@@ -750,6 +881,41 @@ bool OptiPlan::show_thresh_plan(std::string filename, int kplan){
 }
 
 
+
+bool OptiPlan::write_all_ThreshedMatrix(cv::Mat1i & mat_in, std::string folder, bool set_rmsegt){
+    // pour tout plan enregistré
+    // pour toutes les itérations
+    // appeler la fonction getThreshedMatrix
+    cv::Mat1i mat_tmp = cv::Mat::zeros(mat_in.rows,mat_in.cols,CV_32S);
+    if(set_rmsegt&& (gtl_mat.cols!=mat_in.cols||gtl_mat.rows!=mat_in.rows) ){
+        return error("Matrix dimension must agree for rmse (gt & threshedmatrix)");
+    }
+    bool plan_is_stored = h_thresh && h_centroid; //disabled.
+    vector<float> _v_rmse_gt; //if set_rmsegt
+    ioWizard->mksubdir(folder);
+    std::string _type;
+    std::string str_tmp = "";
+    
+    for(size_t method = plan_is_stored?0:0 ; method<nb_storedplans; method++){
+        if(set_rmsegt)_v_rmse_gt.resize(stored_set[method].get_iter());
+        for(size_t i=1; i<stored_set[method].get_iter();i++){
+            if(!get_ThreshedMatrix(mat_in,mat_tmp,i,method)){
+                error("Unexpected failure in get_ThreshedMatrix");}
+            if(set_rmsegt){
+                _v_rmse_gt[i]=Utils::compute_rmse_label(mat_tmp, gtl_mat,nb_labels);
+            }
+            stored_set[method].get_type(_type);
+            str_tmp = _type + "-" + to_string2(i);
+            ioWizard->img_setscale(3);
+            ioWizard->writeImage(folder+"/2D-"+str_tmp+ ".png",mat_tmp);
+            ioWizard->write3DImage(folder+"/3D-"+str_tmp+ ".png",mat_tmp);
+        }
+        if(set_rmsegt)stored_set[method].set_rmsegt(_v_rmse_gt);
+    }
+    
+    ioWizard->img_unsetscale();
+    return true;
+}
 
 
 bool OptiPlan::addToLog(void){

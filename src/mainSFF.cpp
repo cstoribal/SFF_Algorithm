@@ -68,7 +68,7 @@ int main( int argc, char** argv )
     Mat1T tmpmat;
     log(mySFF.dmat_score,tmpmat);
     //mySFF.ioWizard.showImage("scale","score",tmpmat,4000);
-    mySFF.ioWizard.writeImage("Iscore.png",tmpmat);
+    //mySFF.ioWizard.writeImage("Iscore.png",tmpmat);
 
 
 
@@ -88,7 +88,7 @@ int main( int argc, char** argv )
     
     mySFF.optimize();
     //mySFF.ioWizard.showImage("scale","rmat",mySFF.rmat,1000);
-    mySFF.ioWizard.writeImage("I_dregu.png",mySFF.rmat);
+    //mySFF.ioWizard.writeImage("I_dregu.png",mySFF.rmat);
 
 
     mySFF.setMultifocusRmat();
