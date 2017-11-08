@@ -51,6 +51,7 @@ public:
 	vector<float>		& _v_rmse, 
 	vector<float>		& _v_rmsegt);
     bool get_rmse_at_iter(const size_t & iter, float & rmse);
+    bool get_rmse(vector<float> & _v_rmse);
     bool get_type(std::string & _type);
     size_t get_iter(void);
     bool set_rmsegt(vector<float> _v_rmsegt);
@@ -163,6 +164,7 @@ public:
     bool write_all_ThreshedMatrix(
 	cv::Mat1i & mat_in, std::string folder="threshed", bool set_rgt=true);
 
+    bool computeCrossRMSEperf_andLog(void);
     bool addToLog(void);
     
 

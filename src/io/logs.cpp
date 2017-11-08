@@ -121,6 +121,10 @@ bool MyLog::set_bestplans(std::vector<std::string> types){
     return true;
 }
 
+bool MyLog::write_deltaRMSEtoHistogram(vector<vector<vector<std::string> > > & vvv_deltarmse, vector<vector<std::string> > & vv_type12){
+    return this->log_data_out->write_deltaRMSEtoHistogram(vvv_deltarmse, vv_type12);
+}
+
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
 //////////////////////////////////////////////////////////////////////
@@ -186,6 +190,33 @@ bool MyLogOut::Format_txt(void){
     strdata += "\n";
     return true;
 }
+
+
+bool MyLogOut::write_deltaRMSEtoHistogram(vector<vector<vector<std::string> > > & vvv_deltarmse, vector<vector<std::string> > & vv_type12){
+    //si le fichier n'existe pas, le créer
+    size_t M  = vvv_deltarmse.size();
+    size_t N  = vvv_deltarmse[0].size();
+    size_t IT = vvv_deltarmse[0][0].size();
+    
+    std::ofstream outfile;
+    std::string text = "v0.1 ; ";
+    outfile.open("./deltaRMSE.csv", std::ios_base::app);
+    if(!outfile){
+        outfile.open("./deltaRMSE.csv", ios::out | ios::trunc);
+        for(int m=0; m<M;  m++) for(int n=0; n<N; n++) for(int it=1;it<IT; it++){
+            text+=vv_type12[m][n]+"-it-"+to_string2(it)+" ; ";
+        }
+        text+="\nv0.1 ;";
+    }
+    for(int m=0; m<M;  m++) for(int n=0; n<N; n++) for(int it=1;it<IT; it++){
+            text+=vvv_deltarmse[m][n][it]+";";
+    }
+    text+="\n";
+    outfile << text;
+    outfile.close();
+    return true;
+}
+
 
 bool MyLogOut::write(void){
     this->Format_txt();

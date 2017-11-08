@@ -104,6 +104,12 @@ bool OptiStored::get_rmse_at_iter(const size_t & iter, float & rmse){
     return true;
 }
 
+bool OptiStored::get_rmse(vector<float> & _v_rmse){
+    if(!h_rmse){return false;}
+    _v_rmse = v_rmse;
+    return true;
+}
+
 bool OptiStored::get_type(std::string & _type){
     _type = type;
     return true;
@@ -914,6 +920,42 @@ bool OptiPlan::write_all_ThreshedMatrix(cv::Mat1i & mat_in, std::string folder, 
     }
     
     ioWizard->img_unsetscale();
+    return true;
+}
+
+bool OptiPlan::computeCrossRMSEperf_andLog(void){
+    if(nb_storedplans==0||upperbound_iterations==0){
+        return error("No storedplans or iterations for XRMSE");}
+    vector<vector<vector<std::string> > > vvv_deltaRMSEmatrix;
+    vector<vector<std::string> >    vv_types;
+    std::string typeA;
+    std::string typeB;
+    vector<float> v_rmseA, v_rmseB;
+    vvv_deltaRMSEmatrix.resize(nb_storedplans);
+    vv_types.resize(nb_storedplans);
+    size_t miniter;
+    for(int m=0; m<nb_storedplans; m++){
+        vvv_deltaRMSEmatrix[m].resize(nb_storedplans);
+        vv_types[m].resize(nb_storedplans);
+        stored_set[m].get_type(typeA);
+        stored_set[m].get_rmse(v_rmseA);
+        for(int n=0; n<nb_storedplans; n++){
+            vvv_deltaRMSEmatrix[m][n].resize(upperbound_iterations);
+            stored_set[n].get_type(typeB);
+            stored_set[n].get_rmse(v_rmseB);
+            vv_types[m][n]=typeA+"-"+typeB;
+            miniter=min(v_rmseA.size(),v_rmseB.size());
+            for(int i=0; i<min(miniter,upperbound_iterations); i++){
+                vvv_deltaRMSEmatrix[m][n][i]=to_string2(v_rmseA[i]-v_rmseB[i]);
+                }
+            for(int i=min(miniter,upperbound_iterations); 
+			i<upperbound_iterations; ++i){
+                vvv_deltaRMSEmatrix[m][n][i]="";
+                }
+            }
+        }
+    myLog->write_deltaRMSEtoHistogram(vvv_deltaRMSEmatrix,vv_types);
+    
     return true;
 }
 

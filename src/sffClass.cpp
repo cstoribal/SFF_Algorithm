@@ -141,13 +141,13 @@ bool MySFF::doDepth(void){
 
 bool MySFF::prepare_optimization_plan(void){
     optiPlan.set_groundtruth(gt_label_mat);
-    std::vector<std::string> typelist(6);
+    std::vector<std::string> typelist(5);
     typelist[0]="binary";
     typelist[1]="binary_v2";
     typelist[2]="otsu";
-    typelist[3]="otsu_v0";
-    typelist[4]="median";
-    typelist[5]="2means";
+    //typelist[3]="otsu_v0";
+    typelist[3]="median";
+    typelist[4]="2means";
     COUT("starting optimization plan");
     for(int i=0; i<typelist.size(); i++){
         optiPlan.set_param(typelist[i],nb_labels,dim1*dim2,histogram_dmat,1,1);
@@ -159,7 +159,8 @@ bool MySFF::prepare_optimization_plan(void){
     
     COUT("optiplan RMSE computed");
     optiPlan.show_all_thresh_plans("Threshplan_");
-    optiPlan.write_all_ThreshedMatrix(dmat_label);
+    optiPlan.write_all_ThreshedMatrix(dmat_label); // rmse_gt set !
+    optiPlan.computeCrossRMSEperf_andLog();
     //optiPlan.write_all_ThreshedMatrix_set_RMSE_gt(dmat_label);
 
     optiPlan.show_all_RMSE2("RMSEall2");
