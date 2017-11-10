@@ -20,6 +20,7 @@ MySFF::MySFF(){
     A_tst = Point(5,5);
 }
 MySFF::~MySFF(){
+    COUT("starting to write logs");
     myLog.write();
     //CPING("this is MySFF destructor's test");
 }
@@ -57,10 +58,7 @@ bool MySFF::loadProblem(int argc, char** argv){
     ioWizard.mkdir(input_prts.outputfolder);
     ioWizard.set_auto_directory(input_prts.outputfolder);
     ioWizard.storeParameters();
-
-
-
-    
+    MiscClass::optional_features = ioWizard.get_optional_features();
     return true;
 }
 
@@ -127,7 +125,7 @@ bool MySFF::doDepth(void){
     ioWizard.writeImage("data/dmat_label.png",this->dmat_label);
     ioWizard.img_unsetscale();
     Mat1T tmpmat;
-    log(dmat_score,tmpmat);
+    log(dmat_score+1.0f,tmpmat);
     ioWizard.writeImage("data/Iscore.png",tmpmat);
     
     debug_check_all("end doDepth");
@@ -161,7 +159,6 @@ bool MySFF::prepare_optimization_plan(void){
     optiPlan.show_all_thresh_plans("Threshplan_");
     optiPlan.write_all_ThreshedMatrix(dmat_label); // rmse_gt set !
     optiPlan.computeCrossRMSEperf_andLog();
-    //optiPlan.write_all_ThreshedMatrix_set_RMSE_gt(dmat_label);
 
     optiPlan.show_all_RMSE2("RMSEall2");
     optiPlan.addToLog();
@@ -224,7 +221,6 @@ bool MySFF::setMultifocusRmat(void){
         for(int i=0; i<dim1; i++){
         for(int j=0; j<dim2; j++){
             imatBGR[d].at<fType>(i,j) = imageSet[depthEst.getRankFromDepth(rmat.at<fType>(i,j))].ivmat[d].at<fType>(i,j);
-            //imatBGR[d].at<fType>(i,j) = imageSet[(int)dmat_rank.at<fType>(i,j)].ivmat[d].at<fType>(i,j);
         }}
     }
 
@@ -239,12 +235,6 @@ bool MySFF::setMultifocusRmat(void){
 
 
 bool MySFF::optimize(void){
-
-
-    //debug_MMCheck(this->gt_dmat,"gt_dmatrix _stage3");
-    //debug_MMCheck(this->rmat,"rmatrix _stage3");
-    //debug_MMCheck(this->dmat,"dmatrix _stage3");
-    //debug_MMCheck(this->dmat_rank,"drankmatrix _stage3");
 
     ioWizard.mksubdir("optimized");
     
@@ -479,6 +469,7 @@ bool MySFF::setNewProblem(void){
 
 bool MySFF::debug_check_all(std::string context){
     debug_MMCheck(this->gt_dmat,"gt_dmatrix "+context);
+    debug_MMCheck(this->gt_label_mat,"gt_label_mat "+context);
     debug_MMCheck(this->dmat,"dmatrix "+context);
     debug_MMCheck(this->dmat_rank,"drankmatrix "+context);
     debug_MMCheck(this->dmat_score,"dscorematrix "+context);

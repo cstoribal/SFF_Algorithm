@@ -61,6 +61,7 @@ public:
 
     bool parsefile2vect(string filename, vector<vector<string> > & filedata); //ok
     bool parsevect2struct(const vector<vector<string> > & fd, tdf_input & inp); //ok
+    vector<bool> get_optional_features(void);
     bool storeParameters(void);
 
     int help;			// check if help mode is on 
@@ -92,8 +93,6 @@ public:
     bool img_unsetscale(void);    
     bool writeImage(const string filename, const Mat & image);
     bool showImage(const string param,const string name, const Mat & image, int timer);
-    //bool clickImage(const string param, const Mat & image, int timer,
-    //			 bool (*fptr)(void*,Point), void* context) ;
 
     bool write3DImage(const string filename, const Mat & image);
     bool show3DImage(const string filename, const Mat & image);
@@ -145,6 +144,9 @@ private:
     int arg_nrjreg;		// set regularisation functional term
     int arg_opti;		// set optimisation algorithm
     ////////////////
+
+    int opt_feature_int;
+    vector<bool> opt_features;
 
 };
 

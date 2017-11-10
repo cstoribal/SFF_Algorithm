@@ -47,6 +47,8 @@ IOWizard::IOWizard() {
     this->arg_nrjdata = -1;
     this->arg_nrjreg = -1;
     this->arg_opti = -1;
+    
+    this->opt_feature_int = 0;
 
     this->clicked = vector<Point>() ;
     ///// tdf_input default values
@@ -73,15 +75,14 @@ IOWizard::IOWizard() {
 }
 
 IOWizard::~IOWizard(){
-
+    CPING("ioWizard destruction");
 }
 
 bool IOWizard::setlogs(MyLog* mylog){
     this->myLog = mylog;
     return true;
 }
-bool IOWizard::setlogsoutput(void){
-    // to be called when parsing arguments is done. currently called at parseArgs, seems okay
+bool IOWizard::setlogsoutput(void){ // to be called when parsing arguments is done. currently called at parseArgs, seems okay
     this->myLog->set_param(this->input.outputfolder + "/logs.txt",true);
     return true;
 }
@@ -187,6 +188,13 @@ bool IOWizard::parseArgs(int argc, char** argv) {
             assert( i+1 < argc);
             this->outputfolder = string(argv[i+1]);
             cout << this->outputfolder << endl;
+        }
+
+        if (std::string(argv[i]) == "-optf") {
+        // OPTIONAL FEATURES
+            assert( i+1 < argc);
+            this->opt_feature_int = atoi(argv[i+1]);
+            myLog->av("optional features enabled "+to_string2(opt_feature_int) );
         }        
     }
 
@@ -381,6 +389,11 @@ bool IOWizard::checkArgs(void){  // TODO more checks like focus.size == images.s
             return false;
         }
     }
+    
+    opt_features.resize(16);
+    for(int i=0; i<16; i++){
+        opt_features[i]= opt_feature_int && (0x01 << i);
+    }
     // 
     return true;
 }
@@ -403,6 +416,7 @@ bool IOWizard::displayHelp(void){
 		cout<<"Syntax is ProjSFF {[param] [arg] }"<<endl;
 		COUT("Parameters: -D -S -f -fsi -fs -ffi -fdi -fli");
                 COUT("            -gt -sc -gw -ps -pnd -pnr -po -o");
+                COUT("            -optf");
 		COUT("**************************************");
         }
         if(this->arg_filename=="-D" or all==1)
@@ -508,7 +522,10 @@ bool IOWizard::displayHelp(void){
         {
 		cout<<"[-po] parameter is optimisation type (int)"<<endl;
         }
-
+        if(this->arg_filename=="-optf" or all==1)
+        {
+		cout<<"[-optf] optional features vector (int-2bytes)"<<endl;
+        }
         if(this->arg_filename=="NONE" or all==1)
         {
 		cout<<"[] parameter is "<<endl;
@@ -797,6 +814,9 @@ bool IOWizard::parsevect2struct(const vector<vector<string> > & fd, tdf_input & 
     return true;
 }
 
+vector<bool> IOWizard::get_optional_features(void){
+    return opt_features;
+}
 
 bool IOWizard::storeParameters(void){
 
