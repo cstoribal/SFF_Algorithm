@@ -399,6 +399,9 @@ bool DepthClass::interpolate(const vector<fType> & x, const vector<fType> & y, i
     }
     x2[x2.size()-1]=x[x.size()-1]+0.01f; y2[y2.size()-1]=y[y.size()-1];
     N=N+2;
+
+    N=N;
+    x2=x;y2=y;
     
     int i,j,k;
     
