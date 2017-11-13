@@ -13,7 +13,7 @@ and the results under the format of a csv
 #include "logs.h"
 
 MyLog::MyLog(){
-    logversion = "v0.4";
+    logversion = "v0.5";
     logs = "Starting log file \n "+logversion+" \n";
 }
 MyLog::~MyLog(){
@@ -195,20 +195,28 @@ bool MyLogOut::Format_txt(void){
 bool MyLogOut::write_deltaRMSEtoHistogram(vector<vector<vector<std::string> > > & vvv_deltarmse, vector<vector<std::string> > & vv_type12){
     //si le fichier n'existe pas, le créer
     size_t M  = vvv_deltarmse.size();
-    size_t N  = vvv_deltarmse[0].size();
-    size_t IT = vvv_deltarmse[0][0].size();
-    
+    if(M<=1){return false;}
+    size_t IT = vvv_deltarmse[1][0].size();
+    std::string image_path = this->output.settings->file1_set==1?this->output.settings->file1_path:this->output.settings->file2[0];
+    bool file_exists=false;
+    {
+        ifstream fichier("./deltaRMSE.csv");
+        file_exists = !fichier.fail();
+        fichier.close();
+    }
     std::ofstream outfile;
-    std::string text = "v0.1 ; ";
+    std::string text = "v0.2 ; ";
     outfile.open("./deltaRMSE.csv", std::ios_base::app);
-    if(!outfile){
-        outfile.open("./deltaRMSE.csv", ios::out | ios::trunc);
-        for(int m=0; m<M;  m++) for(int n=0; n<N; n++) for(int it=1;it<IT; it++){
+    if(!file_exists){
+        COUT("création d'un nouveau fichier deltaRMSE");
+        text += "filepath ; ";
+        for(int m=0; m<M;  m++) for(int n=0; n<m; n++) for(int it=1;it<IT; it++){
             text+=vv_type12[m][n]+"-it-"+to_string2(it)+" ; ";
         }
-        text+="\nv0.1 ;";
+        text+="\nv0.2 ;";
     }
-    for(int m=0; m<M;  m++) for(int n=0; n<N; n++) for(int it=1;it<IT; it++){
+    text+= image_path+" ;";
+    for(int m=0; m<M;  m++) for(int n=0; n<m; n++) for(int it=1;it<IT; it++){
             text+=vvv_deltarmse[m][n][it]+";";
     }
     text+="\n";

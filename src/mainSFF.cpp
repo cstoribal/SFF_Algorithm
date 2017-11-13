@@ -23,7 +23,7 @@
 
 using namespace cv;
 using namespace std;
-
+vector<bool> MiscClass::optional_features(16);
 MySFF mySFF; // global eurk variable
 
 

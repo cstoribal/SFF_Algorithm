@@ -396,6 +396,7 @@ bool EnergyClass::e_nLx_Rw1( const vector<fType> & lvect, vector<Mat1T> & emat){
     // L1 norm reweighted with reliability 1 == (Max-Min)/RArea/(MaxMax)
     //						*labels (scaling factor)
     // unit is labels
+    Mat1T accumulator, maxmat, minmat;
     if(eParams.rmatset != "rw1") //1step setting reliability matrix
     {
         fType fmin, fmax, maxmax,minmin,auc; //auc area under curve
@@ -403,7 +404,7 @@ bool EnergyClass::e_nLx_Rw1( const vector<fType> & lvect, vector<Mat1T> & emat){
         p_depthClass->getVmatSharpI(sharp3Dvmat);
         int nblabel=sharp3Dvmat.size();
         
-        Mat1T accumulator, maxmat, minmat;
+        //Mat1T accumulator, maxmat, minmat;
         accumulator = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
         maxmat = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
         minmat = Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
@@ -447,6 +448,7 @@ bool EnergyClass::e_nLx_Rw1( const vector<fType> & lvect, vector<Mat1T> & emat){
 
     
     (p_ioW)->writeImage("I_reliability.png",this->eParams.rmat);
+    (p_ioW)->writeImage("I_max-min.png",(maxmat-minmat));
     //fType maxmax,minmin;
     //minMaxLoc(this->eParams.rmat,&minmin,&maxmax);
     //CPING("rmat");CPING2(minmin,maxmax);

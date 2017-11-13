@@ -247,7 +247,14 @@ struct set_param_opti{
 };
 typedef struct set_param_opti tdfp_opti;
 
-
+class MiscClass{
+    
+    
+public:
+    static std::vector<bool> optional_features;
+    
+    
+};
 
 
 

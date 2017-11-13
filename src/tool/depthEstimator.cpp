@@ -392,17 +392,19 @@ bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_ra
 
 bool DepthClass::interpolate(const vector<fType> & x, const vector<fType> & y, int n, int N, vector<fType> X, vector<fType> & z){
     vector<fType> x2(x.size()+2),y2(y.size()+2);
-    x2[0]=x[0]-0.01f; y2[0]=y[0];
-    for(int l=1; l<x2.size()-1; ++l){
-        x2[l]=x[l-1];
-        y2[l]=y[l-1];
+    if(MiscClass::optional_features[0]){
+        x2[0]=x[0]-0.01f; y2[0]=y[0];
+        for(int l=1; l<x2.size()-1; ++l){
+            x2[l]=x[l-1];
+            y2[l]=y[l-1];
+        }
+        x2[x2.size()-1]=x[x.size()-1]+0.01f; y2[y2.size()-1]=y[y.size()-1];
+        N=N+2;
+        myLog->as("using updated interpolation \n");
+    } else {
+        x2=x; y2=y;
     }
-    x2[x2.size()-1]=x[x.size()-1]+0.01f; y2[y2.size()-1]=y[y.size()-1];
-    N=N+2;
 
-    N=N;
-    x2=x;y2=y;
-    
     int i,j,k;
     
 

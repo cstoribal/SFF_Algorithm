@@ -935,11 +935,11 @@ bool OptiPlan::computeCrossRMSEperf_andLog(void){
     vv_types.resize(nb_storedplans);
     size_t miniter;
     for(int m=0; m<nb_storedplans; m++){
-        vvv_deltaRMSEmatrix[m].resize(nb_storedplans);
-        vv_types[m].resize(nb_storedplans);
+        vvv_deltaRMSEmatrix[m].resize(m);
+        vv_types[m].resize(m);
         stored_set[m].get_type(typeA);
         stored_set[m].get_rmse(v_rmseA);
-        for(int n=0; n<nb_storedplans; n++){
+        for(int n=0; n<m; n++){
             vvv_deltaRMSEmatrix[m][n].resize(upperbound_iterations);
             stored_set[n].get_type(typeB);
             stored_set[n].get_rmse(v_rmseB);
@@ -954,8 +954,9 @@ bool OptiPlan::computeCrossRMSEperf_andLog(void){
                 }
             }
         }
-    myLog->write_deltaRMSEtoHistogram(vvv_deltaRMSEmatrix,vv_types);
-    
+    if(!myLog->write_deltaRMSEtoHistogram(vvv_deltaRMSEmatrix,vv_types)){
+        return error("failure in XRMSE, size m<=1 ???");
+    }
     return true;
 }
 
