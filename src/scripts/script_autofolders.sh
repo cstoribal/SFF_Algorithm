@@ -4,18 +4,17 @@
 # 1 default params
 
 init="../ProjSFF -D "
-LIST_FOLD=( "Simulations/s38serie/" ) #"Simulations/semireal_1/")      #"Simulations/s38serie/" "Simulations/s96serie/") # "Simulations/semireal_1/" "Simulations/semireal_2/")
+LIST_FOLD=$1
 
 for fold in ${LIST_FOLD[*]}
   do
-  LIST_SAMP=("../../Samples/"$fold*.txt)
+  LIST_SAMP=("/media/sf_F_DRIVE/Stage/Samples/"$fold*.txt)
   #echo $LIST_SAMP
   #echo $fold
   for samp in ${LIST_SAMP[*]}
     do
-    linecode=$init""$samp
+    linecode=$init""$samp" "$2
     echo $linecode
     eval $linecode
   done
 done
-

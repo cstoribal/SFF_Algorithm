@@ -5,11 +5,11 @@
 
 
 init="./SFFDataMgmt -M "$1" -f "
-LIST_FOLD=("Simulations/s96serie/" "Simulations/s38serie/" "Simulations/" "" "Simulations/semireal_1/" "Simulations/semireal_2/")
+LIST_FOLD=$2
 
 for fold in ${LIST_FOLD[*]}
   do
-  LIST_SAMP=("../Samples/"$fold*.txt)
+  LIST_SAMP=("/media/sf_F_DRIVE/Stage/Samples/"$fold*.txt)
   #echo $LIST_SAMP
   #echo $fold
   for samp in ${LIST_SAMP[*]}
