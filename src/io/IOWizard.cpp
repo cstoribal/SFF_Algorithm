@@ -194,7 +194,7 @@ bool IOWizard::parseArgs(int argc, char** argv) {
         // OPTIONAL FEATURES
             assert( i+1 < argc);
             this->opt_feature_int = atoi(argv[i+1]);
-            myLog->av("optional features enabled "+to_string2(opt_feature_int) );
+            myLog->av("optional features enabled "+to_string2(opt_feature_int)+"\n" );
         }        
     }
 
@@ -1022,6 +1022,9 @@ bool IOWizard::loadGroundTruth(Mat & gtmat,string filepath = "") {
     gtmat = gtmat*(input.gta)+input.gtb;
     if(input.scale!=1)
         resize(gtmat, gtmat, Size(), input.scale, input.scale);
+    //for(int i=0;i<gtmat.rows;i++)for(int j =0;j<gtmat.cols;j++){
+   //     CPING(gtmat.at<fType>(i,j));
+   // }
     // cvtColor(gtmat, gtmat, CV_BGR2GRAY); ok pour version float mfo
     
     //TODO check if 1C or 3C matrix 
