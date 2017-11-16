@@ -79,11 +79,13 @@ bool DepthClass::buildEstimation(const tdf_imgset & sharpSet, tdfp_depth & pmat)
     this->set_dim[1] = sharpSet[0].ivmat[0].cols;
     this->set_dim[2] = sharpSet.size();
 
+    this->sharpSetStored = sharpSet;
+
     for(int k=0;k<set_dim[2];k++)
     {
         this->focus.push_back(sharpSet[k].focus);
     }
-    if(type=="polynome")
+    if(type=="polynome"||type=="polymod")
         f_poly(sharpSet, pmat);
     if(type=="argmax")
         f_argmax(sharpSet, pmat);
@@ -93,11 +95,16 @@ bool DepthClass::buildEstimation(const tdf_imgset & sharpSet, tdfp_depth & pmat)
 }
 
 bool DepthClass::buildDepthmat(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score){
-    cv::Mat1i dmat_labels;
+    cv::Mat1i dmat_label;
 
-    if(type=="polynome") d_poly(dparam, dmat, dmat_rank, dmat_score);
-    if(type=="argmax")   d_argmax(dparam, dmat, dmat_rank, dmat_score);
-    if(type=="gauss")   d_gauss(dparam, dmat, dmat_rank, dmat_score, dmat_labels);
+    if(type=="polynome"||type=="polymod") 
+			d_poly(dparam, dmat, dmat_rank, dmat_score, dmat_label);
+    if(type=="argmax")  d_argmax(dparam, dmat, dmat_rank, dmat_score);
+    if(type=="gauss")   d_gauss(dparam, dmat, dmat_rank, dmat_score, dmat_label);
+
+
+
+    if(type=="polymod") d_polymod(dmat, dmat_rank, dmat_score, dmat_label);
     cout << "depthmap built" << endl;
     return true;
 }
@@ -503,8 +510,11 @@ bool DepthClass::d_argmax(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_
     }}
     DR[oversampling*(set_dim[2]-1)+0][0] = (fType)focus[ (set_dim[2]-1) ];
     DR[oversampling*(set_dim[2]-1)+0][1] = (fType) (set_dim[2]-1) ;
-    //Mat1T tmpmat = cv::Mat::zeros(set_dim[0],set_dim[1],CV_TF);
-    //Mat1T matmax = cv::Mat::zeros(set_dim[0],set_dim[1],CV_TF);
+    this->DepthToRank = DR;
+    build_HalfDepthToRank();
+    CPING2("DR SET : ", this->DepthToRank.size());
+    
+    
     Mat1T matarg = cv::Mat::zeros(set_dim[0],set_dim[1],CV_TF);
     Mat1T matrnk = cv::Mat::zeros(set_dim[0],set_dim[1],CV_TF);
     Mat1T mat1T_ones = cv::Mat::ones(set_dim[0],set_dim[1],CV_TF);
@@ -539,9 +549,6 @@ bool DepthClass::d_argmax(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_
         }
     }
 
-    this->DepthToRank = DR;
-    build_HalfDepthToRank();
-    CPING2("DR SET : ", this->DepthToRank.size());
     //for(int i=0; i<DepthToRank.size(); i++){
     //    CPING2("DR0",DepthToRank[i][0]);
     //    CPING2("DR1",DepthToRank[i][1]);
@@ -555,7 +562,7 @@ bool DepthClass::d_argmax(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_
 }
 
 
-bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score){
+bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score, cv::Mat1i & dmat_label){
     // Créer un vecteur des points en lesquels évaluer chaque profondeur
     // D abscisses des profondeurs
     // X formule w/ oversampling ( k*v[i+1]+(o-k)*v[i] )/o;
@@ -585,6 +592,7 @@ bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_ra
     dmat = dmat + 20.0;
     dmat_score = cv::Mat::zeros(set_dim[0],set_dim[1],CV_TF);
     dmat_rank = cv::Mat::zeros(set_dim[0],set_dim[1],CV_TF);
+    dmat_label = cv::Mat::zeros(set_dim[0],set_dim[1],CV_32S);
 
     //tmpmat = cv::Mat1d::Mat(set_dim[0],set_dim[1],CV_TF);
     CPING2(dmat.rows,dmat.cols);
@@ -632,6 +640,7 @@ bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_ra
                 max = tmp;
                 arg = DR[f][0];
                 rnk = DR[f][1];
+                dmat_label.at<int>(i,j)=f;
 		//if(i==712 and j==1493) cout << "hit !" << endl;
             }
         }
@@ -659,7 +668,32 @@ bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_ra
     return true;
 }
 
-
+bool DepthClass::d_polymod(Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score, cv::Mat1i & dmat_label){
+///Explores vectmat around dmat_rank to determine if there exists a local maxima near. Breaks the oversampling, though. 
+    for(int i=0; i<set_dim[0]; i++) for(int j=0; j<set_dim[1]; j++){
+        int tmprank = dmat_rank.at<fType>(i,j);
+        int tmprank2 = tmprank+2;
+        int tmprank3;
+        fType scoremax=sharpSetStored[tmprank].ivmat[0].at<fType>(i,j);
+        while(tmprank!=tmprank2){
+            tmprank3=tmprank;
+            tmprank2=tmprank;
+            for(int k=max(0,tmprank-1);k<min(set_dim[2],tmprank+1);k++){
+                if(sharpSetStored[k].ivmat[0].at<fType>(i,j) > scoremax){
+                    tmprank3=k;
+                    scoremax = sharpSetStored[k].ivmat[0].at<fType>(i,j);
+                }
+            }
+            tmprank=tmprank3;
+        }
+        dmat_rank.at<fType>(i,j)=(fType)tmprank;
+        dmat_label.at<int>(i,j)=min(tmprank*oversampling,
+				      oversampling*(set_dim[2]-1)+1 );
+        dmat_score.at<fType>(i,j) = scoremax;
+        dmat.at<fType>(i,j)=focus[tmprank];
+    }
+    return true;
+}
 
 bool DepthClass::interpolate(const vector<fType> & x, const vector<fType> & y, int n, int N, vector<fType> X, vector<fType> & z){
     vector<fType> x2(x.size()+2),y2(y.size()+2);

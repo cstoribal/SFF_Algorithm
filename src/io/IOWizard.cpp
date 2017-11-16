@@ -432,7 +432,7 @@ bool IOWizard::displayHelp(void){
         COUT("     1/0; -psharp; \\n");
         COUT("     1/0; -pdepth; \\n");
         COUT("     1/0; -pnd energy data; -pnr energyregul; \\n");
-        COUT("     1/0; -poptimization; \\n");
+        COUT("     1/0; -poptimization; connexity, maxiteration\\n");
         COUT("     1/0; -lambda_r vector; \\n");
         COUT("     1/0; -lambda_d vector; \\n");
         COUT("     note : called parameters overwrite those ones");
