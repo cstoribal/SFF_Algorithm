@@ -84,7 +84,7 @@ bool Sharpness_Operator::compute_SMLAP(vector<Mat1T> ivmat, vector<Mat1T>& smat)
 
         // (lap*0).copyTo(lap,lap<seuil);
         
-        lapb = Mat::ones(6, 6, CV_TF); //TODO define window dimensions
+        lapb = Mat::ones(7, 7, CV_TF); //TODO define window dimensions
         filter2D(lap,lapc,-1,lapb,Point(-1,-1),0,BORDER_REPLICATE);
         
         svmat.push_back(lapc);

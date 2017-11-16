@@ -30,7 +30,7 @@ bool MySFF::setlogs(void){
     ioWizard.setlogs(&myLog);
     pretreatClass.setlogs(&myLog);
     sharpOP.setlogs(&myLog);
-    depthEst.setlogs(&myLog);
+    depthEst.setlogs(&myLog,&ioWizard);
     energyClass.setlogs(&myLog);
     optiPlan.set_logs(&ioWizard,&myLog);
     optiClass.setlogs(&myLog);

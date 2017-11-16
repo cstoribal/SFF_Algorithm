@@ -66,7 +66,7 @@ int main( int argc, char** argv )
     mySFF.ioWizard.img_setscale(1);
     //mySFF.ioWizard.showImage("scale","Idist.png",mySFF.dmat,0);
     mySFF.ioWizard.writeImage("Idist.png",mySFF.dmat); // brut depth image
-    //mySFF.showInterpolationAt();
+    mySFF.showInterpolationAt();
     mySFF.ioWizard.img_unsetscale();
     Mat1T tmpmat;
     log(mySFF.dmat_score,tmpmat);
