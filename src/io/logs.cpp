@@ -13,7 +13,7 @@ and the results under the format of a csv
 #include "logs.h"
 
 MyLog::MyLog(){
-    logversion = "v0.5";
+    logversion = "v0.6";
     logs = "Starting log file \n "+logversion+" \n";
 }
 MyLog::~MyLog(){
