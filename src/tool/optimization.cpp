@@ -93,6 +93,7 @@ bool OptiClass::do_all_optimizations(void){
     }
     
     for(size_t tmp=0; tmp<nb_storedplans; tmp++){
+        myLog->clear_iteration_times();
         actual_idx_method=tmp;
         reset(1,lambda,false);
         compute_opt_custom();
@@ -387,7 +388,7 @@ bool OptiClass::compute_opt_custom(void){
         myLog->time_i();
         M = 2*M;
         
-        std::cout << n << "...";
+        std::cout << n << "..." << endl;
         for(int i=0; i<height; i++) for(int j=0; j<width; j++)
         {
             if(vv_thresh[n][M.at<int>(i,j)+1]<1)return error("indice vv_thresh 0");
@@ -414,7 +415,8 @@ bool OptiClass::compute_opt_custom(void){
 	}
         catch (GCException e){
 	    e.Report();
-            return false;
+            delete gco;
+            return error("GCException failure in "+selected_typename+"!\n");
 	}
         //MAJ VOISINAGES
         for(int i=0; i<nb_pixels; i++) for(int j=0; j<nbs_nbk[i]; j++)
