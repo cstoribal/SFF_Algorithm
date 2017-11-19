@@ -81,6 +81,10 @@ double MyLog::time_r(void){
 double MyLog::time_r(int rank){
     double tmp = timer.Time();
     timer.Init();
+    if(rank>=this->log_data_out->output.time.size()){
+        CPING("error time_r");
+        return tmp;
+    }
     this->log_data_out->output.time[rank] = tmp;
     return tmp;
 }
@@ -91,6 +95,10 @@ double MyLog::time(void){
 
 double MyLog::time(int rank){
     double tmp = timer.Time();
+    if(rank>=this->log_data_out->output.time.size()){
+        CPING("error time_r");
+        return tmp;
+    }
     this->log_data_out->output.time[rank] = tmp;
     return tmp;
 }
@@ -99,12 +107,33 @@ void MyLog::time_i(void){
     return timer.Init();
 }
 
+bool MyLog::clear_log(void){
+//ensures data are not overwritten
+    this->log_data_out->output.lambda         = -999;
+    this->log_data_out->output.iterationlvl   = -999;
+    this->log_data_out->output.opti           = "none";
+    this->log_data_out->output.rmse           = -999;
+    this->log_data_out->output.psnr           = -999;
+    this->log_data_out->output.types.resize(0);
+    //for(int i=6; i<this->log_data_out->output.time.size(); i++){
+    //    this->log_data_out->output.time[i] = -1;
+    //}
+    
+}
+
 bool MyLog::set_state(fType lr, fType ld, int iter){
-    this->log_data_out->output.lambda_r = lr;
-    this->log_data_out->output.lambda_d = ld;
+    this->log_data_out->output.lambda = lr/ld;
     this->log_data_out->output.iterationlvl = iter;
     return true;
 }
+
+bool MyLog::set_state(std::string opti, fType lambda, int iter){
+    this->log_data_out->output.lambda         = lambda;
+    this->log_data_out->output.opti           = opti;
+    this->log_data_out->output.iterationlvl   = iter;
+    return true;
+}
+    
 
 bool MyLog::set_eval(fType rmse, fType psnr){
     this->log_data_out->output.rmse = rmse;
@@ -134,6 +163,8 @@ MyLogOut::MyLogOut(){};MyLogOut::~MyLogOut(){};
 bool MyLogOut::setup(tdf_input & input){
     this->output.settings = &input;
     this->output.time.resize(15);
+    this->output.type_best_theorical="";
+    this->output.type_best_regularized="";
     return true;
 }
 
@@ -142,46 +173,42 @@ bool MyLogOut::Format_txt(void){
     tdf_input* & in = o.settings;
     int tmp_nimg = (int)floor((double)(in->file1_lasti-in->file1_firsti+1) / (double)in->file1_deltai);
 
-    strdata = logversion + ";";
+    strdata = logversion + "; ";
     strdata += 
-	  (in->outputf_set?to_string2(in->outputfolder)	:"") + ";"
-        + (in->file1_set?  to_string2(in->file1_path)	:"") + ";" 
-	+ (in->file1_set?  to_string2(in->file1_ext)	:"") + ";" 
-	+ (in->file1_set?  to_string2(tmp_nimg) 	:"") + ";"
-	+ (in->file2_set?  to_string2(in->file2[0])	:"") + ";"
-	+ (in->file2_set?  to_string2(in->file2.size())	:"") + ";"
-	+ (in->groundt_set?to_string2(in->gtpath)	:"") + ";"
-	+ (in->groundt_set?to_string2(in->gtb)  	:"") + ";"
-	+ (in->groundt_set?to_string2(in->gta+in->gtb) 	:"") + ";"
-	+ (in->focus_set?  to_string2(in->focus[0])	:"") + ";"
-	+ (in->focus_set?to_string2(in->focus[in->focus.size()-1]):"") + ";"
-	+ (in->preproc_set?to_string2(in->scale)	:"") + ";"
- 	+ (in->preproc_set?to_string2(in->gauss)	:"") + ";"
- 	+ (in->preproc_set?to_string2(in->noise_a)	:"") + ";"
- 	+ (in->preproc_set?to_string2(in->noise_b)	:"") + ";"
- 	+ (in->preproc_set?to_string2(in->noise_ca)	:"") + ";"
- 	+ (in->preproc_set?to_string2(in->noise_cs)	:"") + ";"
- 	+ (in->sharp_set?  to_string2(in->sharp)	:"") + ";"
-	+ (in->depth_set?  to_string2(in->depth)	:"") + ";"
-	+ (in->nrj_set?    to_string2(in->nrj_d)	:"") + ";"
-	+ (in->nrj_set?    to_string2(in->nrj_r)	:"") + ";"
-	+ (in->opti_set?   to_string2(in->opti) 	:"") + ";"
-	+ (in->opti_set?   to_string2(in->connexity)	:"") + ";"
-	+ (in->opti_set?   to_string2(in->maxiteration)	:"") + ";";
+	  (in->outputf_set?to_string2(in->outputfolder)	:"") + "; "
+        + (in->file1_set?  to_string2(in->file1_path)	:"") + "; " 
+	+ (in->file1_set?  to_string2(in->file1_ext)	:"") + "; " 
+	+ (in->file1_set?  to_string2(tmp_nimg) 	:"") + "; "
+	+ (in->file2_set?  to_string2(in->file2[0])	:"") + "; "
+	+ (in->file2_set?  to_string2(in->file2.size())	:"") + "; "
+	+ (in->groundt_set?to_string2(in->gtpath)	:"") + "; "
+	+ (in->groundt_set?to_string2(in->gtb)  	:"") + "; "
+	+ (in->groundt_set?to_string2(in->gta+in->gtb) 	:"") + "; "
+	+ (in->focus_set?  to_string2(in->focus[0])	:"") + "; "
+	+ (in->focus_set?to_string2(in->focus[in->focus.size()-1]):"") + "; "
+	+ (in->preproc_set?to_string2(in->scale)	:"") + "; "
+ 	+ (in->preproc_set?to_string2(in->gauss)	:"") + "; "
+ 	+ (in->preproc_set?to_string2(in->noise_a)	:"") + "; "
+ 	+ (in->preproc_set?to_string2(in->noise_b)	:"") + "; "
+ 	+ (in->preproc_set?to_string2(in->noise_ca)	:"") + "; "
+ 	+ (in->preproc_set?to_string2(in->noise_cs)	:"") + "; "
+ 	+ (in->sharp_set?  to_string2(in->sharp)	:"") + "; "
+	+ (in->depth_set?  to_string2(in->depth)	:"") + "; "
+	+ (in->nrj_set?    to_string2(in->nrj_d)	:"") + "; "
+	+ (in->nrj_set?    to_string2(in->nrj_r)	:"") + "; "
+	//+ (in->opti_set?   to_string2(in->opti) 	:"") + "; "
+	+ (in->opti_set?   to_string2(in->connexity)	:"") + "; ";
     
     strdata +=
-	  to_string2(o.lambda_d) + ";"
-	+ to_string2(o.lambda_r) + ";"
-	+ to_string2(o.iterationlvl) + ";"
-	+ to_string2(o.rmse) + ";"
+	  to_string2(o.opti) + "; "
+	+ to_string2(o.lambda) + "; "
+	+ to_string2(o.iterationlvl) + "; "
+	+ to_string2(o.rmse) + "; "
 	+ to_string2(o.psnr);
 
     for(int k=0;k<o.time.size();k++)
-        strdata += ";" + to_string2(o.time[k]);
+        strdata += "; " + to_string2(o.time[k]);
 
-
-    for(int k=0;k<o.time.size();k++)
-        strdata += ";" + to_string2(o.time[k]);
 
     for(int k=0;k<o.types.size();k++)
         strdata += ";" + to_string2(o.types[k]);
@@ -205,7 +232,7 @@ bool MyLogOut::write_deltaRMSEtoHistogram(vector<vector<vector<std::string> > > 
         fichier.close();
     }
     std::ofstream outfile;
-    std::string text = "v0.2 ; ";
+    std::string text = "v0.3 ; ";
     outfile.open("./deltaRMSE.csv", std::ios_base::app);
     if(!file_exists){
         COUT("création d'un nouveau fichier deltaRMSE");
@@ -213,7 +240,7 @@ bool MyLogOut::write_deltaRMSEtoHistogram(vector<vector<vector<std::string> > > 
         for(int m=0; m<M;  m++) for(int n=0; n<m; n++) for(int it=1;it<IT; it++){
             text+=vv_type12[m][n]+"-it-"+to_string2(it)+" ; ";
         }
-        text+="\nv0.2 ;";
+        text+="\nv0.3 ;";
     }
     text+= image_path+" ;";
     for(int m=0; m<M;  m++) for(int n=0; n<m; n++) for(int it=1;it<IT; it++){
@@ -228,10 +255,30 @@ bool MyLogOut::write_deltaRMSEtoHistogram(vector<vector<vector<std::string> > > 
 
 bool MyLogOut::write(void){
     this->Format_txt();
+
+    bool file_exists=false;
+    {
+        ifstream fichier("../logout.csv");
+        file_exists = !fichier.fail();
+        fichier.close();
+    }
     std::ofstream outfile;
-    outfile.open("../1data/logout.csv", std::ios_base::app);
+    outfile.open("../logout.csv", std::ios_base::app);
+    if(!file_exists){
+        COUT("création d'un nouveau fichier de logs");
+        create_new_logfile_header(outfile);
+    }
+    // TODO si pas de fichier alors créer l'en-tête !!
     outfile << strdata;
     outfile.close();
+    return true;
+}
+
+bool MyLogOut::create_new_logfile_header(std::ofstream & outfile){
+    std::string initdata;
+    initdata = logversion + " ; outputfolder ; file1_p ; extension ; nbimg ; file2_p ; nb_img ; gt_path ; dmin ; dmax ; fmin ; fmax ; scale ; blur ; noiseA ; noiseB ; noiseCA ; noiseCS ; sharpOp ; depthOp ; nrj_d ; nrj_r ; opti ; connexity ; opti ; lambda ; iterationlvl ; rmse ; psnr ; t ; t ; t ; t ; t ; t ;  topti ; \n";
+    outfile << initdata ;
+    return true; //TODO
 }
 
 

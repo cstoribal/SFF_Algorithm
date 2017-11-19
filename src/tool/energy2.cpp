@@ -430,7 +430,8 @@ bool EnergyClass::e_nLx_Rw1( const vector<fType> & lvect, vector<Mat1T> & emat){
         }
         
         Mat1T matrix;
-        divide((maxmat-minmat).mul(maxmat-minmat)*nblabel, (accumulator*maxmax), matrix);
+        divide((maxmat-minmat).mul(maxmat-minmat)*nblabel, (accumulator), matrix);
+        // edit : don't divide by *maxmax
         //minMaxLoc(matrix,&minmin,&maxmax);
         //CPING("rmat");CPING2(minmin,maxmax);
         this->eParams.rmat = matrix/mean(matrix)[0];

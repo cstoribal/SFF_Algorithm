@@ -88,7 +88,7 @@ int main( int argc, char** argv )
 
     mySFF.prepare_optimization_plan();
     
-    mySFF.optimize();
+    mySFF.optimize2();
     //mySFF.ioWizard.showImage("scale","rmat",mySFF.rmat,1000);
     //mySFF.ioWizard.writeImage("I_dregu.png",mySFF.rmat);
 

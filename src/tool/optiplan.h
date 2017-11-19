@@ -153,6 +153,14 @@ public:
     //process external data 
     bool get_ThreshedMatrix(const cv::Mat1i & mat_in, cv::Mat1i & mat_out, size_t iteration, int method=-1);
 
+    bool get_thresholds_n_centroids(int method, // -1 current, or stored
+			std::string & _type,
+			size_t & _nb_iterations, 
+			vector<vector<size_t> > & _vv_thresh, 
+			vector<vector<size_t> > & _vv_centro);
+
+    bool get_nb_storedmethods(size_t & _nb_storedplans);
+
     // Visualisation
     bool show_RMSE(const string& filename);
     bool show_all_RMSE(const string& filename);
@@ -166,8 +174,6 @@ public:
 
     bool computeCrossRMSEperf_andLog(void);
     bool addToLog(void);
-    
-
     
     
     

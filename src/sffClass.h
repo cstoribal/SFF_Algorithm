@@ -65,7 +65,7 @@ public:
     tdf_imgset   imageSet;
     tdf_imgset   sharpSet;
     tdfp_depth   depth_parameters;
-    tdfp_opti     opti_prts;
+    tdfp_opti    opti_prts;
     
     Mat1T gt_dmat;    // ground truth matrix
     Mat1T dmat;       // local depth matrix
@@ -112,7 +112,9 @@ public:
 
     bool setMultifocusRmat(void);
 
+    bool extend_lambda(void);
     bool optimize(void);
+    bool optimize2(void);
     bool launch_optimization(fType l_d, fType l_r, int maxiter, Mat1T & output);
 
     bool evaluate(void);

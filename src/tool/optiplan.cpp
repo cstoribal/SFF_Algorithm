@@ -583,6 +583,32 @@ bool OptiPlan::get_best_method_at_it_pointers(size_t iter,
 	(_type,_nb_iter,_vv_thresh,_vv_centroid,_v_rmse);
 }
 
+bool OptiPlan::get_thresholds_n_centroids(int method,
+			std::string & _type,
+			size_t & _nb_iterations, 
+			vector<vector<size_t> > & _vv_thresh, 
+			vector<vector<size_t> > & _vv_centro){
+    vector<float> _v_rmse;
+    if(method>(int)nb_storedplans){return error("no such storedplans (get_t&c)");}
+    if(method<-1){return error("asked -2 in get_tnc");}
+    if(method!=-1){
+        return(stored_set[method].get_data_pointers(
+		_type,_nb_iterations,_vv_thresh,_vv_centro,_v_rmse));
+    }
+    if(h_thresh && h_centroid){
+        _vv_thresh = vv_thresh;
+        _vv_centro = vv_centroid;
+        _type      = type;
+        _nb_iterations = nb_iterations;
+        return true;
+    }
+    return error("nothing to do");
+}
+
+bool OptiPlan::get_nb_storedmethods(size_t & _nb_storedplans){
+    _nb_storedplans = nb_storedplans;
+    return true;    
+}
 
 ////////////////////////////
 //      TRAITEMENT        //

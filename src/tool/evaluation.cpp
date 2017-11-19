@@ -41,6 +41,8 @@ bool EvalClass::set_parameters(const Mat1T & gt_dmat, const vector<fType> & labe
 
 
 bool EvalClass::compute_RMSE_label(const Mat1T & dmat, fType & rmse, fType & q_rmse ){
+    //deprecated
+    CPING("warning, bad version of rmse");
     Mat1T tmpmat;
     tmpmat = dmat/this->step-gt_dmat/this->step;
     pow(tmpmat,2,tmpmat);
@@ -53,8 +55,21 @@ bool EvalClass::compute_RMSE_label(const Mat1T & dmat, fType & rmse, fType & q_r
     return true;
 }
 
+bool EvalClass::compute_RMSE_label(const Mat1T & dmat, fType & rmse){
+    Mat1T tmpmat;
+    tmpmat = dmat/this->step-gt_dmat/this->step;
+    pow(tmpmat,2,tmpmat);
+    tmpmat=Mat(tmpmat,roi);
+    rmse = sqrt(cv::sum(tmpmat)[0]/(height*width))/(fType)this->labels.size();
+
+    string logout = " - RMSE is : " + to_string2(rmse) + "  ";
+    myLog->a(logout);
+    return true;
+}
+
 
 bool EvalClass::compute_RMSE(const Mat1T & dmat, fType & rmse, fType & q_rmse ){
+    //Deprecated
     Mat1T tmpmat;
     tmpmat = dmat-gt_dmat;
     pow(tmpmat,2,tmpmat);
@@ -75,7 +90,7 @@ bool EvalClass::compute_PSNR(const Mat1T & dmat, fType & psnr ){
     tmpmat=Mat(tmpmat,roi);
     psnr = cv::sum(tmpmat)[0]/(height*width);
     psnr = 10*log10(this->labels[this->labels.size()-1]/psnr);
-    string logout = " * PSNR is : " + to_string2(psnr) + "\n";
+    string logout = " - PSNR is : " + to_string2(psnr) + "\n";
     myLog->a(logout);
     
     return true;

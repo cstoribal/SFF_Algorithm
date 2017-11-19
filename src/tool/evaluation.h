@@ -40,6 +40,7 @@ public:
     bool set_parameters(const Mat1T & gt_dmat, const vector<fType> & labels);
     
     bool compute_RMSE_label(const Mat1T & dmat, fType & rmse, fType & q_rmse );
+    bool compute_RMSE_label(const Mat1T & dmat, fType & rmse);
     bool compute_RMSE(const Mat1T & dmat, fType & rmse, fType & q_rmse );
     bool compute_PSNR(const Mat1T & dmat, fType & psnr);
 

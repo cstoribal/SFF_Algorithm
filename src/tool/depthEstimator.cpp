@@ -130,7 +130,7 @@ int DepthClass::getRankFromDepth(fType input){
     }
     if(rank == -1)
     {
-        cout << "could not find rank, value set to last image" << endl;
+        //cout << "could not find rank, value set to last image" << endl;
         rank = (int)round(DepthToRank[DepthToRank.size()-1][1]);
     }
     return rank;
@@ -228,7 +228,7 @@ vector<fType> DepthClass::getMeanLogFocusStep(void){
 
 
 bool DepthClass::showInterpolationAt(const vector<cv::Point> & vP, const tdf_imgset & SharpSet, const tdfp_depth & dparam, const Mat1T & dmat, const string & folder){
-    if(type=="polynome") s_poly_ij(vP, SharpSet, dparam, dmat, folder);
+    if(type=="polynome"||type=="polymod") s_poly_ij(vP, SharpSet, dparam, dmat, folder);
     if(type=="argmax")   s_argmax_ij(vP, SharpSet, dparam, dmat, folder);
     if(type=="gauss")   show_interpol_generic(vP, SharpSet, dparam, dmat, folder);
     
@@ -409,8 +409,8 @@ bool DepthClass::d_gauss(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_r
     std::generate(v_h.begin(), v_h.end(), [&_fi] {return _fi++;});
     Mat1T mat_h   = Mat1T(1,       lbar, v_h.data()).clone();
     Mat1T mat_v   = Mat1T(set_dim[2], 1, v_h.data()).clone();
-    _fi = 0.3f;
-    fType _fincrement = 12.0f/(fType)set_dim[2];
+    _fi = 1.0f;
+    fType _fincrement = 0.2f;//12.0f/(fType)set_dim[2];
     std::generate(v_h.begin(), v_h.end(), [&_fi,_fincrement]
         {_fi+=_fincrement; return _fi;});
     Mat1T mat_sig = Mat1T(set_dim[2], 1, v_h.data()).clone();
@@ -641,7 +641,6 @@ bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_ra
                 arg = DR[f][0];
                 rnk = DR[f][1];
                 dmat_label.at<int>(i,j)=f;
-		//if(i==712 and j==1493) cout << "hit !" << endl;
             }
         }
         
@@ -678,7 +677,7 @@ bool DepthClass::d_polymod(Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score, 
         while(tmprank!=tmprank2){
             tmprank3=tmprank;
             tmprank2=tmprank;
-            for(int k=max(0,tmprank-1);k<min(set_dim[2],tmprank+1);k++){
+            for(int k=max(0,tmprank-1);k<min(set_dim[2],tmprank+2);k++){
                 if(sharpSetStored[k].ivmat[0].at<fType>(i,j) > scoremax){
                     tmprank3=k;
                     scoremax = sharpSetStored[k].ivmat[0].at<fType>(i,j);

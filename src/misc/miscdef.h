@@ -183,13 +183,15 @@ typedef struct struct_input tdf_input;
 struct struct_log{
     // holds structure from parameters and time and rmse
     tdf_input* settings;
-    fType lambda_r;
-    fType lambda_d;
+    fType lambda;
     int   iterationlvl;
     std::vector<double> time;
+    std::string opti; //optimisation actuelle;
     fType rmse;
     fType psnr;
     std::vector<std::string> types;
+    std::string type_best_theorical;
+    std::string type_best_regularized;
 };
 typedef struct struct_log tdf_log;
     
@@ -240,6 +242,8 @@ typedef struct energy_sidestruct tdfp_energy ;
 struct set_param_opti{
     std::string      type;
     EnergyClass *energyclass;
+    DepthClass  *depthClass;
+    EvalClass   *evalClass;
     int nb_pixels, nb_labels, width, height, connexity, maxiteration;
     std::vector<fType> labels; // allows conversion label -> ranklabel
     std::vector<size_t> histogram;

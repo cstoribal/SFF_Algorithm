@@ -10,65 +10,96 @@
 
 OptiClass::OptiClass(){ 
     this->set = false;
-    this->sort_img_set = false;
     this->nbs_set = 0;
     this->connexity = 4; //TODO
     //set all arrows to NULL pointers
     this->nbs_nb   = NULL;
+    this->nbs_nbk  = NULL;
     this->nbs_n1D  = NULL;
-    this->nbs_n    = NULL;
+    this->nbs_nk1D = NULL;
+    this->nbs_N    = NULL;
     this->nbs_w1D  = NULL;
-    this->nbs_w    = NULL;
     this->nbs_wk1D = NULL;
-    this->nbs_wk   = NULL;
+    this->nbs_W    = NULL;
     
-    this->sorted_label_img = NULL;
-    this->adapt_index1D = NULL;
-    this->adapt_index = NULL;
+    //this->sorted_label_img = NULL;
+    //this->adapt_index1D = NULL;
+    //this->adapt_index = NULL;
 }
 OptiClass::~OptiClass(){
     if(this->nbs_set)
     {
         delete [] nbs_nb;
         delete [] nbs_n1D;
-        delete [] nbs_n;
+        delete [] nbs_nk1D;
         delete [] nbs_w1D;
-        delete [] nbs_w;
         delete [] nbs_wk1D;
-        delete [] nbs_wk;
+        
+        delete [] nbs_nbk;
+        delete [] nbs_W;
+        delete [] nbs_N;
 
-        delete [] sorted_label_img;
-        delete [] adapt_index1D;
-        delete [] adapt_index;
-        delete adapt_Iterator;
+        //delete [] sorted_label_img;
+        //delete [] adapt_index1D;
+        //delete [] adapt_index;
+        //delete adapt_Iterator;
     }
 }
 
-bool OptiClass::setlogs(MyLog* mylog){
+bool OptiClass::setlogs(IOWizard* _ioW, MyLog* mylog){
+    this->ioW   = _ioW;
     this->myLog = mylog;
     return true;
 }
 
-bool OptiClass::set_param(tdfp_opti popti){ //const void* param){
-//sets name_opti, 
-// calls a set_param_gcut
-// will set new *gco, nb_pixels, nb_labels, etc., will malloc what's needed
-// warning not to funk the system with const void* TODO
-// We'll need void* to hold dmat AND the initialised instance of energy so that we can start it up. We'll also need a private function to convert matrix in vectors and reciproquely
+bool OptiClass::set_optiplan(OptiPlan* _p_OptiPlanner){
+    p_OptiPlanner= _p_OptiPlanner;
+    return true;
+}
+
+bool OptiClass::set_param(tdfp_opti popti, const Mat1T & _gt_dmat){
+
 // TODO be sure to check that we are working with the good number of pixels, rows, cols...
     this->energyClass = popti.energyclass;
+    this->depthClass  = popti.depthClass;
+    this->evalClass  = popti.evalClass;
     this->name_opti = popti.type;
     this->nb_pixels = popti.nb_pixels;
     this->nb_labels = popti.nb_labels;
     this->width     = popti.width;
     this->height    = popti.height;
-    this->labels    = popti.labels;
+    this->labels    = popti.labels;  //ce sont des focus
     this->connexity = popti.connexity;
-    //this->histogram = popti.histogram;
 //TODO should use a different word for labels & focus
+    _gt_dmat.copyTo(gt_dmat);
+
     build_rank4xy();
+    ioW->mksubdir("optimized");
+    
     
     this->set = true;
+}
+
+bool OptiClass::do_all_optimizations(void){
+    size_t nb_storedplans;
+    p_OptiPlanner->get_nb_storedmethods(nb_storedplans);
+    v_selected_method.resize(nb_storedplans);
+    vv_rmse.resize(nb_storedplans);
+    v_types.resize(nb_storedplans);
+    for(size_t tmp=0; tmp<nb_storedplans; tmp++){
+        v_selected_method[tmp]=tmp;
+    }
+    
+    for(size_t tmp=0; tmp<nb_storedplans; tmp++){
+        actual_idx_method=tmp;
+        reset(1,lambda);
+        compute_opt_custom();
+    }
+    
+    show_all_rmse();
+    
+    return true;
+
 }
 
 bool OptiClass::do_optimization(void){
@@ -77,67 +108,36 @@ bool OptiClass::do_optimization(void){
         set_optimization_gco_grid();
         return compute_gco_grid();
     }
-    if(this->name_opti == "gco_gen"){ //unavailable
-        set_optimization_gco_gen();
-        return compute_gco_gen();
+    if(this->name_opti == "gco_custom"){ 
+        return compute_opt_custom();
     }
-    if(this->name_opti == "gco_bin"){
-        return compute_opt_binary();
-    }
-    if(this->name_opti == "gco_scale"){
-        return compute_opt_multiscale();
-    }
-    if(this->name_opti == "gco_adapt" | 
-       this->name_opti == "gco_custom_scale1"){
-        set_optimization_gco_adapt();
-        return compute_opt_adapt();
-    }
-    if(this->name_opti == "gco_kmeans"){
-        set_gco_kmeans();
-        return compute_gco_kmeans();
-    }
-    myLog->av("Warning, gco" + this->name_opti + "not computed\n");
-    return false;
-
+    return error("Warning, gco" + this->name_opti + "not computed\n");
 }
 
-
-/*
-bool OptiClass::set_optimization(void){
-// calls set_optimization_gcotype()
-// also stores the vector of matrix (depth*mat) to the data_in 
-// which will call some functions from param to gco to initialise the gco
-    if(1) return set_optimization_gco_grid();
-    if(0) return set_optimization_gco_gen();
-    return false;
-}
-
-bool OptiClass::compute_optimization(void){
-// basically computes optimization according to the type.
-// calls compute_gco 
-    if(1) return compute_gco_grid();
-    if(0) return compute_gco_gen();
-    return false;
-}
-*/
-bool OptiClass::reset(int maxiter){
+bool OptiClass::reset(fType l_d, fType l_r){
     //copy weight matrix to reset it at initial status
-    for(int k=0; k<nb_pixels; k++) for(int c=0; c<connexity; c++)
+    for(int k=0; k<nb_pixels*connexity; k++)// for(int c=0; c<connexity; c++)
     {
-        nbs_wk[k][c] = nbs_w[k][c];
+        nbs_wk1D[k] = nbs_w1D[k];
+        nbs_nk1D[k] = nbs_n1D[k];
     }
-    this->maxiteration=maxiter;
+    for(int k=0; k<nb_pixels; k++){
+        nbs_nbk[k]   = nbs_nb[k];
+    }
+    if(l_d>0)lambda = l_r/l_d;
+
+    regularized_labelmat = Mat::zeros(height,width,CV_32S);
+    regularized_depthmat = Mat::zeros(height,width,CV_TE);
+    //this->maxiteration=maxiter;
     return true;
 }
 
 
 bool OptiClass::writebackmatrix(Mat1T & do_mat){
 // according to optimization type, stores the regularised matrix from the vectors to the sff class
-// 
     do_mat = Mat::zeros(height,width,CV_TF);
     convert_vec2mat(data_out,do_mat);
     return true;
-
 }
 
 
@@ -151,7 +151,7 @@ bool OptiClass::writebackmatrix(Mat1T & do_mat){
 
 bool OptiClass::build_rank4xy(void){
     // knowing width & height, we can build the mat1i and vector<point> for conversions
-    this->getrank = Mat::zeros(height,width,CV_32S); //TODO check h, w swap
+    this->getrank = Mat::zeros(height,width,CV_32S);
     this->getxy   = vector<Point>(width*height);
     int k=0;
     for(int i=0;i<height;i++){
@@ -205,11 +205,13 @@ bool OptiClass::set_allneighbors(void){
         myLog->a("Warning, re-setting neighbors without freeing memory");
         delete [] nbs_nb;
         delete [] nbs_n1D;
-        delete [] nbs_n;
+        delete [] nbs_nk1D;
         delete [] nbs_w1D;
-        delete [] nbs_w;
         delete [] nbs_wk1D;
-        delete [] nbs_wk;
+
+        delete [] nbs_nbk;
+        delete [] nbs_W;
+        delete [] nbs_N;
         this->nbs_set=0;
     }
     // sets up neighbornumarray, neighborarray, weightarray !
@@ -236,18 +238,17 @@ bool OptiClass::set_allneighbors(void){
     
     nbs_nb  = new int[nb_pixels];
     nbs_n1D = new int[nb_pixels*connexity];
+    nbs_nk1D = new int[nb_pixels*connexity];
     nbs_w1D = new eType[nb_pixels*connexity];
     nbs_wk1D = new eType[nb_pixels*connexity];
     
-    nbs_n   = new int*[nb_pixels];
-    nbs_w   = new eType*[nb_pixels];
-    nbs_wk   = new eType*[nb_pixels];
-
+    nbs_nbk = new int[nb_pixels];             // Nombre de voisins
+    nbs_N   = new int*[nb_pixels];            // Noms des voisins
+    nbs_W   = new eType*[nb_pixels];          // Poids associé au voisin
 
     for(int k=0; k<nb_pixels; k++){
-        nbs_n[k] = &nbs_n1D[k*connexity];
-        nbs_w[k] = &nbs_w1D[k*connexity];
-        nbs_wk[k] = &nbs_wk1D[k*connexity];
+        nbs_N[k] = &nbs_nk1D[k*connexity];
+        nbs_W[k] = &nbs_wk1D[k*connexity];
     }
 
 
@@ -262,40 +263,21 @@ bool OptiClass::set_allneighbors(void){
             if( getxy[k].y+i >= 0 && getxy[k].y+i < height )
             if( getxy[k].x+j >= 0 && getxy[k].x+j < width  )
             {
-                nbs_n[k][nbs_tmp_nb]=getrank.at<int>
+                nbs_N[k][nbs_tmp_nb]=getrank.at<int>
 				(getxy[k].y+i,getxy[k].x+j);
-                nbs_w[k][nbs_tmp_nb]=neighbor_mat.at<eType>(2+i,2+j);
+                nbs_W[k][nbs_tmp_nb]=neighbor_mat.at<eType>(2+i,2+j);
                 nbs_tmp_nb++;
             }
         }
-        nbs_nb[k]=nbs_tmp_nb;
+        nbs_nbk[k]=nbs_tmp_nb;
+        nbs_nb[k] = nbs_nbk[k];    //storing
     }
     
-/*
-    for (int y = 0; y < nb_pixels; ++y)
+    for(int k=0; k<nb_pixels*connexity; k++) //storing
     {
-        for (int x = 0; x < connexity; ++x)
-        {
-            std::cout << std::hex << &(nbs_n[y][x]) << ' ';
-        }
+        nbs_n1D[k]=nbs_nk1D[k];
+        nbs_w1D[k]=nbs_wk1D[k];
     }
-    std::cout << "\n\n";
-
-    // Print the array
-    for (int y = 0; y < nb_pixels; y++)
-    {
-        std::cout << std::hex << &(nbs_n[y][0]) << std::dec;
-        std::cout <<  "; " << (nbs_nb[y]);
-        std::cout << ": ";
-        for (int x = 0; x < connexity; x++)
-        {
-            std::cout << nbs_n[y][x] << ' ';
-        }
-        std::cout << std::endl;
-    }
-*/
-    
-    
     
     nbs_set = 1;
     return true;
@@ -303,7 +285,6 @@ bool OptiClass::set_allneighbors(void){
 
 /////////////// graph cuts
 bool OptiClass::set_optimization_gco_grid(void){
-// calls set_optimization_gcotype()
 // also stores the vector of matrix (depth*mat) to the data_in 
 // which will call some functions from param to gco to initialise the gco
     // get vector of matrix;
@@ -325,720 +306,94 @@ bool OptiClass::set_optimization_gco_grid(void){
         gco = new GCoptimizationGridGraph(width,height,nb_labels);
         gco->setDataCost(&data_in[0]);
         gco->setSmoothCost(&smoothvect[0]);
-        if(is_same<eType,int>::value)
-            printf("\nBefore optimization energy is %lli",
-			gco->compute_energy());
+        if(is_same<eType,int>::value) 
+            printf("\nBefore optgrdnrj is %lli",gco->compute_energy());
         else
-            printf("\nBefore optimization energy is %f",
-			gco->compute_energy());
+            printf("\nBefore optgrdnrj energy is %f",gco->compute_energy());
 	}
     catch (GCException e){
 		e.Report();
 	}
-
-
-
     return true;
 }
-
-
-
-bool OptiClass::set_optimization_gco_gen(void){
-    // first arranges the data
-    // calls set_optimization_gco_general()
-    // also stores the vector of matrix (depth*mat) to the data_in 
-    // which will call some functions from param to gco to initialise the gco
-    // get vector of matrix;
-}
-
-
 
 
 
 bool OptiClass::compute_gco_grid(void){
-    gco->expansion(10);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
+    gco->expansion(10);// For swap use gc->swap(num_iterations);
     data_out.resize(nb_pixels);
-    for(int i=0; i<nb_pixels; i++){
-        data_out[i] = gco->whatLabel(i);
-        }
+    for(int i=0; i<nb_pixels; i++){data_out[i] = gco->whatLabel(i);}
     if(is_same<eType,int>::value)
-        printf("\nAfter optimization energy is %lli \n",
-		gco->compute_energy());
+        printf("\nAfter optimization energy is %lli \n",gco->compute_energy());
     else
-        printf("\nAfter optimization energy is %f \n",
-		gco->compute_energy());
-
-    
-
-    return true;
-    
-}
-
-bool OptiClass::compute_gco_gen(void){
-
-    gco->expansion(10);// run expansion for 2 iterations. For swap use gc->swap(num_iterations);
-    data_out.resize(nb_pixels);
-    for(int i=0; i<nb_pixels; i++){
-        data_out[i] = gco->whatLabel(i);
-        }
-
-    if(is_same<eType,int>::value)
-        printf("\nAfter optimization energy is %lli \n",
-		gco->compute_energy());
-    else
-        printf("\nAfter optimization energy is %f \n",
-		gco->compute_energy()); 
-
+        printf("\nAfter optimization energy is %f \n",gco->compute_energy());
     return true;
     
 }
 
 
 
-bool OptiClass::compute_opt_binary(void){
-// Parcourt tous les labels les uns après les autres.
-// en déduit une matrice comparant les labels deux à deux. 
-//     - M matrice des labels en construction (+1)
-//     - E vectmat energie attache aux données
-//     - L mat energie labels
-//     - n indice d'itération ( n=0, n++, n<nblabels-1 )
-//     - start, loop.
-    Mat1i M = Mat::zeros(height,width,CV_32S);
-    Mat1i N = Mat::zeros(height,width,CV_32S);
-        
-    Mat1E lmat = Mat::zeros(nb_labels,nb_labels,CV_TE);
-    if(!energyClass->getCrossLabelMatrix(labels,lmat)) return false;
-    smoothvect.resize(2*2);
-    
-    vector<Mat1E> Edata(nb_labels);
+bool OptiClass::compute_opt_custom(void){
+    /////
+
+    Mat1i M = Mat::zeros(height,width,CV_32S); //Global path output
+    Mat1i N = Mat::zeros(height,width,CV_32S); //step   path output
+    Mat1E Dp = Mat::zeros(height,width,CV_TE); //Datacost Offset
+    Mat1E Dn = Mat::zeros(height,width,CV_TE); //Datacost Offset
+
     vector<Mat1E> Edata_slice(2);
-    energyClass->getDataEnergy_3DMatrix(this->labels,Edata);
+    Edata_slice[0] = Mat::zeros(height,width,CV_TE);    //Datacost custom slice -
+    Edata_slice[1] = Mat::zeros(height,width,CV_TE);    //Datacost custom slice +
 
-        myLog->time_r(6);
-    for(int n=0; n<nb_labels-1; n++)
-    {
-        Edata_slice[0] = Edata[n];
-        Edata_slice[1] = Edata[n+1];
-        this->convert_mat2labvec(Edata_slice,data_in);
 
-        for(int i=0; i<2; i++) for(int j=0; j<2; j++)
-        {
-            smoothvect[i*2+j]=lmat.at<eType>(n+i,n+j);
-        }
-        try{
-            gco = new GCoptimizationGridGraph(width,height,2);
-            gco->setDataCost(&data_in[0]);
-            gco->setSmoothCost(&smoothvect[0]);
-            //if(is_same<eType,int>::value)
-            //    printf("\nBefore optimization energy is %lli",
-		//	gco->compute_energy());
-            //else
-            //    printf("\nBefore optimization energy is %f",
-		//	gco->compute_energy());
-            gco->expansion(2);
-            data_out.resize(nb_pixels);
-            for(int i=0; i<nb_pixels; i++){
-                data_out[i] = gco->whatLabel(i);
-            }
-            delete gco;
-            
-	}
-        catch (GCException e){
-	    e.Report();
-            return false;
-	}
-
-        convert_vec2mat(data_out,N);
-        M = M+N;
-    }
-    //output = Mat::zeros(height,width,CV_TF);
-    // go back to original output.
-    for(int i=0; i<height; i++) for(int j=0; j<width; j++)
-    {
-        data_out[i*width+j] = M.at<int>(i,j);
-    }
-    return true;
-}
-
-bool OptiClass::compute_opt_multiscale(void){
-// Parcourt les labels en opérant une dichotomie. 
-//     - know label <-> focus ?
-//     - M matrice masque des labels en construction. (+II)
-//     - n indice d'itération ( n~log2(Nlabels)-1 -> 0 )
-//     - II labelshift rang n  ( '00001' << n )
-//     - E vectmat energie attache aux données 
-//     - L mat energie labels.
-//     - start !
-// Loop
-
-    if(maxiteration>floor(log2(nb_labels-1)+1))
-    {
-        myLog->a("GCO_multiscale error : can't start at higher iteration level than maximum, skipping this operation");
-        return false;
-    }
-    Mat1i M = Mat::zeros(height,width,CV_32S);
-    Mat1i N = Mat::zeros(height,width,CV_32S);
-    Mat1E Dp = Mat::zeros(height,width,CV_TE);
-    Mat1E Dn = Mat::zeros(height,width,CV_TE);
-    int II = 1; 
-    int J;
-    
-    double range = floor(log2(nb_labels-1)+1); //nb of digits necessary
-    Mat1E lmat = Mat::zeros(nb_labels,nb_labels,CV_TE);
-    if(!energyClass->getCrossLabelMatrix(labels,lmat)) return false;
+    Mat1E lmat = Mat::zeros(nb_labels,nb_labels,CV_TE); // label-to-label matrix.
+    if(!energyClass->getCrossLabelMatrix(labels,lmat))  // Smoothcosts
+        return error("getCrossLabelMatrix");
     smoothvect.resize(2*2);
-    
-    vector<Mat1E> Edata(nb_labels);
-    energyClass->getDataEnergy_3DMatrix(this->labels,Edata);
-    vector<Mat1E> Edata_slice(2);
-    Edata_slice[0] = Mat::zeros(height,width,CV_TE);
-    Edata_slice[1] = Mat::zeros(height,width,CV_TE);
-
-
     for(int i=0; i<2; i++) for(int j=0; j<2; j++)
-    {
-        smoothvect[i*2+j]=lmat.at<eType>(0+i,0+j);
-    }
+        smoothvect[i*2+j]=lmat.at<eType>(0+i,0+j);      // we only take 4 values 
 
-        myLog->time_r(6);
-    for(int n=(int)range-1; n>=range-maxiteration; n--) //range-maxiteration
-    {
-        II = 1<<n; J = II-1;
-        CPING2("passe n",n);
+    vector<Mat1E> Edata(nb_labels);               // Datacosts
+    energyClass->getDataEnergy_3DMatrix(this->labels,Edata);
+
+
+    vector<int> v_nbs_reup_N(connexity);
+    vector<eType> v_nbs_reup_W(connexity);
+    size_t max_iterations=1;
+    vector<vector<size_t> > vv_thresh(0);
+    vector<vector<size_t> > vv_centro(0);
+    myLog->time_r(6);
+    p_OptiPlanner->get_thresholds_n_centroids(v_selected_method[actual_idx_method],
+		 selected_typename, max_iterations, vv_thresh, vv_centro);
+    v_types[actual_idx_method]=selected_typename;
+    
+    ioW->mksubdir("optimized/"+selected_typename);
+    ioW->mksubdir("optimized/"+selected_typename+"/"+to_string2(lambda) );
+    std::string imagename;
+    std::string foldername="optimized/"+selected_typename+"/"+to_string2(lambda)+"/";
+    // Starting optimization  
+    int n=1;
+    CPING2(selected_typename," passe N° ");
+    for(n=1; (n<max_iterations) ; n++)
+    {    
+        myLog->time_i();
+        M = 2*M;
+        
+        std::cout << n << "...";
         for(int i=0; i<height; i++) for(int j=0; j<width; j++)
         {
-            if(M.at<int>(i,j)+II >= nb_labels) //TODO presque inutile
-            // car déjà calculé. Pk ne pas laisser ces valeurs inchangées ?
-            {
-                Edata_slice[0].at<eType>(i,j)=0;//Edata[M.at<int>(i,j)-1]
-		//	.at<eType>(i,j)+Dn.at<eType>(i,j);
-                Edata_slice[1].at<eType>(i,j)=Edata[M.at<int>(i,j)]
-			.at<eType>(i,j)+Dp.at<eType>(i,j);
-            }
-            else
-            {
-                Edata_slice[0].at<eType>(i,j) = Edata[M.at<int>(i,j)+J]
-			.at<eType>(i,j)+Dn.at<eType>(i,j);
-                Edata_slice[1].at<eType>(i,j) = Edata[M.at<int>(i,j)+II]
-			.at<eType>(i,j)+Dp.at<eType>(i,j);
-            }
+            if(vv_thresh[n][M.at<int>(i,j)+1]<1)return error("indice vv_thresh 0");
+            Edata_slice[0].at<eType>(i,j) = Edata[vv_thresh[n]
+		[M.at<int>(i,j)+1]-1 ].at<eType>(i,j)+Dn.at<eType>(i,j);
+            Edata_slice[1].at<eType>(i,j) = Edata[vv_thresh[n]
+		[M.at<int>(i,j)+1]   ].at<eType>(i,j)+Dp.at<eType>(i,j);
         }
         this->convert_mat2labvec(Edata_slice,data_in);
-
-        try{
-            gco = new GCoptimizationGeneralGraph(this->nb_pixels,2);
-            ((GCoptimizationGeneralGraph*)gco)
-			->setAllNeighbors(nbs_nb,nbs_n,nbs_wk);
-            gco->setDataCost(&data_in[0]);
-            gco->setSmoothCost(&smoothvect[0]);
-            gco->expansion(2);
-            data_out.resize(nb_pixels);
-            for(int i=0; i<nb_pixels; i++){
-                data_out[i] = gco->whatLabel(i);
-            }
-            delete gco;
-            
-	}
-        catch (GCException e){
-	    e.Report();
-            return false;
-	}
-
-        for(int k=0; k<nb_pixels; k++) for(int i=0; i<nbs_nb[k]; i++)
-        {
-            if(nbs_wk[k][i]!=0)
-            if(data_out[k]!=data_out[ nbs_n[k][i]])
-            {//i°th neighbor j of k°th pixel is different => break w_jk
-                nbs_wk[k][i] = 0;
-                if(data_out[k]>data_out[ nbs_n[k][i] ])
-                    Dp.at<eType>(getxy[k]) += smoothvect[1];
-                else
-                    Dn.at<eType>(getxy[k]) += smoothvect[1];
-            }
-
-        }
-        
-        convert_vec2mat(data_out,N);
-        N = N*II;
-        M = M+N;
-    }
-    if(II>1) //centers to the next value
-    {
-        M=M+(II>>1);
-    }
-    
-    //output = Mat::zeros(height,width,CV_TF);
-    // go back to original output.
-    for(int i=0; i<height; i++) for(int j=0; j<width; j++)
-    {
-        data_out[i*width+j] = M.at<int>(i,j);
-    }
-    
-    return true;
-}
-
-bool OptiClass::set_custom_adapt_histogram(int & range){
-    // builds histogram and sorted label img.
-    // depending on the opt type
-    CPING2("test what's the name ",this->name_opti);
-    if(this->name_opti == "gco_adapt"){
-        range = this->nb_pixels+this->nb_labels;
-        this->sorted_label_img  = new int[range];
-        this->histogram         = new size_t[this->nb_labels];
-        // build histogram
-        int tmpindex=0;
-        Mat1T* dmat;
-        this->energyClass->get_pointer_dmat(dmat);
-        for(int l=0; l<this->nb_labels; l++)
-        {
-            this->histogram[l]=0;
-            this->sorted_label_img[tmpindex++] = l;
-            for(int i=0; i<this->height; i++)
-            for(int j=0; j<this->width; j++)
-            {
-                if(dmat->at<fType>(i,j) == this->labels[l])
-                {
-                    this->histogram[l]++;
-                    sorted_label_img[tmpindex++] = l;
-                }
-            }
-        }
-        CPING2("custom adapt histogram built, range", range);
-        return true;
-    }
-    if(this->name_opti == "gco_custom_scale1"){
-        range = this->nb_labels;
-        this->sorted_label_img  = new int[range];
-        this->histogram         = new size_t[this->nb_labels];
-        // build histogram
-        int tmpindex=0;
-        //Mat1T* dmat;
-        //this->energyClass->get_pointer_dmat(dmat);
-        for(int l=0; l<this->nb_labels; l++)
-        {
-            this->histogram[l]=1;
-            this->sorted_label_img[tmpindex++] = l;
-        }
-        CPING2("custom scale1 histogram built, range", range);
-        return true;
-    }
-    
-} 
-
-
-
-
-bool OptiClass::set_optimization_gco_adapt(void){
-// Will set the histogram of the image and store it.
-// also store the logical indexation scheme.
-    if(sort_img_set)
-    {
-        myLog->as("gco_adapt is already set, skipping. \n");
-        return false;
-    }
-    this->adapt_Iterator    = new OptiIterate;
-    int range;
-    //int range = this->nb_pixels+this->nb_labels;
-    //int nbdigits = (int)floor(log2(range-1)+1);
-    set_custom_adapt_histogram(range);
-    
-    //build histogram
-    int nbdigits            = (int)floor(log2(range-1)+1);
-    this->adapt_index       = new int*[nbdigits+1]; //TODO check; +1 ?
-    this->adapt_index1D     = new int[(int)floor(pow(2,nbdigits))];
-
-    //build index routing
-    adapt_index1D[0]=0;
-    if(nbdigits>64)
-    {
-        myLog->av("What kind of monster are you ? \n"
-    "this program can't hold that much information for an adaptative graph cut\n");
-        return false;
-    }
-    if(nbdigits>=32)
-    {
-        long long int range_ext  = (long long int)range<<nbdigits;
-        long long int * index = new long long int[(int)floor(pow(2,nbdigits))];
-        index[0]=0;
-        for(int i=0; i<nbdigits; i++) for(int j=0; j<(int)pow(2,i);j++)
-        {
-            int tmp=(int)floor(pow(2,i)+j);
-            index[tmp]=index[j]+(range_ext>>(i+1));
-            adapt_index1D[tmp] = (int)(index[tmp]>>nbdigits);
-        }
-        delete [] index;
-    }
-    if(nbdigits>=16 & nbdigits<32)
-    {
-        long int range_ext  = (long int)range<<nbdigits;
-        long int * index = new long int[(int)floor(pow(2,nbdigits))];
-        index[0]=0;
-        for(int i=0; i<nbdigits; i++) for(int j=0; j<(int)pow(2,i);j++)
-        {
-            int tmp=(int)floor(pow(2,i)+j);
-            index[tmp]=index[j]+(range_ext>>(i+1));
-            adapt_index1D[tmp] = (int)(index[tmp]>>nbdigits);
-            //sleep(1);
-            //CPING(adapt_index1D[tmp]);
-            
-        }
-        delete [] index;
-    }
-    if(nbdigits<16)
-    {
-        int range_ext  = (int)range<<nbdigits;
-        int * index = new int[(int)floor(pow(2,nbdigits))];
-        index[0]=0;
-        for(int i=0; i<nbdigits; i++) for(int j=0; j<(int)pow(2,i);j++)
-        {
-            int tmp=(int)floor(pow(2,i)+j);
-            index[tmp]=index[j]+(range_ext>>(i+1));
-            adapt_index1D[tmp] = (int)(index[tmp]>>nbdigits);
-        }
-        delete [] index;
-    }
-    
-    //build 2D indexing
-    for(int i=0; i<nbdigits+1; i++) 
-        adapt_index[i] = &adapt_index1D[(int)(pow(2,i))];
-    
-    
-    this->sort_img_set = true;
-    return true;
-}
-
-OptiIterate::OptiIterate(){
-    this->set = false;
-};
-OptiIterate::~OptiIterate(){};
-bool OptiIterate::setup(MyLog* mylog, int* sortedlabel_in, int** adaptindex_in, int maxseek_in, int nblabels_in, int maxiteration_in, int max_sortedrank_in){
-    if(this->set & this->maxiteration>=maxiteration_in){
-        myLog->a("skipping OptiIterate reinit, switching to soft reset. Use reset to enforce reinitialisation\n");
-        this->active = 1;
-        this->flag = 0;
-        this->lastiteration = 0;
-        this->iteration=0;
-        return false;
-    }
-    this->myLog = mylog;
-    this->set = true;
-    this->sorted_label_img = sortedlabel_in;
-    this->adapt_index  =adaptindex_in;
-    this->maxseek      =maxseek_in;
-    this->nblabels     =nblabels_in;
-    this->maxiteration =maxiteration_in;
-    this->max_sortedrank = max_sortedrank_in;
-    
-    this->iteration = 0;
-    this->active = 1;
-    this->flag = 0;
-    //CPING2("maxseek", maxseek);
-    /*for(int i=0; i<maxseek; i++)
-    {
-        for(int path=0; path<(int)pow(2,i); path++)
-        {
-            CPING(adapt_index[i][path]);
-            CPING(sorted_label_img[adapt_index[i][path]]);
-        }
-        CPING("newline");
-    }*/
-
-
-    // sorted label image is always 0 !!!
-
-
-    
-    path.resize(maxiteration+1);
-    lmin.resize(maxiteration+1);
-    lmax.resize(maxiteration+1);
-    seek.resize(maxiteration+1);
-    labelp.resize(maxiteration+1);
-    labeln.resize(maxiteration+1);
-    enabled.resize(maxiteration+1);
-    labelout.resize(maxiteration+2);
-    for(int i=0; i<maxiteration+1; i++)
-    {
-        path[i].resize( (int)pow(2,i) );
-        lmin[i].resize( (int)pow(2,i) );
-        lmax[i].resize( (int)pow(2,i) );
-        seek[i].resize( (int)pow(2,i) );
-        labelp[i].resize( (int)pow(2,i) );
-        labeln[i].resize( (int)pow(2,i) );
-        enabled[i].resize( (int)pow(2,i) );
-        labelout[i].resize( (int)pow(2,i) );
-    }
-    labelout[maxiteration+1].resize((int)pow(2,maxiteration+1));
-    CPING("yeeeeh");
-    // maybe should find something more effective, duh. later. replace w/ **
-    enabled[0][0] = true;
-    lmin[0][0]=0;
-    lmax[0][0]=nblabels;
-    seek[0][0]=-1;
-    path[0][0]=0;
-    if(seek[0][0]==maxseek-1) 
-    {
-        enabled[0][0] = false;
-        labelp[0][0] = 1;
-        labeln[0][0] = 0;
-    }
-    else
-    {
-        int tmp=1;
-        while(seek[0][0]<(maxseek-1) & tmp)
-        {
-            tmp=0; seek[0][0]+=1;
-           // iter, state,                       seek, it st   path it st
-            if(adapt_index[seek[0][0]][path[0][0]]>max_sortedrank )
-            {
-                tmp=1; labelp[0][0]=lmax[0][0];
-            }
-            else
-            {
-                labelp[0][0]=sorted_label_img[ adapt_index[seek[0][0]][path[0][0]] ];
-            }
-            if(labelp[0][0]>=lmax[0][0])
-            {
-                tmp=1; 
-            }
-            if(labelp[0][0]<=lmin[0][0])
-            {
-                tmp=1; path[0][0] += 1 << seek[0][0];
-            }
-        }
-        assert(tmp == 0);
-    }
-    labeln[0][0] = labelp[0][0]-1;
-    labelout[0][0]=0;
-    // assert : should not be negative... actually should end as enabled == true;
-    //CPING("Starting iterations for labels building");
-    for(int iter=1; iter<maxiteration+1; iter++)
-    {
-        for(int state =0; state<(int)pow(2,iter); state++)
-        { //TODO checksize
-            int prevstate = getprevious(state, iter);
-            this->duplicate_to(iter-1,prevstate,iter,state);
-            if(state!=prevstate & enabled[iter][state])
-                labelout[iter][state]=labelp[iter][state]; 
-                //copied from iter-1 prevstate
-            if(seek[iter][state]==maxseek-1)
-            {
-                enabled[iter][state]=false;
-            }
-
-            if(enabled[iter][state])
-            {
-                if(prevstate==state)
-                {
-                    lmax[iter][state]=labelp[iter][state];
-                }
-                else
-                {
-                    lmin[iter][state]=labelp[iter][state];
-                    path[iter][state]+= (1 << seek[iter][state]);
-                }
-
-                int tmp=1;
-                while(seek[iter][state]<(maxseek-1) & tmp)
-                {
-                    tmp=0; 
-                    seek[iter][state]+=1; //TODO check exceed index
-                    // iter, state,                       seek, it st   path it st
-                    labelp[iter][state]=sorted_label_img
-                    [ adapt_index[seek[iter][state]][path[iter][state]] ];
-                    if(labelp[iter][state]>=lmax[iter][state])
-                    {
-                        tmp=1; 
-                    }
-                    if(labelp[iter][state]<=lmin[iter][state])
-                    {
-                        tmp=1;
-                        path[iter][state] += 1 << seek[iter][state];
-                    }
-                }
-                if(tmp==1) //il n'y avait aucune autre proposition de label distincte
-                {
-                    enabled[iter][state]=false;
-                    labelp[iter][state]=labelp[iter-1][prevstate];
-                    labeln[iter][state]=labeln[iter-1][prevstate];
-                }
-                else
-                {
-                    labeln[iter][state]=labelp[iter][state]-1;
-                }
-            }
-        
-        
-        }
-    }
-    // TODO labelout iter=maxiter+1
-    for(int state =0; state<(int)pow(2,maxiteration+1); state++)
-    {
-        int prevstate = getprevious(state,maxiteration+1);
-        if( state != prevstate )
-            labelout[maxiteration+1][state] = labelout[maxiteration][prevstate];
-        else
-            labelout[maxiteration+1][state] = labelout[maxiteration][prevstate];
-    }
-    //this->display();
-    return true; 
-}
-
-int OptiIterate::getprevious(int current, int iter){
-    int previous = current & (~(1<<(iter-1)));
-    return previous;
-}
-
-bool OptiIterate::duplicate_to(int prev_iter, int prev_state, int iter, int state){
-    path[iter][state]     = path[prev_iter][prev_state];
-    lmin[iter][state]     = lmin[prev_iter][prev_state];
-    lmax[iter][state]     = lmax[prev_iter][prev_state];
-    seek[iter][state]     = seek[prev_iter][prev_state];
-    labelp[iter][state]   = labelp[prev_iter][prev_state];
-    labeln[iter][state]   = labeln[prev_iter][prev_state];
-    enabled[iter][state]  = enabled[prev_iter][prev_state];
-    labelout[iter][state] = labelout[prev_iter][prev_state];
-    return true;
-}
-
-int OptiIterate::getlabelp(int state){
-    return this->labelp[iteration][state];
-}
-int OptiIterate::getlabeln(int state){
-    return this->labeln[iteration][state];
-}
-
-int OptiIterate::getoutlabel(int state){
-    if(iteration < maxiteration)
-        return labelout[iteration+1][state];
-    else
-        CPING("error");
-    return 0;
-}
-int OptiIterate::getnext_outlabel(int state){
-    if(iteration < maxiteration)
-        return labelout[iteration+2][state+(1<<iteration+1)];
-    else
-        CPING("error");
-    return 0;
-}
-
-bool OptiIterate::update(int iter){
-    this->iteration = iter;
-    lastiteration>iter?lastiteration:iter;
-    bool any_active = false;
-    for(int state=0; state<(int)pow(2,iter); state++)
-    {
-        any_active = any_active | enabled[iter][state];
-    }
-    this->active = any_active;
-    return true;
-}
-
-bool OptiIterate::display(void){
-    cout << "********** \n content of OptiIterate vectors \n ********** \n";
-    cout << "maxseek = " << maxseek << ", maxiteration = " << maxiteration << "\n";
-    cout << "nb_labels = " << nblabels << "max_sortedrank = " << max_sortedrank << "\n";
-    cout << "lastiteration " << lastiteration << "\n***********\n\n";
-    cout << "********      previous,lmin, lmax,   seek, path,   index, labelp,   labeln, labelout,  enabled \n";
-    for(int iter=0; iter<maxiteration+1; iter++)
-    {
-        cout << "********      previous,lmin, lmax,   seek, path,   index, labelp,   labeln, labelout,  enabled \n";
-        cout << "Iteration N°" << iter << " \n";
-        for(int state=0; state<(int)pow(2,iter); state++)
-        {
-            cout << "state N°" << state << "  :  ";
-            cout << getprevious(state,iter) << "       " << lmin[iter][state] << "       " << lmax[iter][state] << "       " << seek[iter][state] << "     " << path[iter][state] << "      " << adapt_index[seek[iter][state]][path[iter][state]] << "       " << labelp[iter][state] << "       " << labeln[iter][state] << "       " << labelout[iter][state] << "       " << enabled[iter][state] << "\n";
-        }
-        cout << "\n\n\n";
-    }
-
-    for(int i=0; i<max_sortedrank; i++)
-    {
-        cout << sorted_label_img[i] << "  " ;
-    }
-    cout << "\n\n\n";
-
-    cout << "**********\nadapt index & sorted label image \n**********\n";
-    for (int i=0; i<maxseek; i++)
-    {
-        cout << "\n***seek n°" << i << " :  ";
-        for(int j=0; j<(int)pow(2,i);j++)
-        {
-            
-            cout << adapt_index[i][j] << "[" << sorted_label_img[adapt_index[i][j]]<< "]    " ;
-        }
-    }
-    return true;
-}
-
-bool OptiClass::compute_opt_adapt(void){
-// Parcourre les labels en s'adaptant à la structure de l'image. 
-//     - first, store the histogram. Label matrix has to be known. done done...
-//     - for each pixel, an iteration number, plus Lmax and Lmin keeping track label
-//     - know label <-> focus ?
-
-//     - 
-//     - M matrice masque des labels en construction. (+II)
-//     - n indice d'itération ( n~log2(Nlabels)-1 -> 0 )
-//     - II labelshift rang n  ( '00001' << n )
-//     - E vectmat energie attache aux données 
-//     - L mat energie labels.
-//     - start !
-// Loop
-    int maxseek = (int)floor(log2(this->nb_pixels+this->nb_labels-1)+1); //histogram
-    if (this->maxiteration==-1)
-    {
-        maxiteration  = (int)floor(log2(this->nb_labels-1)+1); //an upper bound to iterations (to get faster results)
-    // if maxseek > maxiteration alors cette méthode est sous optimale.
-        maxiteration += 0;
-    }
-    int maxsortedrank = this->nb_pixels+this->nb_labels;
-    this->adapt_Iterator->setup(this->myLog, this->sorted_label_img, this->adapt_index, maxseek, nb_labels, maxiteration, maxsortedrank);
-
-
-    Mat1i M = Mat::zeros(height,width,CV_32S);
-    Mat1i N = Mat::zeros(height,width,CV_32S);
-    Mat1E Dp = Mat::zeros(height,width,CV_TE);
-    Mat1E Dn = Mat::zeros(height,width,CV_TE);
-    int II = 1;
-
-    Mat1E lmat = Mat::zeros(nb_labels,nb_labels,CV_TE);
-    if(!energyClass->getCrossLabelMatrix(labels,lmat)) return false;
-    smoothvect.resize(2*2);
-    vector<Mat1E> Edata(nb_labels);
-    energyClass->getDataEnergy_3DMatrix(this->labels,Edata);
-    vector<Mat1E> Edata_slice(2);
-    Edata_slice[0] = Mat::zeros(height,width,CV_TE);
-    Edata_slice[1] = Mat::zeros(height,width,CV_TE);
-    for(int i=0; i<2; i++) for(int j=0; j<2; j++)
-    {
-        smoothvect[i*2+j]=lmat.at<eType>(0+i,0+j);
-    }
-
-
-    myLog->time_r(6);    
-
-
-
-    for(int n=0; (n<maxiteration & this->adapt_Iterator->active) ; n++)
-    {
-        this->adapt_Iterator->update(n);
-        II = 1<<n;
-        CPING2("passe n",n);
-        for(int i=0; i<height; i++) for(int j=0; j<width; j++)
-        {
-            Edata_slice[0].at<eType>(i,j) = Edata[this->adapt_Iterator->getlabeln(M.at<int>(i,j) )].at<eType>(i,j)+Dn.at<eType>(i,j);
-            //Edata_slice[0].at<eType>(i,j) = 0;//Edata[this->adapt_Iterator->getlabeln(M.at<int>(i,j) )].at<eType>(i,j)+Dn.at<eType>(i,j);
-            Edata_slice[1].at<eType>(i,j) = Edata[this->adapt_Iterator->getlabelp(M.at<int>(i,j) )].at<eType>(i,j)+Dp.at<eType>(i,j);
-            //CPING(Edata_slice[1].at<eType>(i,j));
-        }
-        this->convert_mat2labvec(Edata_slice,data_in);
-
         try{
             
             gco = new GCoptimizationGeneralGraph(this->nb_pixels,2);
             ((GCoptimizationGeneralGraph*)gco)
-			->setAllNeighbors(nbs_nb,nbs_n,nbs_wk);
+			->setAllNeighbors(nbs_nbk,nbs_N,nbs_W);
             gco->setDataCost(&data_in[0]);
             gco->setSmoothCost(&smoothvect[0]);
             gco->expansion(2);
@@ -1053,59 +408,120 @@ bool OptiClass::compute_opt_adapt(void){
 	    e.Report();
             return false;
 	}
-
-        for(int k=0; k<nb_pixels; k++) for(int i=0; i<nbs_nb[k]; i++)
+        //MAJ VOISINAGES
+        for(int i=0; i<nb_pixels; i++) for(int j=0; j<nbs_nbk[i]; j++)
         {
-            if(nbs_wk[k][i]!=0)
-            if(data_out[k]!=data_out[ nbs_n[k][i]])
-            {//i°th neighbor j of k°th pixel is different => break w_jk
-                nbs_wk[k][i] = 0;
-                if(data_out[k]>data_out[ nbs_n[k][i] ])
-                    Dp.at<eType>(getxy[k]) += smoothvect[1];
-                else
-                    Dn.at<eType>(getxy[k]) += smoothvect[1];
+            if(data_out[i]!=data_out[ nbs_N[i][j]])
+            {
+                int l=0;
+                for(int k=0; k<nbs_nbk[i]; k++)
+                {
+                    if(data_out[i]==data_out[ nbs_N[i][k]])
+                    {
+                        v_nbs_reup_N[l]=nbs_N[i][k];
+                        v_nbs_reup_W[l]=nbs_W[i][k];
+                        l++;
+                    }
+                    else{
+                        if(data_out[i]>data_out[ nbs_N[i][k] ])
+                            Dp.at<eType>(getxy[i]) += smoothvect[1];
+                        else
+                            Dn.at<eType>(getxy[i]) += smoothvect[1];
+                    }
+                }
+                nbs_nbk[i]=l;
+                for(int k=0; k<l; k++){
+                    nbs_N[i][k]=v_nbs_reup_N[k];
+                    nbs_W[i][k]=v_nbs_reup_W[k];
+                }
             }
 
         }
-        
-        convert_vec2mat(data_out,N);
-        N = N*II;
+        // OUTPUT - mise en forme
+        convert_vec2mat(data_out,N); //version labels
         M = M+N;
-    }
+        for(int i=0; i<height; i++) for(int j=0; j<width; j++)
+        {
+            size_t tmp = vv_centro[n][M.at<int>(i,j)];
+            data_out[i*width+j] = tmp;
+            regularized_labelmat.at<int>(i,j) = tmp;
+            regularized_depthmat.at<fType>(i,j)=labels[tmp];
+        }
 
-    //output = Mat::zeros(height,width,CV_TF);
-    // go back to original output.
-    for(int i=0; i<height; i++) for(int j=0; j<width; j++)
-    {
-        data_out[i*width+j] = this->adapt_Iterator->getnext_outlabel( M.at<int>(i,j) );
-        //data_out[i*width+j] = this->adapt_Iterator->getoutlabel( M.at<int>(i,j) );
+        myLog->time_r(6+n);
+        // OUTPUT - Plotting 
+        imagename = to_string2(n)+"it-"+
+		selected_typename+".png";
+        ioW->img_setscale(1);
+        ioW->writeImage(foldername+"2D-"+imagename,regularized_depthmat);
+        ioW->write3DImage(foldername+"3D-"+imagename,regularized_depthmat);
+        //ioW->img_setscale(2);
+        ioW->writeImage(foldername+"2Ddiff-"+imagename,regularized_depthmat-gt_dmat);
+        ioW->write3DImage(foldername+"3Ddiff-"+imagename,regularized_depthmat-gt_dmat);
+        //
+        fType rmse,psnr;
+        myLog->as("**** At iteration "+to_string2(n)+" ****\n");
+        evalClass->compute_RMSE_label(regularized_depthmat,rmse);
+        evalClass->compute_PSNR(regularized_depthmat,psnr);
+        
+        myLog->set_state(selected_typename,lambda,n); 
+        myLog->set_eval(rmse,psnr);
+        myLog->write();
+        vv_rmse[actual_idx_method].resize(n);
+        vv_rmse[actual_idx_method][n-1] = rmse;
+        myLog->clear_log();
     }
+    CPING(" over");
     
     return true;
 }
 
 
-bool OptiClass::set_gco_kmeans(void){
+/////////////////////
+// VISUALISATION   //
+/////////////////////
 
+bool OptiClass::show_all_rmse(void){
+        FILE* gnuplot = popen("gnuplot","w");
+    fprintf(gnuplot, "set term 'pngcairo' size 950,600 enhanced font 'Verdana,10'\n");
+    ioW->set_gnuplot_output(gnuplot,"optimized/rmse-lambda-"+to_string2(lambda)+".png");
+
+    std::string initplot_msg = "plot ";
+    size_t nb_iter;
+    initplot_msg += "'-' title '"+v_types[0]+"' with lines";
+    for(int k=1;k<v_selected_method.size(); k++){
+        //_tmptype="-";
+        initplot_msg += ", '-' title '"+v_types[k]+"' with lines";
+    }
+    initplot_msg += "\n";
+    fprintf(gnuplot, "%s",initplot_msg.c_str());
+
+
+    for(int k=0;k<v_selected_method.size();k++){
+        gnuplot_vect(gnuplot,vv_rmse[k]);
+    }
+    
+    fprintf(gnuplot,"unset output \n");
+    fprintf(gnuplot,"exit \n"); 
+    pclose(gnuplot);
+    return true;
 }
 
-bool OptiClass::compute_gco_kmeans(void){
-
+bool OptiClass::gnuplot_vect(FILE* gnuplot, vector<fType> vect){
+    for(int i=1; i<vect.size(); i++){
+        fprintf(gnuplot, "%i %g\n", i, vect[i]);
+    }
+    fflush(gnuplot);
+    fprintf(gnuplot, "e\n");
+    return true;
 }
 
-bool OptiClass::set_gco_k2means(void){
+///
+// ERRORS
+///
 
+bool OptiClass::error(std::string text){
+    myLog->av("failure in opticlass!\n"+text+"\n");
+    return false;
 }
-
-bool OptiClass::compute_gco_k2means(void){
-
-}
-
-
-
-
-
-
-
-
 

@@ -33,7 +33,7 @@ bool MySFF::setlogs(void){
     depthEst.setlogs(&myLog,&ioWizard);
     energyClass.setlogs(&myLog);
     optiPlan.set_logs(&ioWizard,&myLog);
-    optiClass.setlogs(&myLog);
+    optiClass.setlogs(&ioWizard,&myLog);
     evalClass.setup(&myLog,&depthEst);
     energyClass.set_class(&depthEst, &ioWizard);
 }
@@ -115,9 +115,6 @@ bool MySFF::doDepth(void){
     CPING2("histogram size",histogram_dmat.size());
     ioWizard.draw_histogram(histogram_gtmat,histogram_dmat);
 
-    
-    
-    
     ioWizard.mksubdir("data");
     ioWizard.img_setscale(1);
     ioWizard.writeImage("data/groundtruth.png",this->gt_dmat);
@@ -129,6 +126,7 @@ bool MySFF::doDepth(void){
     ioWizard.writeImage("data/Iscore.png",tmpmat);
     
     debug_check_all("end doDepth");
+    evalClass.set_parameters(gt_dmat,depthEst.getLabels());
     dmat.copyTo(rmat);
     CPING2("nblabels", nb_labels);
     CPINGIF4("End Depth, scale1 : ", d_min, d_max, " !",true);
@@ -172,8 +170,6 @@ bool MySFF::showInterpolationAt(void){
     return true;
 }
 
-
-
 bool MySFF::showInterpolation(Point A){
     vector<Point> v = vector<Point>();
     v.push_back(A);
@@ -189,7 +185,6 @@ bool MySFF::setMultifocus(void){
         cout << "Multifocus " << d << " in progress..." << endl;
         for(int i=0; i<dim1; i++){
         for(int j=0; j<dim2; j++){
-            // imatBGR[d].at<fType>(i,j) = imageSet[depthEst.getRankFromDepth(dmat.at<fType>(i,j))].ivmat[d].at<fType>(i,j);
             imatBGR[d].at<fType>(i,j) = imageSet[(int)dmat_rank.at<fType>(i,j)].ivmat[d].at<fType>(i,j);
         }}
     }
@@ -223,23 +218,11 @@ bool MySFF::setMultifocusRmat(void){
             imatBGR[d].at<fType>(i,j) = imageSet[depthEst.getRankFromDepth(rmat.at<fType>(i,j))].ivmat[d].at<fType>(i,j);
         }}
     }
-
-    
     merge(imatBGR,this->image_MF);
-    
-    CPING("pong");
     return true;
 }
 
-    
-
-
-bool MySFF::optimize(void){
-
-    ioWizard.mksubdir("optimized");
-    
-    int timernk = 5;
-    //for(fType lambda=1;lambda<8;lambda+=0.5)
+bool MySFF::extend_lambda(void){
     tdf_input& ip = input_prts; //alias. too complex
     if(ip.vect_lambda_d.size()<ip.vect_lambda_r.size()){
         int start =ip.vect_lambda_d.size();
@@ -256,7 +239,16 @@ bool MySFF::optimize(void){
         for(int i=start;i<ip.vect_lambda_d.size();i++){
             ip.vect_lambda_r[i]=lambdareplicate;
         }
-    } 
+    }
+    return true;
+}
+
+
+bool MySFF::optimize(void){
+    ioWizard.mksubdir("optimized");
+    
+    int timernk = 5;
+    extend_lambda();
     // fill in differences.
     opti_prts.type = input_prts.opti;
     opti_prts.energyclass = & this->energyClass;
@@ -269,7 +261,7 @@ bool MySFF::optimize(void){
     opti_prts.histogram = histogram_dmat;
     COUT2("nb_pixels", opti_prts.nb_pixels);
     
-    optiClass.set_param(opti_prts);
+    optiClass.set_param(opti_prts,gt_dmat);
     optiClass.set_allneighbors();
     myLog.a("Optimization class set");
     
@@ -398,25 +390,65 @@ bool MySFF::optimize(void){
     }
     i++;
     }
-    
-    
-
-
-    
     debug_check_all("end");
 }
 
+bool MySFF::optimize2(void){
+    extend_lambda();
+    
+    opti_prts.type = input_prts.opti; //deprecated
+    opti_prts.energyclass = & this->energyClass;
+    opti_prts.depthClass  = & this->depthEst;
+    opti_prts.evalClass   = & this->evalClass;
+    opti_prts.nb_pixels = dim1*dim2;
+    opti_prts.nb_labels = nb_labels;
+    opti_prts.height    = dim1;
+    opti_prts.width     = dim2;
+    opti_prts.connexity = input_prts.connexity;
+    opti_prts.labels    = depthEst.getLabels();
 
+    optiClass.set_param(opti_prts,gt_dmat);
+    optiClass.set_allneighbors();
+    optiClass.set_optiplan(&optiPlan);
 
+    
+    
+    for(int i=0; i<input_prts.vect_lambda_d.size(); i++){
+        fType lambda = input_prts.vect_lambda_r[i]/input_prts.vect_lambda_d[i];
+        myLog.time_r(5);
+        energyClass.set_parameters(input_prts.nrj_d,
+				input_prts.nrj_r,
+				sharpSet, dmat,
+				input_prts.vect_lambda_d[i],
+				input_prts.vect_lambda_r[i]);
+        optiClass.reset(input_prts.vect_lambda_d[i],input_prts.vect_lambda_r[i]);
+        CPING2("Starting optimizations l = ",lambda);
+        try{
+            if(!optiClass.do_all_optimizations() ) 
+            {
+                CPING("continue");
+                return false;
+            }
+        }
+        catch(const char* message)
+        {
+            COUT2("\n Error encounterd at lambda = ",lambda);
+            printf("\n%s\n",message);
+            COUT("\n");
+            return false;
+        }
+        CPING2("Optimization done, step lambda = ",lambda);
+    }
+    return true;
+}
 
 bool MySFF::launch_optimization(fType l_d, fType l_r, int maxiter, Mat1T & output){
 
-    COUT2("Starting optimization at lambda_r = ",l_r);
-    COUT2("Starting optimization at lambda_d = ",l_d);
+    CPINGIF4("Starting optimization l_r = ",l_r," l_d = ", l_d, 1);
 
     energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r, sharpSet, dmat, l_d, l_r);
     //set
-    optiClass.reset(maxiter);
+    optiClass.reset();
 
 
     try{
@@ -447,7 +479,6 @@ bool MySFF::launch_optimization(fType l_d, fType l_r, int maxiter, Mat1T & outpu
 
 
 bool MySFF::evaluate(void){
-    evalClass.set_parameters(gt_dmat,depthEst.getLabels());
     evalClass.compute_RMSE(rmat,rmse,q_rmse);
     evalClass.compute_RMSE_label(rmat,rmse,q_rmse);
     evalClass.compute_PSNR(rmat,psnr);

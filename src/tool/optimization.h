@@ -31,7 +31,10 @@
 #include "../misc/miscdef.h"
 #include "../gco/GCoptimization.h"
 #include "../tool/energy2.h"
+#include "../tool/depthEstimator.h"
+#include "../tool/evaluation.h"
 #include "../io/logs.h"
+#include "../io/IOWizard.h"
 #include "../tool/optiplan.h"
 
 extern "C"{
@@ -42,7 +45,7 @@ using namespace std;
 using namespace cv;
 
 
-class OptiIterate{
+/*class OptiIterate{
 public:
     OptiIterate(); ~OptiIterate();
     
@@ -92,47 +95,62 @@ private:
     
 };
 
-
+*/
 
 
 class OptiClass{
 public:
     OptiClass(); ~OptiClass();
     string name_opti; // sets what kind of optimization method is used 
+    string selected_typename; // sets what kind of optimization method is used 
 
-    bool setlogs(MyLog* mylog);
+    bool setlogs(IOWizard* _ioW, MyLog* mylog);
+    bool set_param(tdfp_opti popti, const Mat1T & _gt_dmat);
+    bool set_optiplan(OptiPlan* _p_OptiPlanner);
+    bool do_optimization(void); //deprecated
 
-    bool set_param(tdfp_opti popti);
-    bool do_optimization(void);
+
+    //bool select_optimization_method(int method);	//TODO later
+    bool select_optimization_method(std::string _type);	//TODO later
+    bool do_all_optimizations(void);
     //bool set_optimization(void);
     //bool compute_optimization(void);
     bool writebackmatrix(Mat1T & do_mat);
     bool set_allneighbors(void);
-    bool reset(int maxiter);
+    bool reset(fType l_d=-1, fType l_r=0);
     
 
 private:
 // common
     bool set;
     MyLog* myLog;
+    IOWizard* ioW;
     EnergyClass *energyClass;
+    DepthClass	*depthClass;
+    EvalClass   *evalClass;
 
     int nb_pixels;
     int nb_labels;
     int width;
     int height;
-    vector<fType> labels;
+    std::vector<fType> labels;
     int connexity;
+    size_t actual_idx_method;
+    
+    fType lambda; // pour nommer fichiers //labmda = l_r/l_d
 
     // ce sont des labels, donc des entiers ?
-    vector<eType> data_in; //poids data
-    vector<int> data_out;  //labels output
+    std::vector<eType> data_in; //poids data
+    std::vector<int> data_out;  //labels output
 
+    std::vector<size_t> v_selected_method;
+    std::vector<std::string> v_types;
+    std::vector<vector<fType> > vv_rmse;	//TODO size + shows
 
     //nap-shield
     bool build_rank4xy(void);
-    Mat1i          getrank;
-    vector<Point>  getxy;
+    cv::Mat1i          getrank;
+    std::vector<Point>  getxy;
 
     bool convert_mat2labvec(const vector<Mat1E> & vmat, vector<eType> & vect);
     bool convert_vec2mat(const vector<int> & vect, Mat1T & vmat);
@@ -142,64 +160,38 @@ private:
 // used by graph cuts
     GCoptimization *gco;
     string gcotype;
-    int maxiteration;
 
-    vector<eType> smoothvect;  //label*label
+    std::vector<eType> smoothvect;  //label*label
     //vector<unsigned int> histogram;
     int nb_neighbors;
     Mat1E neighbor_mat; //other way of describing neighbors? weights
-    //vector<vector<Point> >  neighborhoods; //wow
-    //vector<vector<eType> > weights;       //if needed
-    //Neighborsystem nbs_
+    cv::Mat1i regularized_labelmat;
+    Mat1E     regularized_depthmat;
+    Mat1T     gt_dmat;
+
     bool nbs_set;
     int* nbs_nb;
-    int* nbs_n1D;
-    int** nbs_n;
-    eType* nbs_w1D;
-    eType** nbs_w;
-    eType* nbs_wk1D; //iteratively destructed by gco opti
-    eType** nbs_wk;
-    
-    //adaptative optimisation
-    size_t*  histogram;
-    bool sort_img_set;
-    int* sorted_label_img;
-    int* adapt_index1D;
-    int** adapt_index;
-    OptiIterate* adapt_Iterator;
+    int* nbs_n1D, *nbs_nk1D;
+    eType* nbs_w1D, *nbs_wk1D;
+    int* nbs_nbk;     // working
+    int** nbs_N;      // working
+    eType** nbs_W;   // working
 
-
-    // kmeans optimization
-    OptiPlan* p_Planner;
-    
-    
-    
-    
+    // get opti_plan
+    OptiPlan* p_OptiPlanner; // renvoie les seuils & centroides.
     
     // Functions
-
     bool set_optimization_gco_grid(void);
     bool compute_gco_grid(void);
+    bool compute_opt_custom(void);
 
-    bool set_optimization_gco_gen(void);
-    bool compute_gco_gen(void);
-
-    bool compute_opt_binary(void);
-    bool compute_opt_multiscale(void);
-    bool set_optimization_gco_adapt(void);
-    bool set_custom_adapt_histogram(int & range);
-    bool compute_opt_adapt(void);
-
-    bool set_gco_kmeans(void);
-    bool compute_gco_kmeans(void);
-
-    bool set_gco_k2means(void);
-    bool compute_gco_k2means(void);
+// Visualisation
+    bool show_rmse(void);	//TODO ioW show... and mkdir.
+    bool show_all_rmse(void);
+    bool gnuplot_vect(FILE* gnuplot, vector<fType> vect);
 
 // others
-    
-
-    
+    bool error(std::string text=""); 
 };
 
 
