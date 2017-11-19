@@ -118,7 +118,13 @@ bool MyLog::clear_log(void){
     //for(int i=6; i<this->log_data_out->output.time.size(); i++){
     //    this->log_data_out->output.time[i] = -1;
     //}
-    
+}
+
+bool MyLog::clear_iteration_times(void){
+    for(int i=6; i<this->log_data_out->output.time.size(); i++){
+        this->log_data_out->output.time[i] = -1;
+    }
+    return true;
 }
 
 bool MyLog::set_state(fType lr, fType ld, int iter){
