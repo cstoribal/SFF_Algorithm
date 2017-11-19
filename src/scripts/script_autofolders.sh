@@ -3,11 +3,15 @@
 
 # 1 default params
 
-init="../ProjSFF -D "
+init="../../ProjSFF -D "
 LIST_FOLD=$1
 
 for fold in ${LIST_FOLD[*]}
   do
+  subdir=${fold//\//_}
+  echo $subdir
+  mkdir $subdir
+  cd $subdir
   LIST_SAMP=("/media/sf_F_DRIVE/Stage/Samples/"$fold*.txt)
   #echo $LIST_SAMP
   #echo $fold
@@ -17,4 +21,5 @@ for fold in ${LIST_FOLD[*]}
     echo $linecode
     eval $linecode
   done
+  cd ..
 done
