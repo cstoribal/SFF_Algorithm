@@ -53,6 +53,7 @@ public:
     double time(int rank);   // calls time()
     void   time_i(void); // calls init timer.
     bool   clear_log(void);
+    bool   clear_iteration_times(void); //
     bool   set_state(fType lr, fType ld, int iter);
     bool   set_state(std::string opti, fType lambda, int iter);
     bool   set_eval(fType rmse, fType psnr);
