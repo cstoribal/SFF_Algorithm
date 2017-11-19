@@ -6,7 +6,7 @@
 
 init="./ChangeParameters.sh "
 compute="../script_autofolders.sh"
-LIST_FOLD=( "Semireal/semireal_mb4/")
+LIST_FOLD=( "customseries/" "Semireal/semireal_mb4/" "Semireal/semireal_mb2/" "Semireal/semireal_mb1/" "Semireal/semireal_mb3/" "Simulations/simu4/" "Simulations/simu5/" "Simulations/s96serie/" "Simulations/")
 # LIST_FOLD=( "customseries/") 
 LIST_PARAMS=("./*.param.txt")
 opt_param=" -optf 0 "
