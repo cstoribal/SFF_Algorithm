@@ -463,9 +463,9 @@ bool OptiClass::compute_opt_custom(void){
         ioW->img_setscale(1);
         ioW->writeImage(foldername+"2D-"+imagename,regularized_depthmat);
         ioW->write3DImage(foldername+"3D-"+imagename,regularized_depthmat);
-        //ioW->img_setscale(2);
-        ioW->writeImage(foldername+"2Ddiff-"+imagename,regularized_depthmat-gt_dmat);
-        ioW->write3DImage(foldername+"3Ddiff-"+imagename,regularized_depthmat-gt_dmat);
+        ioW->img_setscale(2);
+        ioW->writeImage(foldername+"2Ddiff-"+imagename,10*(regularized_depthmat-gt_dmat) );
+        ioW->write3DImage(foldername+"3Ddiff-"+imagename,10*(regularized_depthmat-gt_dmat) );
         //
         fType rmse,psnr;
         myLog->as("**** At iteration "+to_string2(n)+" ****\n");

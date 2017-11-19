@@ -265,7 +265,8 @@ bool OptiPlan::set_thresh(void){
 	                vv_centroid[iter][2*i]=_min;//vv_centroid[iter-1][i];
                         vv_centroid[iter][2*i+1]=_min;//vv_centroid[iter-1][i];
                     }
-                    vv_thresh[iter][2*i+1]=_min;
+                    //vv_thresh[iter][2*i+1]=_min; //WARNING
+                    vv_thresh[iter][2*i+1]=vv_thresh[iter-1][i];
                 }
                 else{
                 if(_min!=_max){
