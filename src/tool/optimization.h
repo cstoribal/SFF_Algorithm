@@ -117,7 +117,7 @@ public:
     //bool compute_optimization(void);
     bool writebackmatrix(Mat1T & do_mat);
     bool set_allneighbors(void);
-    bool reset(fType l_d=-1, fType l_r=0);
+    bool reset(fType l_d=-1, fType l_r=0, bool _new_EdataMatrix=true);
     
 
 private:
@@ -138,7 +138,7 @@ private:
     size_t actual_idx_method;
     
     fType lambda; // pour nommer fichiers //labmda = l_r/l_d
-
+    bool newfolders,new_EdataMatrix;
     // ce sont des labels, donc des entiers ?
     std::vector<eType> data_in; //poids data
     std::vector<int> data_out;  //labels output
@@ -162,6 +162,7 @@ private:
     string gcotype;
 
     std::vector<eType> smoothvect;  //label*label
+    std::vector<Mat1E> Edata;
     //vector<unsigned int> histogram;
     int nb_neighbors;
     Mat1E neighbor_mat; //other way of describing neighbors? weights

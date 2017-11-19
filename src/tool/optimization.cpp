@@ -75,6 +75,8 @@ bool OptiClass::set_param(tdfp_opti popti, const Mat1T & _gt_dmat){
 
     build_rank4xy();
     ioW->mksubdir("optimized");
+    newfolders=true;
+    new_EdataMatrix=true;
     
     
     this->set = true;
@@ -92,10 +94,10 @@ bool OptiClass::do_all_optimizations(void){
     
     for(size_t tmp=0; tmp<nb_storedplans; tmp++){
         actual_idx_method=tmp;
-        reset(1,lambda);
+        reset(1,lambda,false);
         compute_opt_custom();
     }
-    
+    newfolders=false;
     show_all_rmse();
     
     return true;
@@ -114,7 +116,7 @@ bool OptiClass::do_optimization(void){
     return error("Warning, gco" + this->name_opti + "not computed\n");
 }
 
-bool OptiClass::reset(fType l_d, fType l_r){
+bool OptiClass::reset(fType l_d, fType l_r, bool new_EdataMatrix){
     //copy weight matrix to reset it at initial status
     for(int k=0; k<nb_pixels*connexity; k++)// for(int c=0; c<connexity; c++)
     {
@@ -128,6 +130,7 @@ bool OptiClass::reset(fType l_d, fType l_r){
 
     regularized_labelmat = Mat::zeros(height,width,CV_32S);
     regularized_depthmat = Mat::zeros(height,width,CV_TE);
+    if(new_EdataMatrix){new_EdataMatrix=true;}
     //this->maxiteration=maxiter;
     return true;
 }
@@ -221,17 +224,17 @@ bool OptiClass::set_allneighbors(void){
     if(connexity==4 |
        connexity==8)
     {
-        neighbor_mat.at<eType>(2,1) = 1;
-        neighbor_mat.at<eType>(1,2) = 1;
-        neighbor_mat.at<eType>(3,2) = 1;
-        neighbor_mat.at<eType>(2,3) = 1;
+        neighbor_mat.at<eType>(2,1) = 0.25f;
+        neighbor_mat.at<eType>(1,2) = 0.25f;
+        neighbor_mat.at<eType>(3,2) = 0.25f;
+        neighbor_mat.at<eType>(2,3) = 0.25f;
     }
     if(connexity==8)
     {
-        neighbor_mat.at<eType>(1,1) = (eType)1.0/(eType)sqrt(2.0);
-        neighbor_mat.at<eType>(3,1) = (eType)1.0/(eType)sqrt(2.0);
-        neighbor_mat.at<eType>(1,3) = (eType)1.0/(eType)sqrt(2.0);
-        neighbor_mat.at<eType>(3,3) = (eType)1.0/(eType)sqrt(2.0);
+        neighbor_mat.at<eType>(1,1) = (eType)0.25f/(eType)sqrt(2.0);
+        neighbor_mat.at<eType>(3,1) = (eType)0.25f/(eType)sqrt(2.0);
+        neighbor_mat.at<eType>(1,3) = (eType)0.25f/(eType)sqrt(2.0);
+        neighbor_mat.at<eType>(3,3) = (eType)0.25f/(eType)sqrt(2.0);
     }
 
     filter2D(borders, borders, -1, this->neighbor_mat, Point(2,2), 0, BORDER_CONSTANT );
@@ -335,7 +338,7 @@ bool OptiClass::compute_gco_grid(void){
 
 bool OptiClass::compute_opt_custom(void){
     /////
-
+    myLog->time_r(6);
     Mat1i M = Mat::zeros(height,width,CV_32S); //Global path output
     Mat1i N = Mat::zeros(height,width,CV_32S); //step   path output
     Mat1E Dp = Mat::zeros(height,width,CV_TE); //Datacost Offset
@@ -352,28 +355,33 @@ bool OptiClass::compute_opt_custom(void){
     smoothvect.resize(2*2);
     for(int i=0; i<2; i++) for(int j=0; j<2; j++)
         smoothvect[i*2+j]=lmat.at<eType>(0+i,0+j);      // we only take 4 values 
+ 
+    //vector<Mat1E> Edata(nb_labels);               // Datacosts
+    if(new_EdataMatrix){
+        Edata.resize(nb_labels);
+        energyClass->getDataEnergy_3DMatrix(this->labels,Edata);
+        new_EdataMatrix=false;
+    }
 
-    vector<Mat1E> Edata(nb_labels);               // Datacosts
-    energyClass->getDataEnergy_3DMatrix(this->labels,Edata);
-
-
+;
     vector<int> v_nbs_reup_N(connexity);
     vector<eType> v_nbs_reup_W(connexity);
     size_t max_iterations=1;
     vector<vector<size_t> > vv_thresh(0);
     vector<vector<size_t> > vv_centro(0);
-    myLog->time_r(6);
     p_OptiPlanner->get_thresholds_n_centroids(v_selected_method[actual_idx_method],
 		 selected_typename, max_iterations, vv_thresh, vv_centro);
     v_types[actual_idx_method]=selected_typename;
     
-    ioW->mksubdir("optimized/"+selected_typename);
+    myLog->time_r(7);
+    if(newfolders)ioW->mksubdir("optimized/"+selected_typename);
     ioW->mksubdir("optimized/"+selected_typename+"/"+to_string2(lambda) );
+
     std::string imagename;
     std::string foldername="optimized/"+selected_typename+"/"+to_string2(lambda)+"/";
     // Starting optimization  
     int n=1;
-    CPING2(selected_typename," passe N° ");
+    COUT2(selected_typename," passe N° ");
     for(n=1; (n<max_iterations) ; n++)
     {    
         myLog->time_i();
@@ -448,7 +456,7 @@ bool OptiClass::compute_opt_custom(void){
             regularized_depthmat.at<fType>(i,j)=labels[tmp];
         }
 
-        myLog->time_r(6+n);
+        myLog->time_r(7+n);
         // OUTPUT - Plotting 
         imagename = to_string2(n)+"it-"+
 		selected_typename+".png";

@@ -162,7 +162,7 @@ MyLogOut::MyLogOut(){};MyLogOut::~MyLogOut(){};
 
 bool MyLogOut::setup(tdf_input & input){
     this->output.settings = &input;
-    this->output.time.resize(15);
+    this->output.time.resize(20);
     this->output.type_best_theorical="";
     this->output.type_best_regularized="";
     return true;
@@ -276,7 +276,7 @@ bool MyLogOut::write(void){
 
 bool MyLogOut::create_new_logfile_header(std::ofstream & outfile){
     std::string initdata;
-    initdata = logversion + " ; outputfolder ; file1_p ; extension ; nbimg ; file2_p ; nb_img ; gt_path ; dmin ; dmax ; fmin ; fmax ; scale ; blur ; noiseA ; noiseB ; noiseCA ; noiseCS ; sharpOp ; depthOp ; nrj_d ; nrj_r ; opti ; connexity ; opti ; lambda ; iterationlvl ; rmse ; psnr ; t ; t ; t ; t ; t ; t ;  topti ; \n";
+    initdata = logversion + " ; outputfolder ; file1_p ; extension ; nbimg ; file2_p ; nb_img ; gt_path ; dmin ; dmax ; fmin ; fmax ; scale ; blur ; noiseA ; noiseB ; noiseCA ; noiseCS ; sharpOp ; depthOp ; nrj_d ; nrj_r ; connexity ; opti ; lambda ; iterationlvl ; rmse ; psnr ; t ; t ; t ; t ; t ; t ; t_charg ;  topti ; \n";
     outfile << initdata ;
     return true; //TODO
 }
