@@ -20,8 +20,8 @@ MySFF::MySFF(){
     A_tst = Point(5,5);
 }
 MySFF::~MySFF(){
-    COUT("starting to write logs");
-    myLog.write();
+    // COUT("starting to write logs");
+    // myLog.write();
     //CPING("this is MySFF destructor's test");
 }
 
@@ -398,7 +398,7 @@ bool MySFF::optimize(void){
 
 bool MySFF::optimize2(void){
     extend_lambda();
-    evalClass.compute_RMSE(dmat,rmse,q_rmse);
+    evalClass.compute_RMSE_label(dmat,rmse);
     myLog.set_eval_at(rmse,0);
 
     opti_prts.type = input_prts.opti; //deprecated

@@ -9,7 +9,7 @@ convert_and_run() {
       do
       linecode=$prog_param""$param" -f "$3
       echo $linecode
-      ## eval $linecode
+      eval $linecode
       mkdir ${param%??????????}
       cd ${param%??????????}
       mkdir $4
@@ -17,7 +17,7 @@ convert_and_run() {
       
       linecode=$prog_sff""$3
       echo $linecode
-      ## eval $linecode
+      eval $linecode
       cd ..
       cd ..
     done
@@ -36,7 +36,7 @@ opt_param=" -optf 0 "
 for fold in ${LIST_FOLD[*]}
   do
   subdir=${fold//\//_}
-  LIST_SAMP=("/media/zomby3/SHARED/Stage/Samples/"$fold*.txt)
+  LIST_SAMP=("/data/data/Stage/Samples/"$fold*.txt)
   parallel convert_and_run ::: "${LIST_PARAMS[*]}" ::: $opt_param ::: ${LIST_SAMP[*]} ::: $subdir
 done
 

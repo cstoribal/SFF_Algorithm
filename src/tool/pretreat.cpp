@@ -21,7 +21,7 @@ PreTreatment::PreTreatment(){
     this->noise_b = 0.0;
     this->noise_ca = 0.0;
     this->noise_cs = 0.0;
-    this->myLog = new MyLog();
+    this->myLog =  NULL;
     srand(time(NULL));
 }
 PreTreatment::~PreTreatment(){}

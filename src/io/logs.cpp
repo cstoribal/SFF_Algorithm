@@ -19,6 +19,10 @@ MyLog::MyLog(){
     logs = "Starting log file \n "+logversion+" \n";
 }
 MyLog::~MyLog(){
+    ofstream out(this->filepath.c_str());
+    out << this->logs;
+    out.close();
+    
     delete this->log_data_out;
 }
 

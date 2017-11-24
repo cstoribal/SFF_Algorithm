@@ -10,7 +10,7 @@
 
 OptiClass::OptiClass(){ 
     this->set = false;
-    this->nbs_set = 0;
+    this->nbs_set = false;
     this->connexity = 4; //TODO
     //set all arrows to NULL pointers
     this->nbs_nb   = NULL;
@@ -38,7 +38,7 @@ OptiClass::~OptiClass(){
         delete [] nbs_nbk;
         delete [] nbs_W;
         delete [] nbs_N;
-
+        this->nbs_set=false;
         //delete [] sorted_label_img;
         //delete [] adapt_index1D;
         //delete [] adapt_index;
@@ -207,7 +207,7 @@ bool OptiClass::convert_vec2mat(const vector<int> & vect, Mat1i & vmat){
 
 bool OptiClass::set_allneighbors(void){
     // needed if optimisation type general graph
-    if(nbs_set == 1){
+    if(nbs_set == true){
         myLog->a("Warning, re-setting neighbors without freeing memory");
         delete [] nbs_nb;
         delete [] nbs_n1D;
@@ -218,7 +218,7 @@ bool OptiClass::set_allneighbors(void){
         delete [] nbs_nbk;
         delete [] nbs_W;
         delete [] nbs_N;
-        this->nbs_set=0;
+        this->nbs_set=false;
     }
     // sets up neighbornumarray, neighborarray, weightarray !
     // aka nbs_nb, nbs_n, nbs_w;
@@ -285,7 +285,7 @@ bool OptiClass::set_allneighbors(void){
         nbs_w1D[k]=nbs_wk1D[k];
     }
     
-    nbs_set = 1;
+    nbs_set = true;
     return true;
 }
 
