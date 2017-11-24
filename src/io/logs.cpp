@@ -284,6 +284,7 @@ bool MyLogOut::write_deltaRMSEtoHistogram(vector<vector<vector<std::string> > > 
 
 bool MyLogOut::write(void){
     write("../logout.csv",1);
+    CPING2("outputfolder : ",output.settings->outputfolder);
     if(output.settings->outputf_set) write("./"+output.settings->outputfolder+"/logout.csv",0);
     return true;
 }
@@ -293,12 +294,12 @@ bool MyLogOut::write(std::string filename, bool verbose){
 
     bool file_exists=false;
     {
-        ifstream fichier("../logout.csv");
+        ifstream fichier(filename);
         file_exists = !fichier.fail();
         fichier.close();
     }
     std::ofstream outfile;
-    outfile.open("../logout.csv", std::ios_base::app);
+    outfile.open(filename, std::ios_base::app);
     if(!file_exists){
         if(verbose) {COUT("création d'un nouveau fichier de logs"); }
         create_new_logfile_header(outfile);
