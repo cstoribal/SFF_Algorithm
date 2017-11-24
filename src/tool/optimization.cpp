@@ -97,6 +97,8 @@ bool OptiClass::do_all_optimizations(void){
         actual_idx_method=tmp;
         reset(1,lambda,false);
         compute_opt_custom();
+        myLog->write();
+        myLog->clear_log();
     }
     newfolders=false;
     show_all_rmse();
@@ -474,12 +476,10 @@ bool OptiClass::compute_opt_custom(void){
         evalClass->compute_RMSE_label(regularized_depthmat,rmse);
         evalClass->compute_PSNR(regularized_depthmat,psnr);
         
-        myLog->set_state(selected_typename,lambda,n); 
-        myLog->set_eval(rmse,psnr);
-        myLog->write();
+        if(n==1){myLog->set_state(selected_typename,lambda);}
+        myLog->set_eval_at(rmse,n);
         vv_rmse[actual_idx_method].resize(n);
         vv_rmse[actual_idx_method][n-1] = rmse;
-        myLog->clear_log();
     }
     CPING(" over");
     

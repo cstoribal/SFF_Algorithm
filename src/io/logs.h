@@ -24,6 +24,7 @@ public:
     
     bool setup(tdf_input & input);
     bool write(void);
+    bool write(std::string filename, bool verbose);
     bool write_deltaRMSEtoHistogram(vector<vector<vector<std::string> > > & vvv_deltarmse, vector<vector<std::string> > & vv_type12);
     string logversion;
     tdf_log output;
@@ -56,7 +57,9 @@ public:
     bool   clear_iteration_times(void); //
     bool   set_state(fType lr, fType ld, int iter);
     bool   set_state(std::string opti, fType lambda, int iter);
+    bool   set_state(std::string opti, fType lambda);
     bool   set_eval(fType rmse, fType psnr);
+    bool   set_eval_at(fType rmse, int iter);
     bool   set_bestplans(std::vector<std::string> types);
     bool   write_deltaRMSEtoHistogram(vector<vector<vector<std::string> > > &  vvv_deltarmse, vector<vector<std::string> > & vv_type12);
     
