@@ -992,6 +992,7 @@ bool IOWizard::buildImageSet(tdf_imgset& imageSet) {
             // copyTo timg.ivmat
             imageSet.push_back(timg);
         }
+        CPING("end opt 3");
         return true;   
         
     }

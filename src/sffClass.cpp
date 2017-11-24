@@ -63,8 +63,10 @@ bool MySFF::loadProblem(int argc, char** argv){
 }
 
 bool MySFF::preTreat(void){
+    CPING("start pretreat");
     for(int i=0; i<imageSet.size(); i++){
     for(int j=0; j<imageSet[0].dim; j++){
+        //CPING2(imageSet[i].ivmat[j].rows,imageSet[i].ivmat[j].cols);
         pretreatClass.set_param(input_prts);
         pretreatClass.compute_scale(imageSet[i].ivmat[j]);
         pretreatClass.compute_noises(imageSet[i].ivmat[j]);
@@ -72,6 +74,7 @@ bool MySFF::preTreat(void){
     }
     }
     
+    //CPING("end pretreat");
     pretreatClass.compute_scale(gt_dmat);
     
     dim1 = imageSet[0].ivmat[0].rows;

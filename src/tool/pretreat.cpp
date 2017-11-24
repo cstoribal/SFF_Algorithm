@@ -86,13 +86,13 @@ bool PreTreatment::compute_noises(Mat_<fType> & image){
         //myLog->a( "Computing noise_gauss "+to_string(noise_ca)+ "sigma " +to_string2(noise_cs)+"\n");
         this->compute_ngauss(image);
     }
-    
-    //image.convertTo(image, CV_32F);
-    threshold( image, image, 1.0, 1.0,THRESH_TRUNC);
-    image = -image;
-    threshold( image, image, 0.0, 0.0,THRESH_TRUNC);
-    image = -image;
-    //image.convertTo(image, CV_TF);
+    Mat tmpmat;
+    image.convertTo(tmpmat, CV_32F,1.0f);
+    threshold( tmpmat, tmpmat, 1.0, 1.0,THRESH_TRUNC);
+    tmpmat = -tmpmat;
+    threshold( tmpmat, tmpmat, 0.0, 0.0,THRESH_TRUNC);
+    tmpmat = -tmpmat;
+    tmpmat.convertTo(image, CV_TF,1.0f);
     
     //image = image.mul(Mat::zeros(dimy,dimx,CV_TF),(image<0));
     
