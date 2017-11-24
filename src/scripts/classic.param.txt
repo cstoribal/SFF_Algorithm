@@ -5,8 +5,8 @@
 
 1 ; 1; 1; 0.0; 0.0; 0 ; 0
 1 ; SMLAP 
-1 ; gauss 
-1 ; normeL1; absdiff
+1 ; polynome 
+1 ; normeL1; normeL1
 1 ; all ; 4 ;4
 1 ; 1; 1; 3 ; 6
 1 ; 400; 2 ; 1 ; 1
