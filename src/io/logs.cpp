@@ -284,7 +284,6 @@ bool MyLogOut::write_deltaRMSEtoHistogram(vector<vector<vector<std::string> > > 
 
 bool MyLogOut::write(void){
     write("../logout.csv",1);
-    CPING2("outputfolder : ",output.settings->outputfolder);
     if(output.settings->outputf_set) write("./"+output.settings->outputfolder+"/logout.csv",0);
     return true;
 }
