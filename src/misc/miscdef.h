@@ -188,6 +188,7 @@ struct struct_log{
     std::vector<double> time;
     std::string opti; //optimisation actuelle;
     fType rmse;
+    std::vector<fType> v_rmse;
     fType psnr;
     std::vector<std::string> types;
     std::string type_best_theorical;

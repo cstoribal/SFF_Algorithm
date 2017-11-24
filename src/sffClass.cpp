@@ -395,7 +395,9 @@ bool MySFF::optimize(void){
 
 bool MySFF::optimize2(void){
     extend_lambda();
-    
+    evalClass.compute_RMSE(dmat,rmse,q_rmse);
+    myLog.set_eval_at(rmse,0);
+
     opti_prts.type = input_prts.opti; //deprecated
     opti_prts.energyclass = & this->energyClass;
     opti_prts.depthClass  = & this->depthEst;

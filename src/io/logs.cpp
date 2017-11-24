@@ -10,10 +10,12 @@ and the results under the format of a csv
 */
 
 
+// 0. remove psnr, sets logs rmse in line in a vector.
+
 #include "logs.h"
 
 MyLog::MyLog(){
-    logversion = "v0.6";
+    logversion = "v0.7";
     logs = "Starting log file \n "+logversion+" \n";
 }
 MyLog::~MyLog(){
@@ -124,6 +126,9 @@ bool MyLog::clear_iteration_times(void){
     for(int i=6; i<this->log_data_out->output.time.size(); i++){
         this->log_data_out->output.time[i] = -1;
     }
+    for(int i=1; i<this->log_data_out->output.v_rmse.size(); i++){
+        this->log_data_out->output.v_rmse[i] = -1;
+    }
     return true;
 }
 
@@ -139,7 +144,21 @@ bool MyLog::set_state(std::string opti, fType lambda, int iter){
     this->log_data_out->output.iterationlvl   = iter;
     return true;
 }
-    
+
+
+bool MyLog::set_state(std::string opti, fType lambda){
+    this->log_data_out->output.lambda         = lambda;
+    this->log_data_out->output.opti           = opti;
+    return true;
+}
+
+bool MyLog::set_eval_at(fType rmse, int iter){
+    if(iter<10){
+        this->log_data_out->output.v_rmse[iter] = rmse;
+        return true;
+    }
+    return false;
+}
 
 bool MyLog::set_eval(fType rmse, fType psnr){
     this->log_data_out->output.rmse = rmse;
@@ -171,6 +190,7 @@ bool MyLogOut::setup(tdf_input & input){
     this->output.time.resize(20);
     this->output.type_best_theorical="";
     this->output.type_best_regularized="";
+    this->output.v_rmse.resize(10);
     return true;
 }
 
@@ -207,17 +227,21 @@ bool MyLogOut::Format_txt(void){
     
     strdata +=
 	  to_string2(o.opti) + "; "
-	+ to_string2(o.lambda) + "; "
-	+ to_string2(o.iterationlvl) + "; "
-	+ to_string2(o.rmse) + "; "
-	+ to_string2(o.psnr);
+	+ to_string2(o.lambda);
+	//+ to_string2(o.iterationlvl) + "; "
+	//+ to_string2(o.rmse) + "; "
+	//+ to_string2(o.psnr);
+    
+    for(int k=0; k<o.v_rmse.size(); k++){
+        strdata += "; " + to_string2(o.v_rmse[k]);
+    }
 
     for(int k=0;k<o.time.size();k++)
         strdata += "; " + to_string2(o.time[k]);
 
 
     for(int k=0;k<o.types.size();k++)
-        strdata += ";" + to_string2(o.types[k]);
+        strdata += "; " + to_string2(o.types[k]);
 
     
     strdata += "\n";
@@ -250,7 +274,7 @@ bool MyLogOut::write_deltaRMSEtoHistogram(vector<vector<vector<std::string> > > 
     }
     text+= image_path+" ;";
     for(int m=0; m<M;  m++) for(int n=0; n<m; n++) for(int it=1;it<IT; it++){
-            text+=vvv_deltarmse[m][n][it]+";";
+            text+=vvv_deltarmse[m][n][it]+" ;";
     }
     text+="\n";
     outfile << text;
@@ -258,8 +282,13 @@ bool MyLogOut::write_deltaRMSEtoHistogram(vector<vector<vector<std::string> > > 
     return true;
 }
 
-
 bool MyLogOut::write(void){
+    write("../logout.csv",1);
+    if(output.settings->outputf_set) write("./"+output.settings->outputfolder+"/logout.csv",0);
+    return true;
+}
+
+bool MyLogOut::write(std::string filename, bool verbose){
     this->Format_txt();
 
     bool file_exists=false;
@@ -271,7 +300,7 @@ bool MyLogOut::write(void){
     std::ofstream outfile;
     outfile.open("../logout.csv", std::ios_base::app);
     if(!file_exists){
-        COUT("création d'un nouveau fichier de logs");
+        if(verbose) {COUT("création d'un nouveau fichier de logs"); }
         create_new_logfile_header(outfile);
     }
     // TODO si pas de fichier alors créer l'en-tête !!
@@ -282,7 +311,7 @@ bool MyLogOut::write(void){
 
 bool MyLogOut::create_new_logfile_header(std::ofstream & outfile){
     std::string initdata;
-    initdata = logversion + " ; outputfolder ; file1_p ; extension ; nbimg ; file2_p ; nb_img ; gt_path ; dmin ; dmax ; fmin ; fmax ; scale ; blur ; noiseA ; noiseB ; noiseCA ; noiseCS ; sharpOp ; depthOp ; nrj_d ; nrj_r ; connexity ; opti ; lambda ; iterationlvl ; rmse ; psnr ; t ; t ; t ; t ; t ; t ; t_charg ;  topti ; \n";
+    initdata = logversion + " ; outputfolder ; file1_p ; extension ; nbimg ; file2_p ; nb_img ; gt_path ; dmin ; dmax ; fmin ; fmax ; scale ; blur ; noiseA ; noiseB ; noiseCA ; noiseCS ; sharpOp ; depthOp ; nrj_d ; nrj_r ; connexity ; opti ; lambda ; rmse0 ; rmse1; rmse2; rmse3; r4 ; r5 ; r6 ; r7 ; r8 ; r9 ; t0 ; t1 ; t2 ; t3 ; t4 ; t5 ; t6_charg ; t7_opti ; t8_o2 ; t9_o3 ; t10_o4 ; t11_o5 ; t12_o6 ; t13 ; t14 ; t15 ; t16 ; t17 ; t18 ; t19 ; type 1; type 2; type 3 ; type 4 ; type 5 ; type 6 ; type 7 ; type 8 \n";
     outfile << initdata ;
     return true; //TODO
 }
