@@ -118,16 +118,19 @@ private:
 	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
     bool IT_search_median(
 	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
+    bool IT_search_median_v2(
+	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
     bool IT_search_otsu(
 	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
     bool IT_search_otsu_v0(
 	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
     bool IT_search_2means(
 	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
-    
 
     bool IT_search_1surX( // non itératif ?
 	size_t min, size_t max, size_t& thresh, size_t& c1, size_t& c2);
+    bool IT_set_mean_centroid(
+	size_t _min, size_t _max, const size_t& thresh, size_t& c1, size_t& c2);
     
     
     bool IT_sets_centroids; //Check if centroids are set or not
@@ -160,6 +163,7 @@ public:
 			vector<vector<size_t> > & _vv_centro);
 
     bool get_nb_storedmethods(size_t & _nb_storedplans);
+    bool get_upperbound_iterations(size_t & _upperbound_iterations);
 
     // Visualisation
     bool show_RMSE(const string& filename);

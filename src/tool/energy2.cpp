@@ -156,7 +156,8 @@ bool EnergyClass::updateEnergy(int stype){
 
 
 bool EnergyClass::getCrossLabelMatrix(const vector<fType> & lvect, Mat1E & lmat){
-    if(eParams.typeR == "absdiff") l_absdiff(lvect,lmat);
+    if(eParams.typeR == "absdiff"
+     ||eParams.typeR == "normeL1") l_absdiff(lvect,lmat);
     if(eParams.typeR == "normeL2") l_normeL2(lvect,lmat);
 
     if(!l_checkmetric(lmat)){

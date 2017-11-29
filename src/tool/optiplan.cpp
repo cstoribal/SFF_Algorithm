@@ -180,12 +180,14 @@ bool OptiPlan::set_param(string _type, size_t _labels, size_t _pixels, vector<si
         pIT_search_thresh=&OptiPlan::IT_search_otsu_v0;
     if(type == "median")
         pIT_search_thresh=&OptiPlan::IT_search_median;
+    if(type == "median-v2")
+        pIT_search_thresh=&OptiPlan::IT_search_median_v2;
     if(type == "2means")
         pIT_search_thresh=&OptiPlan::IT_search_2means;
     if(type == "1surX")
         pIT_search_thresh=&OptiPlan::IT_search_1surX;
 
-    IT_sets_centroids = type=="otsu"||type=="binary_v2"||type=="2means";
+    IT_sets_centroids = type=="otsu"||type=="binary_v2"||type=="2means"||type=="median-v2";
 
     if(pIT_search_thresh==NULL){return error("pIT_search init failed");}
     
@@ -365,17 +367,7 @@ bool OptiPlan::reset_memory(void){
 /////////////////////////////////////////////////
 /////// Algorithmes de recherche itératifs //////
 /////////////////////////////////////////////////
-bool OptiPlan::IT_search_binary(size_t _min, size_t _max, size_t& thresh, size_t& c1, size_t& c2){
-
-    thresh = (size_t)((((float)(_min+_max+1))/2.0f));
-    thresh = max(_min+1,thresh);
-    return true;
-}
-
-bool OptiPlan::IT_search_binary_v2(size_t _min, size_t _max, size_t& thresh, size_t& c1, size_t& c2){
-    
-    thresh = (size_t)((((float)(_min+_max+1))/2.0f));
-    thresh = max(_min+1,thresh);
+bool OptiPlan::IT_set_mean_centroid(size_t _min, size_t _max, const size_t& thresh, size_t& c1, size_t& c2){
     size_t nbA=0,nbB=0;
     float meanA=0.0f;
     float meanB=0.0f;
@@ -389,6 +381,31 @@ bool OptiPlan::IT_search_binary_v2(size_t _min, size_t _max, size_t& thresh, siz
     }
     c1=(meanA/(float) nbA)+0.5f;
     c2=(meanB/(float) nbB)+0.5f;
+    return true;
+}
+
+bool OptiPlan::IT_search_binary(size_t _min, size_t _max, size_t& thresh, size_t& c1, size_t& c2){
+    thresh = (size_t)((((float)(_min+_max+1))/2.0f));
+    thresh = max(_min+1,thresh);
+    return true;
+}
+
+bool OptiPlan::IT_search_binary_v2(size_t _min, size_t _max, size_t& thresh, size_t& c1, size_t& c2){
+    IT_search_binary(_min, _max, thresh, c1, c2);
+    IT_set_mean_centroid(_min, _max, thresh, c1, c2);
+/*    size_t nbA=0,nbB=0;
+    float meanA=0.0f;
+    float meanB=0.0f;
+    for(size_t i=_min;i<thresh;i++){
+        meanA+=v_histogram[i]*i;
+        nbA+=v_histogram[i];
+    } 
+    for(size_t i=thresh;i<=_max;i++){
+        meanB+=v_histogram[i]*i;
+        nbB+=v_histogram[i];
+    }
+    c1=(meanA/(float) nbA)+0.5f;
+    c2=(meanB/(float) nbB)+0.5f;*/
     return true;
 }
 
@@ -412,7 +429,11 @@ bool OptiPlan::IT_search_median(size_t _min, size_t _max, size_t& thresh, size_t
     return true;
 }
 
-
+bool OptiPlan::IT_search_median_v2(size_t _min, size_t _max, size_t&thresh, size_t& c1, size_t& c2){
+    IT_search_median(_min, _max, thresh, c1, c2);
+    IT_set_mean_centroid(_min, _max, thresh, c1, c2);
+    return true;
+}
 
 bool OptiPlan::IT_search_otsu(size_t _min, size_t _max, size_t& thresh, size_t& c1, size_t& c2){
     //trouver le seuil d'otsu pour le segment 
@@ -609,6 +630,12 @@ bool OptiPlan::get_thresholds_n_centroids(int method,
 bool OptiPlan::get_nb_storedmethods(size_t & _nb_storedplans){
     _nb_storedplans = nb_storedplans;
     return true;    
+}
+
+
+bool OptiPlan::get_upperbound_iterations(size_t & _upperbound_iterations){
+    _upperbound_iterations=upperbound_iterations;
+    return true;
 }
 
 ////////////////////////////
@@ -981,7 +1008,7 @@ bool OptiPlan::computeCrossRMSEperf_andLog(void){
                 }
             }
         }
-    if(!myLog->write_deltaRMSEtoHistogram(vvv_deltaRMSEmatrix,vv_types)){
+    if(!myLog->write_deltaRMSE("./deltaRMSE-pre",vvv_deltaRMSEmatrix,vv_types)){
         return error("failure in XRMSE, size m<=1 ???");
     }
     return true;

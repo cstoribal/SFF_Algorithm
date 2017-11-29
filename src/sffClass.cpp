@@ -110,6 +110,7 @@ bool MySFF::doDepth(void){
     ioWizard.img_setscale(d_min,d_max,1);
     ioWizard.img_setscale(10.0*(d_min-d_max),10.0*(d_max-d_min),2);
     ioWizard.img_setscale(0,nb_labels,3);
+    ioWizard.img_setscale(0,10.0*(d_max-d_min),4);
     
     depthEst.getMLabelFromMDepth(dmat,dmat_label);
     depthEst.getMLabelFromMDepth(gt_dmat,gt_label_mat);
@@ -121,6 +122,7 @@ bool MySFF::doDepth(void){
     ioWizard.mksubdir("data");
     ioWizard.img_setscale(1);
     ioWizard.writeImage("data/groundtruth.png",this->gt_dmat);
+    ioWizard.writeImage("data/dmat.png",this->dmat);
     ioWizard.img_setscale(3);
     ioWizard.writeImage("data/dmat_label.png",this->dmat_label);
     ioWizard.img_unsetscale();
@@ -131,8 +133,8 @@ bool MySFF::doDepth(void){
     debug_check_all("end doDepth");
     evalClass.set_parameters(gt_dmat,depthEst.getLabels());
     dmat.copyTo(rmat);
-    CPING2("nblabels", nb_labels);
-    CPINGIF4("End Depth, scale1 : ", d_min, d_max, " !",true);
+    //CPING2("nblabels", nb_labels);
+    //CPINGIF4("End Depth, scale1 : ", d_min, d_max, " !",true);
     return true;
 }
 
@@ -140,30 +142,31 @@ bool MySFF::doDepth(void){
 
 bool MySFF::prepare_optimization_plan(void){
     optiPlan.set_groundtruth(gt_label_mat);
-    std::vector<std::string> typelist(5);
+    std::vector<std::string> typelist(6);
     typelist[0]="binary";
     typelist[1]="binary_v2";
     typelist[2]="otsu";
     //typelist[3]="otsu_v0";
     typelist[3]="median";
-    typelist[4]="2means";
+    typelist[4]="median-v2";
+    typelist[5]="2means";
     COUT("starting optimization plan");
     for(int i=0; i<typelist.size(); i++){
         optiPlan.set_param(typelist[i],nb_labels,dim1*dim2,histogram_dmat,1,1);
     }
-    //COUT("optiplan set");
-    CPING("showallRMSE");
+    COUT("optiplan set");
+    myLog.time_r(5);
     optiPlan.show_all_RMSE("RMSEall");
     Mat1i gt_dmat_label;
     
-    COUT("optiplan RMSE computed");
+    //COUT("optiplan RMSE computed");
     optiPlan.show_all_thresh_plans("Threshplan_");
     optiPlan.write_all_ThreshedMatrix(dmat_label); // rmse_gt set !
     optiPlan.computeCrossRMSEperf_andLog();
 
     optiPlan.show_all_RMSE2("RMSEall2");
     optiPlan.addToLog();
-    
+    COUT("Optiplan logged");
     return true;
 }
 
@@ -209,21 +212,7 @@ bool MySFF::setMultifocus(void){
     return true;
 }
 
-bool MySFF::setMultifocusRmat(void){
-    image_MF = Mat::zeros(Size(dim1,dim2), CV_TFC3);
-    vector<Mat1T> imatBGR(imageSet[0].dim);
-    //Mat1T imatBGR;
-    for(int d=0; d<imageSet[0].dim; d++){
-        imatBGR[d] = Mat::zeros(dim1, dim2, CV_TF);
-        cout << "Multifocus " << d << " in progress..." << endl;
-        for(int i=0; i<dim1; i++){
-        for(int j=0; j<dim2; j++){
-            imatBGR[d].at<fType>(i,j) = imageSet[depthEst.getRankFromDepth(rmat.at<fType>(i,j))].ivmat[d].at<fType>(i,j);
-        }}
-    }
-    merge(imatBGR,this->image_MF);
-    return true;
-}
+
 
 bool MySFF::extend_lambda(void){
     tdf_input& ip = input_prts; //alias. too complex
@@ -246,6 +235,178 @@ bool MySFF::extend_lambda(void){
     return true;
 }
 
+bool MySFF::optimize2(void){
+    extend_lambda();
+    evalClass.compute_RMSE_label(dmat,rmse);
+    myLog.set_eval_at(rmse,0);
+
+    opti_prts.type = input_prts.opti; //deprecated
+    opti_prts.energyclass = & this->energyClass;
+    opti_prts.depthClass  = & this->depthEst;
+    opti_prts.evalClass   = & this->evalClass;
+    opti_prts.nb_pixels = dim1*dim2;
+    opti_prts.nb_labels = nb_labels;
+    opti_prts.height    = dim1;
+    opti_prts.width     = dim2;
+    opti_prts.connexity = input_prts.connexity;
+    opti_prts.labels    = depthEst.getLabels();
+
+    optiClass.set_param(opti_prts,gt_dmat);
+    optiClass.set_allneighbors();
+    optiClass.set_optiplan(&optiPlan);
+
+    
+    
+    for(int i=0; i<input_prts.vect_lambda_d.size(); i++){
+        fType lambda = input_prts.vect_lambda_r[i]/input_prts.vect_lambda_d[i];
+        energyClass.set_parameters(input_prts.nrj_d,
+				input_prts.nrj_r,
+				sharpSet, dmat,
+				input_prts.vect_lambda_d[i],
+				input_prts.vect_lambda_r[i]);
+        optiClass.reset(input_prts.vect_lambda_d[i],input_prts.vect_lambda_r[i]);
+        CPING2("Starting optimizations l = ",lambda);
+        try{
+            if(!optiClass.do_all_optimizations() ) 
+            {
+                CPING("continue");
+                return false;
+            }
+        }
+        catch(const char* message)
+        {
+            COUT2("\n Error encounterd at lambda = ",lambda);
+            printf("\n%s\n",message);
+            COUT("\n");
+            return false;
+        }
+        CPING2("Optimization done, step lambda = ",lambda);
+    }
+    return true;
+}
+
+bool MySFF::launch_optimization(fType l_d, fType l_r, int maxiter, Mat1T & output){
+
+    CPINGIF4("Starting optimization l_r = ",l_r," l_d = ", l_d, 1);
+
+    energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r, sharpSet, dmat, l_d, l_r);
+    //set
+    optiClass.reset();
+
+
+    try{
+        if(!optiClass.do_optimization() ) 
+        {
+            CPING("continue");
+            return false;
+        }
+    }
+    catch(const GCException & error)
+    {
+        COUT2("\nGCException encounterd at lambda_r = ",l_r);
+        printf("\n%s\n",error.message);
+        COUT("\n");
+        return false;
+    } 
+   catch(const char* message)
+    {
+        COUT2("\n Error encounterd at lambda_r = ",l_r);
+        printf("\n%s\n",message);
+        COUT("\n");
+        return false;
+    }
+    optiClass.writebackmatrix(output);
+    
+    return true;
+}
+
+
+
+bool MySFF::debug_check_all(std::string context){
+    debug_MMCheck(this->gt_dmat,"gt_dmatrix "+context);
+    debug_MMCheck(this->gt_label_mat,"gt_label_mat "+context);
+    debug_MMCheck(this->dmat,"dmatrix "+context);
+    debug_MMCheck(this->dmat_rank,"drankmatrix "+context);
+    debug_MMCheck(this->dmat_score,"dscorematrix "+context);
+    debug_MMCheck(this->dmat_label,"dlabelmatrix "+context);
+    //debug_MMCheck(this->dmat_labelfloat,"dlabelfloatmatrix "+context);
+    debug_MMCheck(this->rmat,"rmatrix "+context);
+    //debug_MMCheck(this->image_MF,"MF_image "+context);
+    
+}
+
+
+bool MySFF::debug_MMCheck(const cv::Mat & matrix, std::string name){
+    double _min,_max;
+    minMaxLoc(matrix,&_min,&_max);
+    CPINGIF4("matrix min max : ",name, _min, _max, true);
+    return true;
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+///////////##########################///////////
+///////////        Deprecated        ///////////
+///////////##########################///////////
+
+
+bool MySFF::setMultifocusRmat(void){
+    image_MF = Mat::zeros(Size(dim1,dim2), CV_TFC3);
+    vector<Mat1T> imatBGR(imageSet[0].dim);
+    //Mat1T imatBGR;
+    for(int d=0; d<imageSet[0].dim; d++){
+        imatBGR[d] = Mat::zeros(dim1, dim2, CV_TF);
+        cout << "Multifocus " << d << " in progress..." << endl;
+        for(int i=0; i<dim1; i++){
+        for(int j=0; j<dim2; j++){
+            imatBGR[d].at<fType>(i,j) = imageSet[depthEst.getRankFromDepth(rmat.at<fType>(i,j))].ivmat[d].at<fType>(i,j);
+        }}
+    }
+    merge(imatBGR,this->image_MF);
+    return true;
+}
+
+
+bool MySFF::evaluate(void){
+    evalClass.compute_RMSE(rmat,rmse,q_rmse);
+    evalClass.compute_RMSE_label(rmat,rmse,q_rmse);
+    evalClass.compute_PSNR(rmat,psnr);
+}
+
+bool MySFF::setNewProblem(void){
+    // if the 1st loading ioWizard returns -M as an option (macro) then
+    // store the string vector with problems adresses indexed by iPRB,
+    // destroy all classes, reset variables
+    // iPRB++
+    return false;
+}
 
 bool MySFF::optimize(void){
     ioWizard.mksubdir("optimized");
@@ -379,9 +540,9 @@ bool MySFF::optimize(void){
         //ioWizard.showImage("scale",tmp,this->rmat,100);
         ioWizard.write3DImage("optimized/3D-"+tmp+ ".png",this->rmat);
 
-        ioWizard.img_setscale(2);
-        ioWizard.writeImage("optimized/2Ddiff-"+tmp+ ".png",10*(this->rmat-this->gt_dmat));
-        ioWizard.write3DImage("optimized/3Ddiff-"+tmp+ ".png",10*(this->rmat-this->gt_dmat) );
+        ioWizard.img_setscale(4);
+        ioWizard.writeImage("optimized/2Ddiff-"+tmp+ ".png",abs(10*(this->rmat-this->gt_dmat)));
+        ioWizard.write3DImage("optimized/3Ddiff-"+tmp+ ".png",abs(10*(this->rmat-this->gt_dmat)));
         ioWizard.img_unsetscale();
         myLog.a(tmp+"\n");
         myLog.time_r(7);
@@ -396,130 +557,3 @@ bool MySFF::optimize(void){
     debug_check_all("end");
 }
 
-bool MySFF::optimize2(void){
-    extend_lambda();
-    evalClass.compute_RMSE_label(dmat,rmse);
-    myLog.set_eval_at(rmse,0);
-
-    opti_prts.type = input_prts.opti; //deprecated
-    opti_prts.energyclass = & this->energyClass;
-    opti_prts.depthClass  = & this->depthEst;
-    opti_prts.evalClass   = & this->evalClass;
-    opti_prts.nb_pixels = dim1*dim2;
-    opti_prts.nb_labels = nb_labels;
-    opti_prts.height    = dim1;
-    opti_prts.width     = dim2;
-    opti_prts.connexity = input_prts.connexity;
-    opti_prts.labels    = depthEst.getLabels();
-
-    optiClass.set_param(opti_prts,gt_dmat);
-    optiClass.set_allneighbors();
-    optiClass.set_optiplan(&optiPlan);
-
-    
-    
-    for(int i=0; i<input_prts.vect_lambda_d.size(); i++){
-        fType lambda = input_prts.vect_lambda_r[i]/input_prts.vect_lambda_d[i];
-        myLog.time_r(5);
-        energyClass.set_parameters(input_prts.nrj_d,
-				input_prts.nrj_r,
-				sharpSet, dmat,
-				input_prts.vect_lambda_d[i],
-				input_prts.vect_lambda_r[i]);
-        optiClass.reset(input_prts.vect_lambda_d[i],input_prts.vect_lambda_r[i]);
-        CPING2("Starting optimizations l = ",lambda);
-        try{
-            if(!optiClass.do_all_optimizations() ) 
-            {
-                CPING("continue");
-                return false;
-            }
-        }
-        catch(const char* message)
-        {
-            COUT2("\n Error encounterd at lambda = ",lambda);
-            printf("\n%s\n",message);
-            COUT("\n");
-            return false;
-        }
-        CPING2("Optimization done, step lambda = ",lambda);
-    }
-    return true;
-}
-
-bool MySFF::launch_optimization(fType l_d, fType l_r, int maxiter, Mat1T & output){
-
-    CPINGIF4("Starting optimization l_r = ",l_r," l_d = ", l_d, 1);
-
-    energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r, sharpSet, dmat, l_d, l_r);
-    //set
-    optiClass.reset();
-
-
-    try{
-        if(!optiClass.do_optimization() ) 
-        {
-            CPING("continue");
-            return false;
-        }
-    }
-    catch(const GCException & error)
-    {
-        COUT2("\nGCException encounterd at lambda_r = ",l_r);
-        printf("\n%s\n",error.message);
-        COUT("\n");
-        return false;
-    } 
-   catch(const char* message)
-    {
-        COUT2("\n Error encounterd at lambda_r = ",l_r);
-        printf("\n%s\n",message);
-        COUT("\n");
-        return false;
-    }
-    optiClass.writebackmatrix(output);
-    
-    return true;
-}
-
-
-bool MySFF::evaluate(void){
-    evalClass.compute_RMSE(rmat,rmse,q_rmse);
-    evalClass.compute_RMSE_label(rmat,rmse,q_rmse);
-    evalClass.compute_PSNR(rmat,psnr);
-}
-
-bool MySFF::setNewProblem(void){
-    // if the 1st loading ioWizard returns -M as an option (macro) then
-    // store the string vector with problems adresses indexed by iPRB,
-    // destroy all classes, reset variables
-    // iPRB++
-    // logout the iprb (for debug)
-    // reset classes, relink to logs,
-    // call loadProblem with a new int argc, char** argv
-    // basically argc = 2, (?), argv = [-D,../../Samples/.....]
-    
-    
-    return false;
-}
-
-bool MySFF::debug_check_all(std::string context){
-    debug_MMCheck(this->gt_dmat,"gt_dmatrix "+context);
-    debug_MMCheck(this->gt_label_mat,"gt_label_mat "+context);
-    debug_MMCheck(this->dmat,"dmatrix "+context);
-    debug_MMCheck(this->dmat_rank,"drankmatrix "+context);
-    debug_MMCheck(this->dmat_score,"dscorematrix "+context);
-    debug_MMCheck(this->dmat_label,"dlabelmatrix "+context);
-    //debug_MMCheck(this->dmat_labelfloat,"dlabelfloatmatrix "+context);
-    debug_MMCheck(this->rmat,"rmatrix "+context);
-    //debug_MMCheck(this->image_MF,"MF_image "+context);
-    
-}
-
-
-bool MySFF::debug_MMCheck(const cv::Mat & matrix, std::string name){
-    double _min,_max;
-    minMaxLoc(matrix,&_min,&_max);
-    CPINGIF4("matrix min max : ",name, _min, _max, true);
-    return true;
-}

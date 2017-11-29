@@ -1147,7 +1147,7 @@ bool IOWizard::writeImage(const string filename, const Mat & image){
 
 
 bool IOWizard::write3DImage(const string filename, const Mat & image){
-    
+    if(1) return false;
     //TODO perpare vector evolution (vector mat &)
     Mat1T imat;
     image.convertTo(imat,CV_TF,1);

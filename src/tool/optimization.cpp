@@ -102,6 +102,7 @@ bool OptiClass::do_all_optimizations(void){
     }
     newfolders=false;
     show_all_rmse();
+    compute_write_cross_RMSE();
     
     return true;
 
@@ -366,7 +367,6 @@ bool OptiClass::compute_opt_custom(void){
         new_EdataMatrix=false;
     }
 
-;
     vector<int> v_nbs_reup_N(connexity);
     vector<eType> v_nbs_reup_W(connexity);
     size_t max_iterations=1;
@@ -400,6 +400,7 @@ bool OptiClass::compute_opt_custom(void){
 		[M.at<int>(i,j)+1]   ].at<eType>(i,j)+Dp.at<eType>(i,j);
         }
         this->convert_mat2labvec(Edata_slice,data_in);
+        
         try{
             
             gco = new GCoptimizationGeneralGraph(this->nb_pixels,2);
@@ -467,8 +468,9 @@ bool OptiClass::compute_opt_custom(void){
         ioW->img_setscale(1);
         ioW->writeImage(foldername+"2D-"+imagename,regularized_depthmat);
         ioW->write3DImage(foldername+"3D-"+imagename,regularized_depthmat);
+        ioW->img_setscale(4);
+        ioW->writeImage(foldername+"2Ddiff-"+imagename,abs(10*(regularized_depthmat-gt_dmat)) );
         ioW->img_setscale(2);
-        ioW->writeImage(foldername+"2Ddiff-"+imagename,10*(regularized_depthmat-gt_dmat) );
         ioW->write3DImage(foldername+"3Ddiff-"+imagename,10*(regularized_depthmat-gt_dmat) );
         //
         fType rmse,psnr;
@@ -515,6 +517,45 @@ bool OptiClass::show_all_rmse(void){
     fprintf(gnuplot,"exit \n"); 
     pclose(gnuplot);
     return true;
+}
+
+bool OptiClass::compute_write_cross_RMSE(void){
+    size_t nb_computed_plans=vv_rmse.size();
+    if(nb_computed_plans<2) return error("not enough computed optimizations!");
+    vector<vector<vector<std::string> > > vvv_deltaRMSEmatrix;
+    vector<vector<std::string> >    vv_types;
+    std::string typeA;
+    std::string typeB;
+    vector<double> v_rmseA, v_rmseB;
+    vvv_deltaRMSEmatrix.resize(nb_computed_plans);
+    vv_types.resize(nb_computed_plans);
+    size_t maxiter;
+    p_OptiPlanner->get_upperbound_iterations(maxiter);
+    size_t miniter;
+    for(int m=0; m<nb_computed_plans; m++){
+        vvv_deltaRMSEmatrix[m].resize(m);
+        vv_types[m].resize(m);
+        typeA   = v_types[m];
+        v_rmseA = vv_rmse[m];
+        for(int n=0; n<m; n++){
+            vvv_deltaRMSEmatrix[m][n].resize(maxiter);
+            typeB   = v_types[n];
+            v_rmseB = vv_rmse[n];
+            vv_types[m][n]=typeA+"-"+typeB;
+            miniter=min(v_rmseA.size(),v_rmseB.size());
+            for(int i=0; i<min(miniter,maxiter); i++){
+                vvv_deltaRMSEmatrix[m][n][i]=to_string2(v_rmseA[i]-v_rmseB[i]);
+                }
+            for(int i=min(miniter,maxiter); 
+			i<maxiter; ++i){
+                vvv_deltaRMSEmatrix[m][n][i]="";
+                }
+            }
+        }
+    if(!myLog->write_deltaRMSE("./deltaRMSE-post",vvv_deltaRMSEmatrix,vv_types)){
+        return error("failure in XRMSE, size m<=1 ???");
+    }
+    
 }
 
 bool OptiClass::gnuplot_vect(FILE* gnuplot, vector<fType> vect){

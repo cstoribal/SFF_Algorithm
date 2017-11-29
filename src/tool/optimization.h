@@ -190,6 +190,7 @@ private:
     bool show_rmse(void);	//TODO ioW show... and mkdir.
     bool show_all_rmse(void);
     bool gnuplot_vect(FILE* gnuplot, vector<fType> vect);
+    bool compute_write_cross_RMSE(void);
 
 // others
     bool error(std::string text=""); 

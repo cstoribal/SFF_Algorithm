@@ -15,7 +15,7 @@ and the results under the format of a csv
 #include "logs.h"
 
 MyLog::MyLog(){
-    logversion = "v0.7";
+    logversion = "v0.8";
     logs = "Starting log file \n "+logversion+" \n";
 }
 MyLog::~MyLog(){
@@ -179,8 +179,8 @@ bool MyLog::set_bestplans(std::vector<std::string> types){
     return true;
 }
 
-bool MyLog::write_deltaRMSEtoHistogram(vector<vector<vector<std::string> > > & vvv_deltarmse, vector<vector<std::string> > & vv_type12){
-    return this->log_data_out->write_deltaRMSEtoHistogram(vvv_deltarmse, vv_type12);
+bool MyLog::write_deltaRMSE(std::string filename, vector<vector<vector<std::string> > > & vvv_deltarmse, vector<vector<std::string> > & vv_type12){
+    return this->log_data_out->write_deltaRMSE(filename, vvv_deltarmse, vv_type12);
 }
 
 //////////////////////////////////////////////////////////////////////
@@ -253,7 +253,14 @@ bool MyLogOut::Format_txt(void){
 }
 
 
-bool MyLogOut::write_deltaRMSEtoHistogram(vector<vector<vector<std::string> > > & vvv_deltarmse, vector<vector<std::string> > & vv_type12){
+bool MyLogOut::write_deltaRMSE(std::string filename, vector<vector<vector<std::string> > > & vvv_deltarmse, vector<vector<std::string> > & vv_type12){
+    priv_write_deltaRMSE(filename,vvv_deltarmse,vv_type12);
+    if(output.settings->outputf_set) priv_write_deltaRMSE("./"+output.settings->outputfolder+filename,vvv_deltarmse,vv_type12);
+    return true;
+}
+// ./deltaRMSE.csv
+
+bool MyLogOut::priv_write_deltaRMSE(std::string filename, vector<vector<vector<std::string> > > & vvv_deltarmse, vector<vector<std::string> > & vv_type12){
     //si le fichier n'existe pas, le créer
     size_t M  = vvv_deltarmse.size();
     if(M<=1){return false;}
@@ -261,20 +268,20 @@ bool MyLogOut::write_deltaRMSEtoHistogram(vector<vector<vector<std::string> > > 
     std::string image_path = this->output.settings->file1_set==1?this->output.settings->file1_path:this->output.settings->file2[0];
     bool file_exists=false;
     {
-        ifstream fichier("./deltaRMSE.csv");
+        ifstream fichier(filename+".csv");
         file_exists = !fichier.fail();
         fichier.close();
     }
     std::ofstream outfile;
-    std::string text = "v0.3 ; ";
-    outfile.open("./deltaRMSE.csv", std::ios_base::app);
+    std::string text = "v0.4 ; ";
+    outfile.open(filename+".csv", std::ios_base::app);
     if(!file_exists){
         COUT("création d'un nouveau fichier deltaRMSE");
         text += "filepath ; ";
         for(int m=0; m<M;  m++) for(int n=0; n<m; n++) for(int it=1;it<IT; it++){
             text+=vv_type12[m][n]+"-it-"+to_string2(it)+" ; ";
         }
-        text+="\nv0.3 ;";
+        text+="\nv0.4 ;";
     }
     text+= image_path+" ;";
     for(int m=0; m<M;  m++) for(int n=0; n<m; n++) for(int it=1;it<IT; it++){
@@ -315,7 +322,7 @@ bool MyLogOut::write(std::string filename, bool verbose){
 
 bool MyLogOut::create_new_logfile_header(std::ofstream & outfile){
     std::string initdata;
-    initdata = logversion + " ; outputfolder ; file1_p ; extension ; nbimg ; file2_p ; nb_img ; gt_path ; dmin ; dmax ; fmin ; fmax ; scale ; blur ; noiseA ; noiseB ; noiseCA ; noiseCS ; sharpOp ; depthOp ; nrj_d ; nrj_r ; connexity ; opti ; lambda ; rmse0 ; rmse1; rmse2; rmse3; r4 ; r5 ; r6 ; r7 ; r8 ; r9 ; t0 ; t1 ; t2 ; t3 ; t4 ; t5 ; t6_charg ; t7_opti ; t8_o2 ; t9_o3 ; t10_o4 ; t11_o5 ; t12_o6 ; t13 ; t14 ; t15 ; t16 ; t17 ; t18 ; t19 ; type 1; type 2; type 3 ; type 4 ; type 5 ; type 6 ; type 7 ; type 8 \n";
+    initdata = logversion + " ; outputfolder ; file1_p ; extension ; nbimg ; file2_p ; nb_img ; gt_path ; dmin ; dmax ; fmin ; fmax ; scale ; blur ; noiseA ; noiseB ; noiseCA ; noiseCS ; sharpOp ; depthOp ; nrj_d ; nrj_r ; connexity ; opti ; lambda ; rmse0 ; rmse1; rmse2; rmse3; rmse4 ; rmse5 ; rmse6 ; rmse7 ; rmse8 ; rmse9 ; t0_load ; t1_sharp ; t2_sharp ; t3_depth ; t4_multif ; t5_plan ; t6_charg ; topti1 ; topti2 ; topti3 ; topti4 ; topti5 ; topti6 ; topti7 ; topti8 ; topti9 ; t16 ; t17 ; t18 ; t19 ; type 1; type 2; type 3 ; type 4 ; type 5 ; type 6 ; type 7 ; type 8 \n";
     outfile << initdata ;
     return true; //TODO
 }

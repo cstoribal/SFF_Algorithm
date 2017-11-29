@@ -42,63 +42,43 @@ int main( int argc, char** argv )
     myLog->time_i();
     mySFF.loadProblem(argc, argv);
     double t0 = myLog->time_r(0);
-    myLog->a(to_string2(t0)+" seconds for building dataset\n");
+    //myLog->a(to_string2(t0)+" seconds for building dataset\n");
     mySFF.preTreat();
-/*
-    for(int i=0; i<mySFF.imageSet.size(); i++)
-    {
-        Mat tmpmat2;
-        merge(mySFF.imageSet[i].ivmat,tmpmat2);
-        mySFF.ioWizard.showImage("scxle",tmpmat2,10);
-    }
-*/
-    t0 = myLog->time_r(1);
-    myLog->a(to_string2(t0)+" seconds for pretreatment\n");
+    myLog->time_r(1);
+    //myLog->a(to_string2(t0)+" seconds for pretreatment\n");
     mySFF.doSharpness();
-    t0 = myLog->time_r(2);
-    myLog->a(to_string2(t0)+" seconds for computing sharpness\n");
+    myLog->time_r(2);
+    //myLog->a(to_string2(t0)+" seconds for computing sharpness\n");
 
     mySFF.doDepth();
-    t0 = myLog->time_r(3);
-    myLog->a(to_string2(t0)+" seconds for computing interpolation\n");
+    myLog->time_r(3);
+    //myLog->a(to_string2(t0)+" seconds for computing interpolation\n");
     
     //mySFF.testEnergy();
     mySFF.ioWizard.img_setscale(1);
-    //mySFF.ioWizard.showImage("scale","Idist.png",mySFF.dmat,0);
-    mySFF.ioWizard.writeImage("Idist.png",mySFF.dmat); // brut depth image
+    if(MiscClass::optional_features[1]){mySFF.ioWizard.showImage("scale","Idist.png",mySFF.dmat,0);}
     mySFF.showInterpolationAt();
     mySFF.ioWizard.img_unsetscale();
     Mat1T tmpmat;
     log(mySFF.dmat_score,tmpmat);
-    //mySFF.ioWizard.showImage("scale","score",tmpmat,4000);
-    //mySFF.ioWizard.writeImage("Iscore.png",tmpmat);
 
 
 
- 
-    mySFF.setMultifocus();
-    //mySFF.ioWizard.showImage("scale",mySFF.image_MF,10);
+    myLog->time_i();
+    mySFF.setMultifocus(); //old method. 
     mySFF.ioWizard.writeImage("I_Multifocus.png",mySFF.image_MF);
+    myLog->time_r(4);
 
     mySFF.ioWizard.img_setscale(1);
-    //mySFF.clickInterpolation(mySFF.image_MF,0);
-    //mySFF.ioWizard.showImage("scale","dmat",mySFF.dmat,1000);
-    t0 = myLog->time_r(4);
-    myLog->a(to_string2(t0)+" seconds for misc (multifocus & dmatscore)\n");
+    //myLog->a(to_string2(t0)+" seconds for misc (multifocus & dmatscore)\n");
 
     mySFF.prepare_optimization_plan();
     
     mySFF.optimize2();
-    //mySFF.ioWizard.showImage("scale","rmat",mySFF.rmat,1000);
-    //mySFF.ioWizard.writeImage("I_dregu.png",mySFF.rmat);
 
-
-    mySFF.setMultifocusRmat();
-
-    mySFF.ioWizard.img_unsetscale();
-    //mySFF.ioWizard.showImage("scale",mySFF.image_MF,10);    
-    mySFF.ioWizard.writeImage("I_Multifocus_regu.png",mySFF.image_MF);
-    //mySFF.ioWizard.showImage("scale","score",tmpmat,4000);
+    //mySFF.setMultifocusRmat();
+    mySFF.ioWizard.img_unsetscale();  
+    //mySFF.ioWizard.writeImage("I_Multifocus_regu.png",mySFF.image_MF);
     
     //Mat1T reliability_matrix;
     //mySFF.energyClass.eParams.rmat.copyTo(reliability_matrix);

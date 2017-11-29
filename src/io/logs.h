@@ -25,7 +25,7 @@ public:
     bool setup(tdf_input & input);
     bool write(void);
     bool write(std::string filename, bool verbose);
-    bool write_deltaRMSEtoHistogram(vector<vector<vector<std::string> > > & vvv_deltarmse, vector<vector<std::string> > & vv_type12);
+    bool write_deltaRMSE(std::string filename, vector<vector<vector<std::string> > > & vvv_deltarmse, vector<vector<std::string> > & vv_type12);
     string logversion;
     tdf_log output;
     
@@ -33,6 +33,7 @@ private:
     string strdata;
     bool create_new_logfile_header(std::ofstream & outfile);
     bool Format_txt(void);
+    bool priv_write_deltaRMSE(std::string filename, vector<vector<vector<std::string> > > & vvv_deltarmse, vector<vector<std::string> > & vv_type12);
     
 };
 
@@ -61,7 +62,7 @@ public:
     bool   set_eval(fType rmse, fType psnr);
     bool   set_eval_at(fType rmse, int iter);
     bool   set_bestplans(std::vector<std::string> types);
-    bool   write_deltaRMSEtoHistogram(vector<vector<vector<std::string> > > &  vvv_deltarmse, vector<vector<std::string> > & vv_type12);
+    bool   write_deltaRMSE(std::string filename, vector<vector<vector<std::string> > > &  vvv_deltarmse, vector<vector<std::string> > & vv_type12);
     
 private:
     CTimer timer;
