@@ -82,6 +82,12 @@ bool EvalClass::compute_RMSE(const Mat1T & dmat, fType & rmse, fType & q_rmse ){
     return true;
 }
 
+Mat1T EvalClass::check_diff(const Mat1T & dmat){
+    Mat1T outmat = abs(dmat - gt_dmat);
+    return outmat;
+}
+    
+
 
 bool EvalClass::compute_PSNR(const Mat1T & dmat, fType & psnr ){
     Mat1T tmpmat;

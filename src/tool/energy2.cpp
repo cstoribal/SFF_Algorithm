@@ -196,127 +196,10 @@ bool EnergyClass::get_pointer_dmat( Mat1T* & matrix){
     return true;
 }
 
-/*
-/////////////////////////////////////////////////////////////////////
-///	ROIs
-/////////////////////////////////////////////////////////////////////
-
-bool EnergyClass::get_P_ROI(int stype, const vector<Point> & P, Rect & mROI){
-    //tmp
-    int xmax,xmin,ymax,ymin;
-    xmax = P[0].x;xmin=xmax;ymax=P[0].y;ymin=ymax;
-    for(int i=0;i<P.size();i++){
-        xmax = (xmax<P[i].x)? P[i].x:xmax;
-        xmin = (xmin>P[i].x)? P[i].x:xmin;
-        ymax = (ymax<P[i].y)? P[i].y:ymax;
-        ymin = (ymin>P[i].y)? P[i].y:ymin;
-    }
-    mROI = Rect(xmin,ymin, xmax-xmin, ymax-ymin);
-    
-    return true;
-}
-
-bool EnergyClass::get_ROI_from_ROI(int stype, const Rect & roiin, Rect & roiout){
-    int w=5;
-    int h=5;
-
-    if(stype == 1){
-        
-        
-    }
-    else if(stype==2)
-    {
-        
-        
-    }
-    roiout = roiin - Point(w/2,h/2);
-    roiout = roiout + Size(w,h);
-    cout << "ROI is" << endl;
-    cout << roiout.x << endl;
-    cout << roiout.y << endl;
-    cout << roiout.height << endl;
-    cout << roiout.width << endl;
-    // Limit ROI to bounds
-    return true;
-}
 
 
 /////////////////////////////////////////////////////////////////////
-//	DataNRJ
-/////////////////////////////////////////////////////////////////////
-
-
-bool EnergyClass::d_absdiff(const Mat1T & drmat, const Rect & roi){
-    Mat1T eDataij_roi = Mat(eDataij,roi);
-    Mat1T tmpmat= Mat(drmat,roi) - Mat(eParams.dmat,roi);
-    tmpmat = this->eParams.scale_d*(cv::abs(tmpmat));
-    tmpmat.copyTo(eDataij_roi,flag_Dmat);
-    tmpmat = tmpmat - ed_mat;
-    tmpmat.copyTo(delta_eDij,flag_Dmat);
-    delta_eD = sum(delta_eDij)[0];
-    //done
-    
-    
-    return true;
-}
-
-bool EnergyClass::d_normeL2(const Mat1T & drmat, const Rect & roi){
-    Mat1T eDataij_roi = Mat(eDataij,roi);
-    Mat1T tmpmat= Mat(drmat,roi) - Mat(eParams.dmat,roi);
-    tmpmat = this->eParams.scale_d*tmpmat.mul(tmpmat);
-    tmpmat.copyTo(eDataij_roi,flag_Dmat);
-    tmpmat = tmpmat - ed_mat;
-    tmpmat.copyTo(delta_eDij,flag_Dmat);
-    delta_eD = sum(delta_eDij)[0];
-    //done
-    
-    
-    return true;
-}
-
-
-
-
-
-/////////////////////////////////////////////////////////////////////
-//	ReguNRJ
-/////////////////////////////////////////////////////////////////////
-
-
-bool EnergyClass::r_absdiff(const Mat1T & drmat, const Rect & roi){
-    Mat1T eReguij_roi = Mat(eReguij,roi);
-    Mat1T tmpmat;
-    zeromatrix.copyTo(accumat);
-    Mat mL = (Mat_<fType>(3,1) << -1, 1, 0);
-    Mat mR = (Mat_<fType>(3,1) <<  0, 1,-1);
-    Mat mU = (Mat_<fType>(1,3) << -1, 1, 0);
-    Mat mD = (Mat_<fType>(1,3) <<  0, 1,-1);
-    
-    filter2D(drmat,tmpmat,-1,mL, Point(-1,-1), 0, BORDER_REPLICATE);
-    accumat = abs(tmpmat);
-    filter2D(drmat,tmpmat,-1,mR, Point(-1,-1), 0, BORDER_REPLICATE);
-    accumat += abs(tmpmat);
-    filter2D(drmat,tmpmat,-1,mU, Point(-1,-1), 0, BORDER_REPLICATE);
-    accumat += abs(tmpmat);
-    filter2D(drmat,tmpmat,-1,mD, Point(-1,-1), 0, BORDER_REPLICATE);
-    accumat += abs(tmpmat);
-    accumat -= er_mat;
-    accumat.copyTo(delta_eRij,flag_Rmat);
-    delta_eR = sum(delta_eRij)[0];
-    //
-    
-    return true;    
-    
-}
-
-*/
-
-
-
-
-
-/////////////////////////////////////////////////////////////////////
-//	DNRJ - Lab2Mat wrning - totally ignore previous system.
+//	DNRJ - Lab2Mat 
 /////////////////////////////////////////////////////////////////////
 
 
@@ -496,7 +379,7 @@ bool EnergyClass::l_checkmetric(Mat1E & lmat){
             }
         }
     }
-    if(sep2 & sumenergy != 0){
+    if(sep2 & sumenergy != 0){  // lambda =0 autorisé
         COUT("Separation2");
         return false;
     }

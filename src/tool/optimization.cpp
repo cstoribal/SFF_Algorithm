@@ -57,6 +57,11 @@ bool OptiClass::set_optiplan(OptiPlan* _p_OptiPlanner){
     return true;
 }
 
+bool OptiClass::set_blindestimation(const Mat1T & _blindmat){
+    blindmat=_blindmat; //warning !! not to be changed !
+    return true;
+}
+
 bool OptiClass::set_param(tdfp_opti popti, const Mat1T & _gt_dmat){
 
 // TODO be sure to check that we are working with the good number of pixels, rows, cols...
@@ -97,6 +102,8 @@ bool OptiClass::do_all_optimizations(void){
         actual_idx_method=tmp;
         reset(1,lambda,false);
         compute_opt_custom();
+        ioW->img_unsetscale();
+        ioW->writeImage("optimized/"+selected_typename+"/"+to_string2(lambda)+"/"+"BlindDiff.png",abs(blindmat-regularized_depthmat));
         myLog->write();
         myLog->clear_log();
     }
@@ -120,7 +127,7 @@ bool OptiClass::do_optimization(void){
     return error("Warning, gco" + this->name_opti + "not computed\n");
 }
 
-bool OptiClass::reset(fType l_d, fType l_r, bool new_EdataMatrix){
+bool OptiClass::reset(fType l_d, fType l_r, bool _new_EdataMatrix){
     //copy weight matrix to reset it at initial status
     for(int k=0; k<nb_pixels*connexity; k++)// for(int c=0; c<connexity; c++)
     {
@@ -133,8 +140,8 @@ bool OptiClass::reset(fType l_d, fType l_r, bool new_EdataMatrix){
     if(l_d>0)lambda = l_r/l_d;
 
     regularized_labelmat = Mat::zeros(height,width,CV_32S);
-    regularized_depthmat = Mat::zeros(height,width,CV_TE);
-    if(new_EdataMatrix){new_EdataMatrix=true;}
+    regularized_depthmat = Mat::zeros(height,width,CV_TF);
+    if(_new_EdataMatrix){new_EdataMatrix=true;}
     //this->maxiteration=maxiter;
     return true;
 }

@@ -252,6 +252,7 @@ bool MySFF::optimize2(void){
     opti_prts.labels    = depthEst.getLabels();
 
     optiClass.set_param(opti_prts,gt_dmat);
+    optiClass.set_blindestimation(dmat);
     optiClass.set_allneighbors();
     optiClass.set_optiplan(&optiPlan);
 

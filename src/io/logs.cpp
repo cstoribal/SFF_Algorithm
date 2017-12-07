@@ -15,7 +15,7 @@ and the results under the format of a csv
 #include "logs.h"
 
 MyLog::MyLog(){
-    logversion = "v0.8";
+    logversion = "v0.9";
     logs = "Starting log file \n "+logversion+" \n";
 }
 MyLog::~MyLog(){
@@ -322,7 +322,7 @@ bool MyLogOut::write(std::string filename, bool verbose){
 
 bool MyLogOut::create_new_logfile_header(std::ofstream & outfile){
     std::string initdata;
-    initdata = logversion + " ; outputfolder ; file1_p ; extension ; nbimg ; file2_p ; nb_img ; gt_path ; dmin ; dmax ; fmin ; fmax ; scale ; blur ; noiseA ; noiseB ; noiseCA ; noiseCS ; sharpOp ; depthOp ; nrj_d ; nrj_r ; connexity ; opti ; lambda ; rmse0 ; rmse1; rmse2; rmse3; rmse4 ; rmse5 ; rmse6 ; rmse7 ; rmse8 ; rmse9 ; t0_load ; t1_sharp ; t2_sharp ; t3_depth ; t4_multif ; t5_plan ; t6_charg ; topti1 ; topti2 ; topti3 ; topti4 ; topti5 ; topti6 ; topti7 ; topti8 ; topti9 ; t16 ; t17 ; t18 ; t19 ; type 1; type 2; type 3 ; type 4 ; type 5 ; type 6 ; type 7 ; type 8 \n";
+    initdata = logversion + " ; outputfolder ; file1_p ; extension ; nbimg ; file2_p ; nb_img ; gt_path ; dmin ; dmax ; fmin ; fmax ; scale ; blur ; noiseA ; noiseB ; noiseCA ; noiseCS ; sharpOp ; depthOp ; nrj_d ; nrj_r ; connexity ; opti ; lambda ; rmse0 ; rmse1; rmse2; rmse3; rmse4 ; rmse5 ; rmse6 ; rmse7 ; rmse8 ; rmse9 ; t0_load ; t1_sharp ; t2_sharp ; t3_depth ; t4_multif ; t5_plan ; t6_charg ; topti0 ; topti1 ; topti2 ; topti3 ; topti4 ; topti5 ; topti6 ; topti7 ; topti8 ; topti9 ; t17 ; t18 ; t19 ; type 1; type 2; type 3 ; type 4 ; type 5 ; type 6 ; type 7 ; type 8 \n";
     outfile << initdata ;
     return true; //TODO
 }

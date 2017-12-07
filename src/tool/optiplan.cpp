@@ -261,14 +261,17 @@ bool OptiPlan::set_thresh(void){
                   vv_thresh[iter-1][i]==vv_thresh[iter-1][i+1]){
                     //CPINGIF2("full_active set false",iter,iter,4);
                     full_active=false;
-                    if(!IT_sets_centroids){
+                    if(vv_thresh[iter-1][i]!=vv_thresh[iter-1][i+1]){
+                    //if(!IT_sets_centroids){
                         vv_centroid[iter-1][i]=_min;
                     }else {
-	                vv_centroid[iter][2*i]=_min;//vv_centroid[iter-1][i];
-                        vv_centroid[iter][2*i+1]=_min;//vv_centroid[iter-1][i];
+                        +1;
                     }
-                    //vv_thresh[iter][2*i+1]=_min; //WARNING
-                    vv_thresh[iter][2*i+1]=min(vv_thresh[iter-1][i+1],nb_labels-1);
+	            vv_centroid[iter][2*i]=vv_centroid[iter-1][i]; //_min
+                    vv_centroid[iter][2*i+1]=vv_centroid[iter-1][i]; //_min //TODO check
+                    //vv_thresh[iter][2*i+1]=_min; //WARNING //TODO Check
+                    //vv_thresh[iter][2*i+1]=min(vv_thresh[iter-1][i+1],nb_labels-1);
+                    vv_thresh[iter][2*i+1]=max(_min,(size_t)1);
                 }
                 else{
                 if(_min!=_max){
@@ -281,7 +284,7 @@ bool OptiPlan::set_thresh(void){
                         {vv_centroid[iter-1][i]=vv_thresh[iter][2*i+1];}
                 }}
             }
-            vv_centroid[iter-1][vv_thresh[iter-1].size()-1]=66666;
+            vv_centroid[iter-1][vv_thresh[iter-1].size()-1]=6600000000;
             if(iter>=upperbound_iterations){fin=true;}
         }
         //if(!IT_sets_centroids){

@@ -44,6 +44,8 @@ public:
     bool compute_RMSE(const Mat1T & dmat, fType & rmse, fType & q_rmse );
     bool compute_PSNR(const Mat1T & dmat, fType & psnr);
 
+    Mat1T check_diff(const Mat1T & dmat);
+
     bool compute_quantization_noise(void);
     
 private:

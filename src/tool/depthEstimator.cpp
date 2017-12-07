@@ -366,7 +366,7 @@ bool DepthClass::get_dmats_from_sharpset(Mat1T & dmat, Mat1T & dmat_rank, Mat1T 
 
     vmat_sharp_i[0].copyTo(dmat_score);
     dmat_label = dmat_label*0.0f;
-    dmat       = dmat*0.0f;
+    dmat       = dmat*0.0f+DepthToRank[0][0];
     for(int k=0; k<set_dim[2]-1; k++){
         for(int f=1; f<=oversampling;f++){
             mat_labels = mat_ones*(k*oversampling+f);

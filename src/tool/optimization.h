@@ -45,58 +45,6 @@ using namespace std;
 using namespace cv;
 
 
-/*class OptiIterate{
-public:
-    OptiIterate(); ~OptiIterate();
-    
-    bool setup(MyLog* mylog, int* sortedlabel_in, int** adaptindex_in, int maxseek_in, int nblabels_in, int maxiteration_in, int max_sortedrank); // builds the vectors
-    bool update(int i); // iterate one more time. start's -1+1, set active & flags
-
-    bool active; //set to false when all instances are at maxseek or labelmax
-    bool flag;   // something needs to be checked ? init to 0
-
-    int getlabelp(int state); // pixel call for label number
-    int getlabeln(int state); // pixel call for label number
-
-    int getoutlabel(int state);      // résultat = dernier résultat à 1
-    int getnext_outlabel(int state); // variante, suppose le résultat = prochain label à 1
-                   // => SI il y a un seek supplémentaire à state, le prendre
-                   // => SI il n'y a pas de seek supplémentaire, prendre la sortie 0 ou 1
-
-
-private:
-    // at setup
-    MyLog* myLog;
-    bool set;
-    int maxseek;
-    int maxiteration; // to get sizes
-    int* sorted_label_img;
-    int** adapt_index;
-    int nblabels;
-    int max_sortedrank;
-
-    int getprevious(int current, int iter);
-    bool duplicate_to(int prev_iter, int prev_state, int iter, int state);
-    bool display(void); // just to show-off the work. And see what's wrong here
-    
-    // other
-    int iteration;    // init to zero
-    vector<vector<int> > path; // init to zero
-    vector<vector<int> > lmin; // init to zero           -  those values are forbidden
-    vector<vector<int> > lmax; // init to maximum label
-    vector<vector<int> > seek; // get local depth of iteration
-    vector<vector<int> > labelp; // get label corresponding to binary process (01001101)
-    vector<vector<int> > labeln; // get label corresponding to binary process (01001101)
-    vector<vector<bool> > enabled;// set to false when over maxseek
-    vector<vector<int> > labelout;
-
-    int lastiteration;
-    
-    
-};
-
-*/
-
 
 class OptiClass{
 public:
@@ -106,6 +54,7 @@ public:
 
     bool setlogs(IOWizard* _ioW, MyLog* mylog);
     bool set_param(tdfp_opti popti, const Mat1T & _gt_dmat);
+    bool set_blindestimation(const Mat1T & _blindmat);
     bool set_optiplan(OptiPlan* _p_OptiPlanner);
     bool do_optimization(void); //deprecated
 
@@ -167,7 +116,7 @@ private:
     int nb_neighbors;
     Mat1E neighbor_mat; //other way of describing neighbors? weights
     cv::Mat1i regularized_labelmat;
-    Mat1E     regularized_depthmat;
+    Mat1T     regularized_depthmat;
     Mat1T     gt_dmat;
 
     bool nbs_set;
@@ -187,6 +136,7 @@ private:
     bool compute_opt_custom(void);
 
 // Visualisation
+    Mat1T blindmat;
     bool show_rmse(void);	//TODO ioW show... and mkdir.
     bool show_all_rmse(void);
     bool gnuplot_vect(FILE* gnuplot, vector<fType> vect);
