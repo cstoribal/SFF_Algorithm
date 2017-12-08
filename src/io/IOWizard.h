@@ -91,7 +91,7 @@ public:
     bool img_setscale(fType min, fType max, int select);
     bool img_setscale(int select);    
     bool img_unsetscale(void);    
-    bool writeImage(const string filename, const Mat & image);
+    bool writeImage(const string filename, const Mat & image, bool b_autofolder=true);
     bool showImage(const string param,const string name, const Mat & image, int timer);
 
     bool write3DImage(const string filename, const Mat & image);

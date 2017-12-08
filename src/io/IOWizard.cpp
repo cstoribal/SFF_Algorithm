@@ -1038,7 +1038,11 @@ bool IOWizard::loadGroundTruth(Mat & gtmat,string filepath = "") {
 ////SCALING////
 bool IOWizard::img_setscale(fType min, fType max, int select){
     //select=0 -> erase all
-    //select=1 -> Depthmap
+    //select=1 -> Depthmap$
+    //select=2 -> DiffDepth
+    //select=3 -> Labelmap
+    //select=4 -> AbsDiffDepth
+    //select=5 -> [0;1]
 
     if(max == min) throw("error omax == omin in setscale");
     if(select<=0)
@@ -1120,7 +1124,7 @@ bool IOWizard::showImage(const string param, const string name, const Mat & imag
     return true;
 }
 
-bool IOWizard::writeImage(const string filename, const Mat & image){
+bool IOWizard::writeImage(const string filename, const Mat & image, bool b_autofolder){
     if(0){return false;}
     fType imin, imax, scale;
     fType omin, omax;
@@ -1140,7 +1144,8 @@ bool IOWizard::writeImage(const string filename, const Mat & image){
     }
     imat.convertTo(imat, CV_8UC1, 255);
     //normalize(image, imat, 0, 255, NORM_MINMAX);
-    imwrite( autofolder+filename, imat );
+    if(b_autofolder) imwrite( autofolder+filename, imat );
+    else imwrite( filename, imat );
 
     return true;
 }

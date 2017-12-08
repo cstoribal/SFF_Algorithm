@@ -73,9 +73,24 @@ bool MySFF::preTreat(void){
         pretreatClass.compute_blur(imageSet[i].ivmat[j]);
     }
     }
-    
-    //CPING("end pretreat");
     pretreatClass.compute_scale(gt_dmat);
+    
+    ioWizard.img_setscale(0,1,5);
+    if(input_prts.file2_set && input_prts.noise_cs!=(fType)0.0){
+        Mat3T output_noizy_image;
+        std::string output_image_name;
+        std::string output_folder_name;
+        output_folder_name = "./noizy/"+input_prts.outputfolder;
+        ioWizard.mkdir("noizy/");
+        ioWizard.mkdir(output_folder_name);
+        for(int i=0; i<imageSet.size(); i++){
+            merge(imageSet[i].ivmat,output_noizy_image);
+            // CPING("noizy/"+input_prts.file2[i]);
+            ioWizard.writeImage("./noizy/"+input_prts.file2[i],output_noizy_image,false);
+        }
+        ioWizard.writeImage("./noizy/"+input_prts.gtpath,gt_dmat,false);
+    }
+    CPING("end pretreat");
     
     dim1 = imageSet[0].ivmat[0].rows;
     dim2 = imageSet[0].ivmat[0].cols;
@@ -286,41 +301,6 @@ bool MySFF::optimize2(void){
     return true;
 }
 
-bool MySFF::launch_optimization(fType l_d, fType l_r, int maxiter, Mat1T & output){
-
-    CPINGIF4("Starting optimization l_r = ",l_r," l_d = ", l_d, 1);
-
-    energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r, sharpSet, dmat, l_d, l_r);
-    //set
-    optiClass.reset();
-
-
-    try{
-        if(!optiClass.do_optimization() ) 
-        {
-            CPING("continue");
-            return false;
-        }
-    }
-    catch(const GCException & error)
-    {
-        COUT2("\nGCException encounterd at lambda_r = ",l_r);
-        printf("\n%s\n",error.message);
-        COUT("\n");
-        return false;
-    } 
-   catch(const char* message)
-    {
-        COUT2("\n Error encounterd at lambda_r = ",l_r);
-        printf("\n%s\n",message);
-        COUT("\n");
-        return false;
-    }
-    optiClass.writebackmatrix(output);
-    
-    return true;
-}
-
 
 
 bool MySFF::debug_check_all(std::string context){
@@ -330,9 +310,7 @@ bool MySFF::debug_check_all(std::string context){
     debug_MMCheck(this->dmat_rank,"drankmatrix "+context);
     debug_MMCheck(this->dmat_score,"dscorematrix "+context);
     debug_MMCheck(this->dmat_label,"dlabelmatrix "+context);
-    //debug_MMCheck(this->dmat_labelfloat,"dlabelfloatmatrix "+context);
     debug_MMCheck(this->rmat,"rmatrix "+context);
-    //debug_MMCheck(this->image_MF,"MF_image "+context);
     
 }
 
@@ -556,5 +534,42 @@ bool MySFF::optimize(void){
     i++;
     }
     debug_check_all("end");
+}
+
+
+
+bool MySFF::launch_optimization(fType l_d, fType l_r, int maxiter, Mat1T & output){
+
+    CPINGIF4("Starting optimization l_r = ",l_r," l_d = ", l_d, 1);
+
+    energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r, sharpSet, dmat, l_d, l_r);
+    //set
+    optiClass.reset();
+
+
+    try{
+        if(!optiClass.do_optimization() ) 
+        {
+            CPING("continue");
+            return false;
+        }
+    }
+    catch(const GCException & error)
+    {
+        COUT2("\nGCException encounterd at lambda_r = ",l_r);
+        printf("\n%s\n",error.message);
+        COUT("\n");
+        return false;
+    } 
+   catch(const char* message)
+    {
+        COUT2("\n Error encounterd at lambda_r = ",l_r);
+        printf("\n%s\n",message);
+        COUT("\n");
+        return false;
+    }
+    optiClass.writebackmatrix(output);
+    
+    return true;
 }
 

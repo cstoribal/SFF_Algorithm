@@ -349,6 +349,7 @@ bool DepthClass::build_DR(void){
 
 
 bool DepthClass::get_dmats_from_sharpset(Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score, cv::Mat1i & dmat_label){
+    // may only work with gauss
     if(!vmat_sharp_i_set){return false;}
 
     dmat = cv::Mat::zeros(set_dim[0],set_dim[1],CV_TF);
@@ -885,7 +886,7 @@ bool DepthClass::show_interpol_generic(const vector<cv::Point> & vP, const tdf_i
     {
         fprintf(gnuplot, "set term 'pngcairo' \n");
         fprintf(gnuplot, "set output '%s/sharpness%ix%i.png'\n",folder.c_str(), vP[i].y,vP[i].x);
-        fprintf(gnuplot, "plot '-' with lines, '-' with lines, '-' with lines\n");
+        fprintf(gnuplot, "plot '-' title 'raw sharpness' with lines, '-' title 'interpolated sharpness' with lines, '-' title 'blind estimation' with lines\n");
         
         
         for(int k=0;k<sharpSet.size();k++){
