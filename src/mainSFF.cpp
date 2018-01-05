@@ -13,11 +13,10 @@
 //#include <mgl2/qt.h>
 #include <mgl2/mgl.h>
 
-//#include <opencv2/core.hpp>
-//#include <opencv2/highgui.hpp>
 
 
-//#include "misc/testClass.h"
+
+
 #include "sffClass.h"
 
 
@@ -56,8 +55,10 @@ int main( int argc, char** argv )
     
     //mySFF.testEnergy();
     mySFF.ioWizard.img_setscale(1);
-    if(MiscClass::optional_features[1]){mySFF.ioWizard.showImage("scale","Idist.png",mySFF.dmat,0);}
-    mySFF.showInterpolationAt();
+    mySFF.showInterpolation(Point(10,10));
+    if(MiscClass::optional_features[1]){mySFF.ioWizard.showImage("scale","Idist.png",Mat::zeros(1,1,CV_TF),1);}//mySFF.dmat,1);}
+    //mySFF.showInterpolationAt();
+    mySFF.showInterpolation(Point(10,11));
     mySFF.ioWizard.img_unsetscale();
     Mat1T tmpmat;
     log(mySFF.dmat_score,tmpmat);

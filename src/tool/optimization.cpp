@@ -372,6 +372,10 @@ bool OptiClass::compute_opt_custom(void){
         Edata.resize(nb_labels);
         energyClass->getDataEnergy_3DMatrix(this->labels,Edata);
         new_EdataMatrix=false;
+        ioW->img_unsetscale();
+        for(int i=0; i<nb_labels; i++){
+            //ioW->writeImage("edata"+to_string(i)+".png",Edata[i]);
+        }
     }
 
     vector<int> v_nbs_reup_N(connexity);

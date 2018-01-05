@@ -1092,11 +1092,11 @@ bool IOWizard::img_unsetscale(void){
 //// IMG DISPLAY & SAVE ////
 
 bool IOWizard::showImage(const string param, const string name, const Mat & image, int timer) {
-    if(0){return false;}
+    if(1){return false;} //TODO Corruption of data ?!?
     fType imin, imax, scale;
-    Mat imat;
+    Mat imat = image.clone();
     //image.copyTo(imat);
-    image.convertTo(imat,CV_TF,1);
+    imat.convertTo(imat,CV_TF,1);
     if(img_dout_scaleselect)
     {
         imat = (imat - this->img_dout_scb[img_dout_scaleselect-1])*this->img_dout_sca[img_dout_scaleselect-1];
@@ -1120,7 +1120,6 @@ bool IOWizard::showImage(const string param, const string name, const Mat & imag
     waitKey(timer);
     
     destroyWindow(name);
-    
     return true;
 }
 

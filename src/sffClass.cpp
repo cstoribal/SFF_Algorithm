@@ -114,12 +114,15 @@ bool MySFF::doDepth(void){
     // test 
     //testClass.fillSharpPoly(sharpSet);
     depthEst.buildEstimation(sharpSet, depth_parameters);
+    debug_check_all("end estimation");
     depthEst.buildDepthmat(depth_parameters, dmat, dmat_rank, dmat_score);
+    debug_check_all("end depth");
     vector<fType> labels = depthEst.getLabels();
     this->nb_labels = labels.size();
     // set dmat next outputs
     CPING("test depth");
     assert(this->nb_labels == (this->sharpSet.size())*depthEst.getOversampling()); // Check Oversampling
+
     fType d_min = labels[0];
     fType d_max = labels[this->nb_labels-1];
     ioWizard.img_setscale(d_min,d_max,1);
@@ -129,6 +132,7 @@ bool MySFF::doDepth(void){
     
     depthEst.getMLabelFromMDepth(dmat,dmat_label);
     depthEst.getMLabelFromMDepth(gt_dmat,gt_label_mat);
+    debug_check_all("gotlabelmats");
     Utils::build_int_histogram(dmat_label,nb_labels,histogram_dmat);
     Utils::build_int_histogram(gt_label_mat,nb_labels,histogram_gtmat);
     CPING2("histogram size",histogram_dmat.size());
@@ -157,14 +161,14 @@ bool MySFF::doDepth(void){
 
 bool MySFF::prepare_optimization_plan(void){
     optiPlan.set_groundtruth(gt_label_mat);
-    std::vector<std::string> typelist(6);
+    std::vector<std::string> typelist(4);
     typelist[0]="binary";
     typelist[1]="binary_v2";
     typelist[2]="otsu";
     //typelist[3]="otsu_v0";
     typelist[3]="median";
-    typelist[4]="median-v2";
-    typelist[5]="2means";
+    //typelist[4]="median-v2";
+    //typelist[5]="2means";
     COUT("starting optimization plan");
     for(int i=0; i<typelist.size(); i++){
         optiPlan.set_param(typelist[i],nb_labels,dim1*dim2,histogram_dmat,1,1);
@@ -186,6 +190,7 @@ bool MySFF::prepare_optimization_plan(void){
 }
 
 bool MySFF::showInterpolationAt(void){
+    //CPINGIF4("iowizardclicked[0]",ioWizard.clicked[0].x,ioWizard.clicked[0].y,"",1);
     depthEst.showInterpolationAt(ioWizard.clicked,sharpSet,depth_parameters,dmat, input_prts.outputfolder);
     ioWizard.clicked = vector<Point>();
     return true;

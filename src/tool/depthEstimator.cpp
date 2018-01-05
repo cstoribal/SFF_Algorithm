@@ -99,7 +99,7 @@ bool DepthClass::buildDepthmat(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & 
 
     if(type=="polynome"||type=="polymod") 
 			d_poly(dparam, dmat, dmat_rank, dmat_score, dmat_label);
-    if(type=="argmax")  d_argmax(dparam, dmat, dmat_rank, dmat_score);
+    if(type=="argmax")  d_argmax(dparam, dmat, dmat_rank, dmat_score, dmat_label);
     if(type=="gauss")   d_gauss(dparam, dmat, dmat_rank, dmat_score, dmat_label);
 
 
@@ -349,7 +349,7 @@ bool DepthClass::build_DR(void){
 
 
 bool DepthClass::get_dmats_from_sharpset(Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score, cv::Mat1i & dmat_label){
-    // may only work with gauss
+    // may only work if vmat_sharp_i is set (gauss or ++)
     if(!vmat_sharp_i_set){return false;}
 
     dmat = cv::Mat::zeros(set_dim[0],set_dim[1],CV_TF);
@@ -477,14 +477,14 @@ bool DepthClass::d_gauss(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_r
     return true;
 }
 
-bool DepthClass::d_argmax(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score){
+bool DepthClass::d_argmax(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score, cv::Mat1i & dmat_label){
     // Créer un vecteur des points en lesquels évaluer chaque profondeur
     // D abscisses des profondeurs
     // taille degree*oversampling*set_dim[2]
 
     //int dim[] = {set_dim[0],set_dim[1]};
 
-    cv::Mat1i dmat_label = cv::Mat::zeros(set_dim[0],set_dim[1],CV_32S);
+    dmat_label = cv::Mat::zeros(set_dim[0],set_dim[1],CV_32S);
     vector<Mat1T> vectmat;
     fType inv_oversampling = 1.0f/(fType)oversampling;
     vectmat.resize(oversampling*(set_dim[2]-1)+1);
@@ -615,13 +615,13 @@ bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_ra
     
 
     fType tmp;
-    fType max=0;
+    fType _max=0;
     fType arg=0;
     fType rnk=0;
     fType linarg=0;
     for(int i=0; i<set_dim[0]; i++) for(int j=0; j<set_dim[1]; j++)
     {
-        max = -1;
+        _max = -1;
         arg = 20;
 
         for(int f=0; f<oversampling*(set_dim[2]-1);f++){
@@ -634,11 +634,11 @@ bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_ra
             // now store the data there
             if(!vmat_sharp_i_set)
             {
-                vectmat[f].at<fType>(i,j) = tmp;
+                vectmat[f].at<fType>(i,j) = max((fType)0,tmp);
             }
             
-            if(tmp>max){
-                max = tmp;
+            if(tmp>_max){
+                _max = tmp;
                 arg = DR[f][0];
                 rnk = DR[f][1];
                 dmat_label.at<int>(i,j)=f;
@@ -646,8 +646,8 @@ bool DepthClass::d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_ra
         }
         
         dmat.at<fType>(i,j)= (fType)arg; 
-        dmat_score.at<fType>(i,j)= (fType)max; // usefull for scaling
-        if(max>1000)//why alert ?
+        dmat_score.at<fType>(i,j)= (fType)_max; // usefull for scaling
+        if(_max>1000)//why alert ?
         {
             //CPING2("alleeeeert",max);
         }
@@ -705,7 +705,7 @@ bool DepthClass::interpolate(const vector<fType> & x, const vector<fType> & y, i
         }
         x2[x2.size()-1]=x[x.size()-1]+0.01f; y2[y2.size()-1]=y[y.size()-1];
         N=N+2;
-        //myLog->as("using updated interpolation \n");
+        myLog->as("using updated interpolation \n");
     } else {
         x2=x; y2=y;
     }

@@ -173,7 +173,7 @@ bool EnergyClass::getDataEnergy_3DMatrix(const vector<fType> & lvect, vector<Mat
     //TODO add feature checking if energy>>overflow
     
     
-    eParams.typeD = "nL1_Rw1"; //TODO TMP
+    //eParams.typeD = "nL1_Rw1"; //TODO TMP
     vector<Mat1T> e1mat;
     if(true) //NotSet.
     {
@@ -234,7 +234,7 @@ bool EnergyClass::e_normeL2(const vector<fType> & lvect, vector<Mat1T> & emat){
         labelmat = labelmat*0+lvect[k];
         tmpmat = this->scale_to_etype
                  *cv::abs(labelmat-this->eParams.dmat);
-        tmpmat = tmpmat.mul(tmpmat);
+        tmpmat = tmpmat.mul(tmpmat)/lvect.size();
         tmpmat.copyTo(emat[k]);
         /*
         Mat::zeros(eParams.dim1,eParams.dim2, CV_TF);
@@ -285,7 +285,7 @@ bool EnergyClass::e_nLx_Rw1( const vector<fType> & lvect, vector<Mat1T> & emat){
     {
         fType fmin, fmax, maxmax,minmin,auc; //auc area under curve
         vector<Mat1T> sharp3Dvmat;
-        p_depthClass->getVmatSharpI(sharp3Dvmat);
+        p_depthClass->getVmatSharpI(sharp3Dvmat); //TODO CHECK
         int nblabel=sharp3Dvmat.size();
         
         //Mat1T accumulator, maxmat, minmat;

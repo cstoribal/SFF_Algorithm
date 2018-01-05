@@ -73,7 +73,7 @@ private:
     bool f_gauss(const tdf_imgset & sharpSet, tdfp_depth & pdmat);
     bool d_poly(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score, cv::Mat1i & dmat_label);
     bool d_polymod(Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score, cv::Mat1i & dmat_label);
-    bool d_argmax(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score);
+    bool d_argmax(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score, cv::Mat1i & dmat_label);
     bool d_gauss(const tdfp_depth & dparam, Mat1T & dmat, Mat1T & dmat_rank, Mat1T & dmat_score, cv::Mat1i & dmat_label);
     int degree; // degré du polynôme
     
