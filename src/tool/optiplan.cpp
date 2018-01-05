@@ -953,7 +953,7 @@ bool OptiPlan::show_thresh_plan(std::string filename, int kplan){
     pclose(gnuplot);
 
     std::ofstream outfile;
-    outfile.open(foldername+filename+t_type+".png",std::ios_base::app);
+    outfile.open(foldername+filename+t_type+".txt",std::ios_base::app);
     outfile << raw_output_str;
     outfile.close();
     raw_output_str = "";

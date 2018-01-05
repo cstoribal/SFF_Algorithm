@@ -55,10 +55,10 @@ int main( int argc, char** argv )
     
     //mySFF.testEnergy();
     mySFF.ioWizard.img_setscale(1);
-    mySFF.showInterpolation(Point(10,10));
+    //mySFF.showInterpolation(Point(140,10));
     if(MiscClass::optional_features[1]){mySFF.ioWizard.showImage("scale","Idist.png",Mat::zeros(1,1,CV_TF),1);}//mySFF.dmat,1);}
-    //mySFF.showInterpolationAt();
-    mySFF.showInterpolation(Point(10,11));
+    mySFF.showInterpolationAt();
+    //mySFF.showInterpolation(Point(10,11));
     mySFF.ioWizard.img_unsetscale();
     Mat1T tmpmat;
     log(mySFF.dmat_score,tmpmat);

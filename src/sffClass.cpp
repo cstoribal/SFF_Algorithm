@@ -192,7 +192,12 @@ bool MySFF::prepare_optimization_plan(void){
 
 bool MySFF::showInterpolationAt(void){
     //CPINGIF4("iowizardclicked[0]",ioWizard.clicked[0].x,ioWizard.clicked[0].y,"",1);
-    depthEst.showInterpolationAt(ioWizard.clicked,sharpSet,depth_parameters,dmat, input_prts.outputfolder);
+    //depthEst.showInterpolationAt(ioWizard.clicked,sharpSet,depth_parameters,dmat, input_prts.outputfolder);
+    vector<Point> v = vector<Point>();
+    v.push_back(Point(140,30));
+    v.push_back(Point(150,220));
+    v.push_back(Point(305,245));
+    depthEst.showInterpolationAt(v,sharpSet,depth_parameters,dmat, input_prts.outputfolder);
     ioWizard.clicked = vector<Point>();
     return true;
 }
