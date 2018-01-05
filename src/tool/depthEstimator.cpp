@@ -229,8 +229,8 @@ vector<fType> DepthClass::getMeanLogFocusStep(void){
 
 bool DepthClass::showInterpolationAt(const vector<cv::Point> & vP, const tdf_imgset & SharpSet, const tdfp_depth & dparam, const Mat1T & dmat, const string & folder){
     if(type=="polynome"||type=="polymod") s_poly_ij(vP, SharpSet, dparam, dmat, folder);
-    if(type=="argmax")   s_argmax_ij(vP, SharpSet, dparam, dmat, folder);
-    if(type=="gauss")   show_interpol_generic(vP, SharpSet, dparam, dmat, folder);
+    //if(type=="argmax")   s_argmax_ij(vP, SharpSet, dparam, dmat, folder);
+    if(type=="gauss"||type=="argmax")   show_interpol_generic(vP, SharpSet, dparam, dmat, folder);
     
     return true ;
 }
@@ -769,6 +769,13 @@ bool DepthClass::interpolate(const vector<fType> & x, const vector<fType> & y, i
     return true;
 }
 
+
+
+/////////////////////////////////////////////////////////////////
+// Visualisation features
+/////////////////////////////////////////////////////////////////
+
+
 bool DepthClass::s_poly_ij(const vector<cv::Point> & vP, const tdf_imgset & sharpSet, const tdfp_depth & dparam,const Mat1T & dmat, const string & folder){
     // calls gnuplot in order to sketch the evolution of sharpness and sharpness interpolated on one pixel.
     
@@ -776,39 +783,63 @@ bool DepthClass::s_poly_ij(const vector<cv::Point> & vP, const tdf_imgset & shar
     // build a vector holding polynomial interpolation X D(oversampled)
     //     peut on se contenter du vecteur DepthToRank OUI devrait être renommer depthlist
     FILE *gnuplot = popen("gnuplot", "w");
+    std::string outputstr="";
+    std::string tmpstr=""; 
+
     for(int i=0; i<vP.size(); i++)
     {
-        fprintf(gnuplot, "set term 'pngcairo' \n");
-        fprintf(gnuplot, "set output '%s/sharpness%ix%i.png'\n",folder.c_str(), vP[i].y,vP[i].x);
-        fprintf(gnuplot, "plot '-' with lines, '-' with lines, '-' with lines\n");
-        
+        //fprintf(gnuplot, "set term 'pngcairo' \n");
+        //fprintf(gnuplot, "set output '%s/sharpness%ix%i.png'\n",folder.c_str(), vP[i].y,vP[i].x);
+        //fprintf(gnuplot, "plot '-' with lines, '-' with lines, '-' with lines\n");
+
+        tmpstr += "set term 'pngcairo' \n";
+        tmpstr += "set output '"+folder+"/sharpness"+to_string2(vP[i].y)+"x"+to_string2(vP[i].x)+".png'\n";
+        tmpstr+="plot '-' title 'raw sharpness' with lines, '-' title 'interpolated sharpness' with lines, '-' title 'blind estimation' with lines\n";
         
         for(int k=0;k<sharpSet.size();k++){
-            fprintf(gnuplot, "%g %g\n", (fType)sharpSet[k].focus,
-			(fType)sharpSet[k].ivmat[0].at<fType>(vP[i].y,vP[i].x));
+            //fprintf(gnuplot, "%g %g\n", (fType)sharpSet[k].focus,
+	    //		(fType)sharpSet[k].ivmat[0].at<fType>(vP[i].y,vP[i].x));
+            tmpstr += to_string2((fType)sharpSet[k].focus)+" "+
+		to_string2((fType)sharpSet[k].ivmat[0].at<fType>(vP[i].y,vP[i].x))+"\n";
             } 
+        fprintf(gnuplot,"%s",tmpstr.c_str());
         fflush(gnuplot);
         fprintf(gnuplot, "e\n");
-        
+        outputstr += tmpstr+"e\n";
+        tmpstr="";
+
         for(int k=0;k<DepthToRank.size();k++){
             fType tmp3 =0;
             tmp3 =0;
             for(int l=0;l<dparam.degree+1;l++){
                 tmp3+=dparam.vmat[l].at<fType>(vP[i].y,vP[i].x)*pow(DepthToRank[k][0],l);
                 }
-            fprintf(gnuplot, "%g %g\n", DepthToRank[k][0],tmp3);
+            //fprintf(gnuplot, "%g %g\n", DepthToRank[k][0],tmp3);
+            tmpstr+=to_string2(DepthToRank[k][0])+" "+to_string2(tmp3)+"\n";
             }
+        fprintf(gnuplot,"%s",tmpstr.c_str());
         fflush(gnuplot);
         fprintf(gnuplot, "e\n");
+        outputstr += tmpstr+"e\n";
+        tmpstr="";
 
         // chosen rank
         for(int k=0;k<10;k+=3){
             fType tmp3 = dmat.at<fType>(vP[i].y,vP[i].x);
-            fprintf(gnuplot, "%g %g\n", tmp3, (fType) k);
+            //fprintf(gnuplot, "%g %g\n", tmp3, (fType) k);
+            tmpstr+=to_string2(tmp3)+" "+to_string2((fType)k)+"\n";
             }
+        fprintf(gnuplot,"%s",tmpstr.c_str());
         fflush(gnuplot);
         fprintf(gnuplot, "e\n");
-
+        outputstr += tmpstr+"e\n"+"unset output";
+        tmpstr="";
+        // print text file
+        std::ofstream outfile;
+        outfile.open(folder+"/sharpness"+to_string2(vP[i].y)+"x"+to_string2(vP[i].x)+".txt",std::ios_base::app);
+        outfile << outputstr;
+        outfile.close();
+        outputstr = "";
     
 
         fprintf(gnuplot,"unset output \n");
@@ -820,6 +851,7 @@ bool DepthClass::s_poly_ij(const vector<cv::Point> & vP, const tdf_imgset & shar
     
     return true;
 }
+/*
 bool DepthClass::s_argmax_ij(const vector<cv::Point> & vP, const tdf_imgset & sharpSet, const tdfp_depth & dparam,const Mat1T & dmat, const string & folder){
     // calls gnuplot in order to sketch the evolution of sharpness and sharpness interpolated on one pixel.
     
@@ -827,37 +859,60 @@ bool DepthClass::s_argmax_ij(const vector<cv::Point> & vP, const tdf_imgset & sh
     // build a vector holding polynomial interpolation X D(oversampled)
     //     peut on se contenter du vecteur DepthToRank OUI devrait être renommer depthlist
     FILE *gnuplot = popen("gnuplot", "w");
+    std::string outputstr="";
+    std::string tmpstr="";    
+
     for(int i=0; i<vP.size(); i++)
     {
-        fprintf(gnuplot, "set term 'pngcairo' \n");
-        fprintf(gnuplot, "set output '%s/sharpness%ix%i.png'\n",folder.c_str(), vP[i].y,vP[i].x);
-        fprintf(gnuplot, "plot '-' with lines, '-' with lines, '-' with lines\n");
-        
+        tmpstr="";
+        //fprintf(gnuplot, "set term 'pngcairo' \n");
+        //fprintf(gnuplot, "set output '%s/sharpness%ix%i.png'\n",folder.c_str(), vP[i].y,vP[i].x);
+        //fprintf(gnuplot, "plot '-' with lines, '-' with lines, '-' with lines\n");
+
+        tmpstr += "set term 'pngcairo' \n";
+        tmpstr += "set output '"+folder+"/sharpness"+to_string2(vP[i].y)+"x"+to_string2(vP[i].x)+".png'\n";
+        tmpstr+="plot '-' title 'raw sharpness' with lines, '-' title 'interpolated sharpness' with lines, '-' title 'blind estimation' with lines\n";
         
         for(int k=0;k<sharpSet.size();k++){
-            fprintf(gnuplot, "%g %g\n", (fType)sharpSet[k].focus,
-			(fType)sharpSet[k].ivmat[0].at<fType>(vP[i].y,vP[i].x));
+            //fprintf(gnuplot, "%g %g\n", (fType)sharpSet[k].focus,
+	    //		(fType)sharpSet[k].ivmat[0].at<fType>(vP[i].y,vP[i].x));
+            tmpstr += to_string2((fType)sharpSet[k].focus)+" "+to_string2((fType)sharpSet[k].ivmat[0].at<fType>(vP[i].y,vP[i].x))+"\n";
             } 
+        fprintf(gnuplot,tmpstr);
         fflush(gnuplot);
         fprintf(gnuplot, "e\n");
+        outputstr += tmpstr+"e\n";
+        tmpstr="";
         
         for(int k=0;k<DepthToRank.size();k++){
             fType tmp3 =0;
             tmp3 = dparam.vmat[k].at<fType>(vP[i].y,vP[i].x);
-            fprintf(gnuplot, "%g %g\n", DepthToRank[k][0],tmp3);
+            //fprintf(gnuplot, "%g %g\n", DepthToRank[k][0],tmp3);
+            tmpstr+=to_string2(DepthToRank[k][0])+" "+to_string2(tmp3)+"\n";
             }
+        fprintf(gnuplot,tmpstr);
         fflush(gnuplot);
         fprintf(gnuplot, "e\n");
+        outputstr += tmpstr+"e\n";
+        tmpstr="";
 
         // chosen rank
         for(int k=0;k<10;k+=3){
             fType tmp3 = dmat.at<fType>(vP[i].y,vP[i].x);
-            fprintf(gnuplot, "%g %g\n", tmp3, (fType) k);
+            //fprintf(gnuplot, "%g %g\n", tmp3, (fType) k);
+            tmpstr+=to_string2(tmp3)+" "+to_string2((fType)k)+"\n";
             }
+        fprintf(gnuplot,tmpstr);
         fflush(gnuplot);
         fprintf(gnuplot, "e\n");
-
-    
+        outputstr += tmpstr+"e\n"+"unset output";
+        tmpstr="";
+        // print text file
+        std::ofstream outfile;
+        outfile.open(folder+"/sharpness"+to_string2(vP[i].y)+"x"+to_string2(vP[i].x)+".txt",std::ios_base::app);
+        outfile << outputstr;
+        outfile.close();
+        outputstr = "";
 
         fprintf(gnuplot,"unset output \n");
         // exit gnuplot
@@ -868,13 +923,9 @@ bool DepthClass::s_argmax_ij(const vector<cv::Point> & vP, const tdf_imgset & sh
     
     return true;
 }
+*/
 
 
-
-
-/////////////////////////////////////////////////////////////////
-// Visualisation features
-/////////////////////////////////////////////////////////////////
 bool DepthClass::show_interpol_generic(const vector<cv::Point> & vP, const tdf_imgset & sharpSet, const tdfp_depth & dparam,const Mat1T & dmat, const string & folder){
     // calls gnuplot in order to sketch the evolution of sharpness and sharpness interpolated on one pixel.
     
@@ -882,38 +933,61 @@ bool DepthClass::show_interpol_generic(const vector<cv::Point> & vP, const tdf_i
     // build a vector holding polynomial interpolation X D(oversampled)
     //     peut on se contenter du vecteur DepthToRank OUI devrait être renommer depthlist
     FILE *gnuplot = popen("gnuplot", "w");
+    
+    std::string outputstr="";
+    std::string tmpstr="";    
     for(int i=0; i<vP.size(); i++)
     {
-        fprintf(gnuplot, "set term 'pngcairo' \n");
-        fprintf(gnuplot, "set output '%s/sharpness%ix%i.png'\n",folder.c_str(), vP[i].y,vP[i].x);
-        fprintf(gnuplot, "plot '-' title 'raw sharpness' with lines, '-' title 'interpolated sharpness' with lines, '-' title 'blind estimation' with lines\n");
-        
+        tmpstr="";
+        // fprintf(gnuplot, "set term 'pngcairo' \n");
+        // fprintf(gnuplot, "set output '%s/sharpness%ix%i.png'\n",folder.c_str(), vP[i].y,vP[i].x);
+        // fprintf(gnuplot, "plot '-' title 'raw sharpness' with lines, '-' title 'interpolated sharpness' with lines, '-' title 'blind estimation' with lines\n");
+        tmpstr += "set term 'pngcairo' \n";
+        tmpstr += "set output '"+folder+"/sharpness"+to_string2(vP[i].y)+"x"+to_string2(vP[i].x)+".png'\n";
+        tmpstr+="plot '-' title 'raw sharpness' with lines, '-' title 'interpolated sharpness' with lines, '-' title 'blind estimation' with lines\n";
+
         
         for(int k=0;k<sharpSet.size();k++){
-            fprintf(gnuplot, "%g %g\n", (fType)sharpSet[k].focus,
-			(fType)sharpSet[k].ivmat[0].at<fType>(vP[i].y,vP[i].x));
+            //fprintf(gnuplot, "%g %g\n", (fType)sharpSet[k].focus,
+	    //		(fType)sharpSet[k].ivmat[0].at<fType>(vP[i].y,vP[i].x));
+            tmpstr += to_string2((fType)sharpSet[k].focus)+" "+to_string2((fType)sharpSet[k].ivmat[0].at<fType>(vP[i].y,vP[i].x))+"\n";
             } 
+        fprintf(gnuplot,"%s",tmpstr.c_str());
         fflush(gnuplot);
         fprintf(gnuplot, "e\n");
+        outputstr += tmpstr+"e\n";
+        tmpstr="";
         
         for(int k=0;k<DepthToRank.size();k++){
             fType tmp3 =0;
             tmp3 = vmat_sharp_i[k].at<fType>(vP[i].y,vP[i].x);
-            fprintf(gnuplot, "%g %g\n", DepthToRank[k][0],tmp3);
+            //fprintf(gnuplot, "%g %g\n", DepthToRank[k][0],tmp3);
+            tmpstr+=to_string2(DepthToRank[k][0])+" "+to_string2(tmp3)+"\n";
             }
+        fprintf(gnuplot,"%s",tmpstr.c_str());
         fflush(gnuplot);
         fprintf(gnuplot, "e\n");
+        outputstr += tmpstr+"e\n";
+        tmpstr="";
 
         // chosen rank
         for(int k=0;k<10;k+=3){
             fType tmp3 = dmat.at<fType>(vP[i].y,vP[i].x);
-            fprintf(gnuplot, "%g %g\n", tmp3, (fType) k);
+            //fprintf(gnuplot, "%g %g\n", tmp3, (fType) k);
+            tmpstr+=to_string2(tmp3)+" "+to_string2((fType)k)+"\n";
             }
+        fprintf(gnuplot,"%s",tmpstr.c_str());
         fflush(gnuplot);
         fprintf(gnuplot, "e\n");
-
-    
-
+        outputstr += tmpstr+"e\n"+"unset output";
+        tmpstr="";
+        // print text file
+        std::ofstream outfile;
+        outfile.open(folder+"/sharpness"+to_string2(vP[i].y)+"x"+to_string2(vP[i].x)+".txt",std::ios_base::app);
+        outfile << outputstr;
+        outfile.close();
+        outputstr = "";
+        
         fprintf(gnuplot,"unset output \n");
         // exit gnuplot
 

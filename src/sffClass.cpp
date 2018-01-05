@@ -76,7 +76,8 @@ bool MySFF::preTreat(void){
     pretreatClass.compute_scale(gt_dmat);
     
     ioWizard.img_setscale(0,1,5);
-    if(input_prts.file2_set && input_prts.noise_cs!=(fType)0.0){
+    if(input_prts.file2_set && input_prts.noise_cs!=(fType)0.0
+	&& MiscClass::optional_features[2]){
         Mat3T output_noizy_image;
         std::string output_image_name;
         std::string output_folder_name;

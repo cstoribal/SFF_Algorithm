@@ -861,6 +861,9 @@ bool OptiPlan::show_thresh_plan(std::string filename, int kplan){
     FILE* gnuplot = popen("gnuplot","w");
     fprintf(gnuplot,"set terminal pngcairo size 950,600 enhanced font 'Verdana,10'\n");
     ioWizard->set_gnuplot_output(gnuplot,filename+t_type+".png");
+    std::string foldername=ioWizard->get_autofolder();
+    std::string raw_output_str="";
+    
     std::string tmp_string="set border linewidth 1.5\n"+
   to_string2("")+
   "set style line 1 linecolor rgb '#dd181f' linetype 1 linewidth 2\n"+
@@ -868,7 +871,7 @@ bool OptiPlan::show_thresh_plan(std::string filename, int kplan){
   "set style line 3 linecolor rgb '#dd181f' linetype 1 linewidth 2 pt 6\n"+
   "set style line 4 linecolor rgb '#aaffaa' linetype 1 linewidth 1\n"+
   "set key at "+to_string2(nb_labels-10)+",3\n"+
-  "set title 'Optimization with "+to_string2(t_type)+"' font 'Helvetica,15' enhanced\n"+
+  "set title 'Optimization with "+t_type+"' font 'Helvetica,15' enhanced\n"+
   "set xlabel 'label'\n"+
   "set ylabel 'iteration'\n"+
   "set xrange[0:"+to_string2(nb_labels)+"]\n"+
@@ -886,6 +889,8 @@ bool OptiPlan::show_thresh_plan(std::string filename, int kplan){
     tmp_string+="\n";
 
     fprintf(gnuplot,tmp_string.c_str());
+
+    raw_output_str+="histogram \n";
     float scale_histogram;
     for(size_t i=0; i<nb_labels; i++)
     {
@@ -896,26 +901,32 @@ bool OptiPlan::show_thresh_plan(std::string filename, int kplan){
     for(size_t i=0; i<nb_labels; i++)
     {
         fprintf(gnuplot, "%lu %g \n", i, 
-			((float)v_histogram0[i])*scale_histogram );
+			((float)(v_histogram0[i]))*scale_histogram );
+        raw_output_str += to_string2(i) + " ; " + 
+		to_string2( ((float)(v_histogram0[i]))*scale_histogram) + "\n";
     }
     fflush(gnuplot);
     fprintf(gnuplot, "e\n");
 
+    raw_output_str += "\n threshold list \n";
     for(int i=0; i<t_nb_iter; i++)
     {
         for(size_t path=0; path<pow(2,i)+1; path++)
         {
             fprintf(gnuplot,"%lu %i \n", t_vv_threshold[i][path], -i);
+            raw_output_str += to_string2(t_vv_threshold[i][path])+" ; "+to_string2(-i)+" \n";
         }
     }
     fflush(gnuplot);
     fprintf(gnuplot, "e\n");
 
+    raw_output_str += "\n centroid list \n";
     for(int i=0; i<t_nb_iter; i++)
     {
         for(size_t path=0; path<pow(2,i); path++)
         {
             fprintf(gnuplot,"%lu %i \n", t_vv_centroid[i][path], -i);
+            raw_output_str += to_string2(t_vv_centroid[i][path])+" ; "+to_string2(-i)+" \n";
         }
     }
     fflush(gnuplot);
@@ -940,6 +951,17 @@ bool OptiPlan::show_thresh_plan(std::string filename, int kplan){
     fprintf(gnuplot,"unset output \n");
     fprintf(gnuplot,"exit \n"); 
     pclose(gnuplot);
+
+    std::ofstream outfile;
+    outfile.open(foldername+filename+t_type+".png",std::ios_base::app);
+    outfile << raw_output_str;
+    outfile.close();
+    raw_output_str = "";
+    
+    
+
+
+
     return true;
 }
 

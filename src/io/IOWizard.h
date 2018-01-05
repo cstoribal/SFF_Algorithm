@@ -105,6 +105,7 @@ public:
     bool mkdir(const string directory);
     bool mksubdir(const string directory);
     bool set_auto_directory(string foldername);
+    std::string get_autofolder(void);
 
     
 

@@ -1309,7 +1309,9 @@ bool IOWizard::set_auto_directory(string foldername){
     return true;
 }
 
-
+std::string IOWizard::get_autofolder(void){
+    return this->autofolder;
+}
 
 
 
