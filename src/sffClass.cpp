@@ -54,6 +54,7 @@ bool MySFF::loadProblem(int argc, char** argv){
     // Parsing done
     ioWizard.buildImageSet(imageSet);
     ioWizard.loadGroundTruth(gt_dmat,"");
+    //debug_check_all("load gt");
     ioWizard.autosetImsetParameters(imageSet);
     ioWizard.mkdir(input_prts.outputfolder);
     ioWizard.set_auto_directory(input_prts.outputfolder);
@@ -89,10 +90,13 @@ bool MySFF::preTreat(void){
             // CPING("noizy/"+input_prts.file2[i]);
             ioWizard.writeImage("./noizy/"+input_prts.file2[i],output_noizy_image,false);
         }
+        ioWizard.img_unsetscale();
         ioWizard.writeImage("./noizy/"+input_prts.gtpath,gt_dmat,false);
     }
     CPING("end pretreat");
-    
+
+    ioWizard.writeImage("data/groundtruth.png",this->gt_dmat);
+    //debug_check_all("post prescale");
     dim1 = imageSet[0].ivmat[0].rows;
     dim2 = imageSet[0].ivmat[0].cols;
     myLog.a("Image Dimensions : "+to_string2(dim1)+"px rows per "+to_string2(dim2)+"px cols\n");
@@ -111,21 +115,25 @@ bool MySFF::doSharpness(void){
 }
 
 bool MySFF::doDepth(void){
-    depthEst.set_param(input_prts.depth);
+    depthEst.set_param(input_prts.depth, input_prts.oversampling, gt_dmat);
     // test 
     //testClass.fillSharpPoly(sharpSet);
     depthEst.buildEstimation(sharpSet, depth_parameters);
-    debug_check_all("end estimation");
+    //debug_check_all("end estimation");
     depthEst.buildDepthmat(depth_parameters, dmat, dmat_rank, dmat_score);
-    debug_check_all("end depth");
+    //debug_check_all("end depth");
     vector<fType> labels = depthEst.getLabels();
     this->nb_labels = labels.size();
     // set dmat next outputs
     CPING("test depth");
-    assert(this->nb_labels == (this->sharpSet.size())*depthEst.getOversampling()); // Check Oversampling
+    CPING2("This Nb Labels",this->nb_labels);
+    CPING2("this sharpsetblabla", (this->sharpSet.size())*depthEst.getOversampling() );
+    CPING2("oversampling", depthEst.getOversampling());
+    assert(this->nb_labels == ( this->sharpSet.size()-1)*depthEst.getOversampling()+1); // Check Oversampling
 
     fType d_min = labels[0];
     fType d_max = labels[this->nb_labels-1];
+    CPING(d_max);
     ioWizard.img_setscale(d_min,d_max,1);
     ioWizard.img_setscale(10.0*(d_min-d_max),10.0*(d_max-d_min),2);
     ioWizard.img_setscale(0,nb_labels,3);
@@ -133,15 +141,18 @@ bool MySFF::doDepth(void){
     
     depthEst.getMLabelFromMDepth(dmat,dmat_label);
     depthEst.getMLabelFromMDepth(gt_dmat,gt_label_mat);
-    debug_check_all("gotlabelmats");
+    //debug_check_all("gotlabelmats");
     Utils::build_int_histogram(dmat_label,nb_labels,histogram_dmat);
     Utils::build_int_histogram(gt_label_mat,nb_labels,histogram_gtmat);
     CPING2("histogram size",histogram_dmat.size());
     ioWizard.draw_histogram(histogram_gtmat,histogram_dmat);
 
+
     ioWizard.mksubdir("data");
-    ioWizard.img_setscale(1);
+    ioWizard.img_unsetscale();
     ioWizard.writeImage("data/groundtruth.png",this->gt_dmat);
+    ioWizard.img_setscale(1);
+    ioWizard.writeImage("data/groundtruth_scaled.png",this->gt_dmat);
     ioWizard.writeImage("data/dmat.png",this->dmat);
     ioWizard.img_setscale(3);
     ioWizard.writeImage("data/dmat_label.png",this->dmat_label);
@@ -149,9 +160,11 @@ bool MySFF::doDepth(void){
     Mat1T tmpmat;
     log(dmat_score+1.0f,tmpmat);
     ioWizard.writeImage("data/Iscore.png",tmpmat);
-    
-    debug_check_all("end doDepth");
+
     evalClass.set_parameters(gt_dmat,depthEst.getLabels());
+    //debug_check_all("end doDepth");
+    ioWizard.img_unsetscale();
+    ioWizard.writeImage("data/groundtruth2.png",this->gt_dmat);
     dmat.copyTo(rmat);
     //CPING2("nblabels", nb_labels);
     //CPINGIF4("End Depth, scale1 : ", d_min, d_max, " !",true);
@@ -193,12 +206,18 @@ bool MySFF::prepare_optimization_plan(void){
 bool MySFF::showInterpolationAt(void){
     //CPINGIF4("iowizardclicked[0]",ioWizard.clicked[0].x,ioWizard.clicked[0].y,"",1);
     //depthEst.showInterpolationAt(ioWizard.clicked,sharpSet,depth_parameters,dmat, input_prts.outputfolder);
+    //ioWizard.clicked = vector<Point>();
+
+
     vector<Point> v = vector<Point>();
-    v.push_back(Point(140,30));
-    v.push_back(Point(150,220));
-    v.push_back(Point(305,245));
+    //v.push_back(Point(140,30));
+    //v.push_back(Point(150,220));
+    //v.push_back(Point(305,245));
+    v.push_back(Point(95,30));
+    v.push_back(Point(117,244));
+    v.push_back(Point(238,225));
     depthEst.showInterpolationAt(v,sharpSet,depth_parameters,dmat, input_prts.outputfolder);
-    ioWizard.clicked = vector<Point>();
+    ioWizard.writeImage("data/dmat_xcross.png",drawCrosses(dmat,v));
     return true;
 }
 
@@ -236,6 +255,31 @@ bool MySFF::setMultifocus(void){
     merge(imatBGR,this->image_MF);
     
     return true;
+}
+
+Mat3T MySFF::drawCrosses(const Mat1T & inputImage, const vector<Point> & vpoints){
+    Mat3T crossImage = Mat::zeros(Size(dim1,dim2), CV_TFC3);
+    vector<Mat1T> imatBGR(3);
+    if(inputImage.channels()==1){
+        imatBGR[0]=inputImage.clone();
+        imatBGR[2]=imatBGR[0].clone();
+        imatBGR[1]=imatBGR[0].clone();
+    }
+    else split(inputImage,imatBGR);
+    
+    // set a cross on the pointed pixel
+    fType imin, imax;
+    minMaxLoc(imatBGR[2], &imin, &imax);
+    for(int k=0; k<vpoints.size(); k++){
+        for(int i=-3; i<4; i++) for(int j=-3; j<4; j++) if(i*j==0){
+        imatBGR[2].at<fType>(vpoints[k].y+i,vpoints[k].x+j)=imax;
+        imatBGR[1].at<fType>(vpoints[k].y+i,vpoints[k].x+j)=(fType)0;
+        imatBGR[0].at<fType>(vpoints[k].y+i,vpoints[k].x+j)=(fType)0;
+    }}
+
+    merge(imatBGR,crossImage);
+    
+    return crossImage;
 }
 
 
@@ -309,20 +353,26 @@ bool MySFF::optimize2(void){
         }
         CPING2("Optimization done, step lambda = ",lambda);
     }
+    
+    
+    //debug_check_all("end end end");
+    
     return true;
 }
 
 
 
 bool MySFF::debug_check_all(std::string context){
+    if(0){
     debug_MMCheck(this->gt_dmat,"gt_dmatrix "+context);
     debug_MMCheck(this->gt_label_mat,"gt_label_mat "+context);
     debug_MMCheck(this->dmat,"dmatrix "+context);
     debug_MMCheck(this->dmat_rank,"drankmatrix "+context);
     debug_MMCheck(this->dmat_score,"dscorematrix "+context);
     debug_MMCheck(this->dmat_label,"dlabelmatrix "+context);
-    debug_MMCheck(this->rmat,"rmatrix "+context);
-    
+    debug_MMCheck(this->rmat,"rmatrix "+context); 
+    }
+    return true;
 }
 
 
@@ -348,25 +398,11 @@ bool MySFF::debug_MMCheck(const cv::Mat & matrix, std::string name){
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 ///////////##########################///////////
 ///////////        Deprecated        ///////////
 ///////////##########################///////////
 
-
+/*
 bool MySFF::setMultifocusRmat(void){
     image_MF = Mat::zeros(Size(dim1,dim2), CV_TFC3);
     vector<Mat1T> imatBGR(imageSet[0].dim);
@@ -382,14 +418,13 @@ bool MySFF::setMultifocusRmat(void){
     merge(imatBGR,this->image_MF);
     return true;
 }
-
-
+*/
+/*
 bool MySFF::evaluate(void){
-    evalClass.compute_RMSE(rmat,rmse,q_rmse);
-    evalClass.compute_RMSE_label(rmat,rmse,q_rmse);
-    evalClass.compute_PSNR(rmat,psnr);
+    //evalClass.compute_RMSE(rmat,rmse,q_rmse);
+    evalClass.compute_RMSE_label(rmat,rmse);
+    //evalClass.compute_PSNR(rmat,psnr);
 }
-
 bool MySFF::setNewProblem(void){
     // if the 1st loading ioWizard returns -M as an option (macro) then
     // store the string vector with problems adresses indexed by iPRB,
@@ -527,7 +562,6 @@ bool MySFF::optimize(void){
 
         ioWizard.img_setscale(1);
         ioWizard.writeImage("optimized/2D-"+tmp+ ".png",this->rmat);
-        //ioWizard.showImage("scale",tmp,this->rmat,100);
         ioWizard.write3DImage("optimized/3D-"+tmp+ ".png",this->rmat);
 
         ioWizard.img_setscale(4);
@@ -544,19 +578,16 @@ bool MySFF::optimize(void){
     }
     i++;
     }
-    debug_check_all("end");
+    //debug_check_all("end");
 }
 
 
 
 bool MySFF::launch_optimization(fType l_d, fType l_r, int maxiter, Mat1T & output){
-
     CPINGIF4("Starting optimization l_r = ",l_r," l_d = ", l_d, 1);
-
     energyClass.set_parameters(input_prts.nrj_d, input_prts.nrj_r, sharpSet, dmat, l_d, l_r);
     //set
     optiClass.reset();
-
 
     try{
         if(!optiClass.do_optimization() ) 
@@ -583,4 +614,4 @@ bool MySFF::launch_optimization(fType l_d, fType l_r, int maxiter, Mat1T & outpu
     
     return true;
 }
-
+*/

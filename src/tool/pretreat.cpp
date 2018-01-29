@@ -23,6 +23,7 @@ PreTreatment::PreTreatment(){
     this->noise_cs = 0.0;
     this->myLog =  NULL;
     srand(time(NULL));
+    // rng(time(NULL));
 }
 PreTreatment::~PreTreatment(){}
 

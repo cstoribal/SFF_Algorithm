@@ -20,6 +20,8 @@
 
 #include "../io/IOWizard.h"
 #include "../io/logs.h"
+#include "../tool/evaluation.h"
+#include "../tool/utils.h"
 
 
 using namespace cv;
@@ -40,6 +42,7 @@ int main( int argc, char** argv )
     ioW.setlogs(myLog);
     // Load Problem
     ioW.parseArgs(argc,argv);
+    if(!ioW.checkArgs())
     {
         cout<<"Arguments checking failed"<<endl;
         ioW.displayHelp();
@@ -48,16 +51,19 @@ int main( int argc, char** argv )
     tdf_input input_prts;
     ioW.setArgs(input_prts);
     myLog->log_data_out->setup(input_prts);
-    Mat1T gt_dmat;
+
+    Mat1T gt_dmat, gt_mat_copy;
     tdf_imgset imageSet;
     
     ioW.loadGroundTruth(gt_dmat,"");
+    ioW.loadGroundTruth(gt_mat_copy,"");
     ioW.autosetImsetParameters(imageSet);
     ioW.mkdir(input_prts.outputfolder);
     
-    
-    
-    
+    ioW.set_auto_directory(input_prts.outputfolder);
+
+    ioW.writeImage("gt_out.png",gt_dmat);
+    ioW.writeImage("gt_clone.png",gt_dmat);
     
     /*
     myLog->time_i();

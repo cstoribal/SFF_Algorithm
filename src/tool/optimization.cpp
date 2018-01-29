@@ -232,7 +232,7 @@ bool OptiClass::set_allneighbors(void){
     // aka nbs_nb, nbs_n, nbs_w;
     Mat1E borders = Mat::zeros(height,width,CV_TE)+1;
     this->neighbor_mat = Mat::zeros(5,5,CV_TE);
-    if(connexity==4 |
+    if(connexity==4 ||
        connexity==8)
     {
         neighbor_mat.at<eType>(2,1) = 0.25f;
@@ -487,7 +487,7 @@ bool OptiClass::compute_opt_custom(void){
         fType rmse,psnr;
         myLog->as("**** At iteration "+to_string2(n)+" ****\n");
         evalClass->compute_RMSE_label(regularized_depthmat,rmse);
-        evalClass->compute_PSNR(regularized_depthmat,psnr);
+        //evalClass->compute_PSNR(regularized_depthmat,psnr);
         
         if(n==1){myLog->set_state(selected_typename,lambda);}
         myLog->set_eval_at(rmse,n);
@@ -570,8 +570,8 @@ bool OptiClass::compute_write_cross_RMSE(void){
 }
 
 bool OptiClass::gnuplot_vect(FILE* gnuplot, vector<fType> vect){
-    for(int i=1; i<vect.size(); i++){
-        fprintf(gnuplot, "%i %g\n", i, vect[i]);
+    for(int i=0; i<vect.size(); i++){
+        fprintf(gnuplot, "%i %g\n", i+1, vect[i]);
     }
     fflush(gnuplot);
     fprintf(gnuplot, "e\n");

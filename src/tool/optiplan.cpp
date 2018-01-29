@@ -862,7 +862,7 @@ bool OptiPlan::show_thresh_plan(std::string filename, int kplan){
     fprintf(gnuplot,"set terminal pngcairo size 950,600 enhanced font 'Verdana,10'\n");
     ioWizard->set_gnuplot_output(gnuplot,filename+t_type+".png");
     std::string foldername=ioWizard->get_autofolder();
-    std::string raw_output_str="";
+    
     
     std::string tmp_string="set border linewidth 1.5\n"+
   to_string2("")+
@@ -890,7 +890,6 @@ bool OptiPlan::show_thresh_plan(std::string filename, int kplan){
 
     fprintf(gnuplot,tmp_string.c_str());
 
-    raw_output_str+="histogram \n";
     float scale_histogram;
     for(size_t i=0; i<nb_labels; i++)
     {
@@ -902,31 +901,27 @@ bool OptiPlan::show_thresh_plan(std::string filename, int kplan){
     {
         fprintf(gnuplot, "%lu %g \n", i, 
 			((float)(v_histogram0[i]))*scale_histogram );
-        raw_output_str += to_string2(i) + " ; " + 
-		to_string2( ((float)(v_histogram0[i]))*scale_histogram) + "\n";
     }
     fflush(gnuplot);
     fprintf(gnuplot, "e\n");
 
-    raw_output_str += "\n threshold list \n";
+    //raw_output_str += "\n threshold list \n";
     for(int i=0; i<t_nb_iter; i++)
     {
         for(size_t path=0; path<pow(2,i)+1; path++)
         {
             fprintf(gnuplot,"%lu %i \n", t_vv_threshold[i][path], -i);
-            raw_output_str += to_string2(t_vv_threshold[i][path])+" ; "+to_string2(-i)+" \n";
         }
     }
     fflush(gnuplot);
     fprintf(gnuplot, "e\n");
 
-    raw_output_str += "\n centroid list \n";
+    //raw_output_str += "\n centroid list \n";
     for(int i=0; i<t_nb_iter; i++)
     {
         for(size_t path=0; path<pow(2,i); path++)
         {
             fprintf(gnuplot,"%lu %i \n", t_vv_centroid[i][path], -i);
-            raw_output_str += to_string2(t_vv_centroid[i][path])+" ; "+to_string2(-i)+" \n";
         }
     }
     fflush(gnuplot);
@@ -951,6 +946,29 @@ bool OptiPlan::show_thresh_plan(std::string filename, int kplan){
     fprintf(gnuplot,"unset output \n");
     fprintf(gnuplot,"exit \n"); 
     pclose(gnuplot);
+
+
+
+    std::string raw_output_str="";
+    raw_output_str+="histogram ;";
+    for(int i=0; i<t_nb_iter; i++){
+        raw_output_str+=" threshold_"+to_string2(i)+" ; centroid_"+to_string2(i)+" ;";
+        }
+    raw_output_str+="\n";
+    
+    for(size_t path=0; path<pow(2,t_nb_iter-1)+1; path++){
+        if(path<(size_t)nb_labels){
+            raw_output_str+= to_string2(v_histogram0[path]);
+        }
+        raw_output_str +=  " ; ";
+        for(int i=0; i<t_nb_iter; i++){
+            if(path<pow(2,i)+1) raw_output_str += to_string2(t_vv_threshold[i][path]);
+            raw_output_str += " ; ";
+            if(path<pow(2,i))   raw_output_str += to_string2(t_vv_centroid[i][path]);
+            raw_output_str += " ; ";
+        }
+        raw_output_str += "\n";
+    }
 
     std::ofstream outfile;
     outfile.open(foldername+filename+t_type+".txt",std::ios_base::app);

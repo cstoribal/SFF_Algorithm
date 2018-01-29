@@ -127,6 +127,7 @@ public:
     bool debug_check_all(std::string context = "");
     
 private:
+    Mat3T drawCrosses(const Mat1T & inputImage, const vector<Point> & vpoints);
     int dim1, dim2;
     int nb_labels;
 

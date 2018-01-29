@@ -51,3 +51,6 @@ target_link_libraries(ProjSFF myLIB  gcoLIB  ${OpenCV_LIBS} ${MathGL_LIBRARIES} 
 add_executable(SFFDataMgmt ./io/filemgmt.cpp)
 target_link_libraries(SFFDataMgmt myLIB  gcoLIB  ${OpenCV_LIBS} ${MathGL_LIBRARIES} )
 
+add_executable(testRMSE ./misc/testRMSE.cpp)
+target_link_libraries(testRMSE myLIB  gcoLIB  ${OpenCV_LIBS} ${MathGL_LIBRARIES} )
+

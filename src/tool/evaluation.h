@@ -59,6 +59,7 @@ private:
     fType step;
 
     Rect roi;
+    fType roi_surface;
     
     
     

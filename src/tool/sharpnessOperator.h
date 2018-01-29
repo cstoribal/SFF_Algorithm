@@ -48,6 +48,7 @@ public:
     
     
     bool compute_SMLAP(vector<Mat1T> ivmat, vector<Mat1T>& smat);
+    bool compute_MLAP(vector<Mat1T> ivmat, vector<Mat1T>& smat);
     bool compute_DLAP(vector<Mat1T> ivmat, vector<Mat1T>& smat);
     bool compute_3DLAP(tdf_imgset & ioset);
     bool compute_STA2(vector<Mat1T> ivmat, vector<Mat1T>& smat);
