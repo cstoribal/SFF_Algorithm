@@ -95,6 +95,7 @@ private:
     std::vector<size_t> v_selected_method;
     std::vector<std::string> v_types;
     std::vector<vector<fType> > vv_rmse;	//TODO size + shows
+    std::vector<vector<fType> > vv_psnr;
 
     //nap-shield
     bool build_rank4xy(void);

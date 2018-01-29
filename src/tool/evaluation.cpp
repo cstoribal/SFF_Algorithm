@@ -50,22 +50,6 @@ bool EvalClass::set_parameters(const Mat1T & gt_dmat, const vector<fType> & labe
 }
 
 
-bool EvalClass::compute_RMSE_label(const Mat1T & dmat, fType & rmse, fType & q_rmse ){
-    //deprecated
-    CPING("warning, bad version of rmse");
-    assert(0);
-    Mat1T tmpmat;
-    tmpmat = dmat/this->step-gt_dmat/this->step;
-    pow(tmpmat,2,tmpmat);
-    tmpmat=Mat(tmpmat,roi);
-    rmse = sqrt(cv::sum(tmpmat)[0]/(roi_surface));
-    q_rmse = 1/rmse;
-
-    string logout = " * RMSE_label is : " + to_string2(rmse) + " and Q is : " + to_string2(q_rmse) + "\n";
-    myLog->a(logout);
-    return true;
-}
-
 bool EvalClass::compute_RMSE_label(const Mat1T & dmat, fType & rmse){
     Mat1T tmpmat;
     tmpmat = dmat/this->step-gt_dmat/this->step;
@@ -76,6 +60,21 @@ bool EvalClass::compute_RMSE_label(const Mat1T & dmat, fType & rmse){
     string logout = " - RMSE is : " + to_string2(rmse) + "  ";
     CPING(logout);
     myLog->a(logout);
+    return true;
+}
+
+
+bool EvalClass::compute_PSNR(const Mat1T & dmat, fType & psnr ){
+    Mat1T tmpmat;
+    tmpmat = dmat-gt_dmat;
+    pow(tmpmat,2,tmpmat);
+    tmpmat=Mat(tmpmat,roi);
+    psnr = cv::sum(tmpmat)[0]/(roi_surface);
+    psnr = 10*log10( (this->labels[this->labels.size()-1]-this->labels[0])*
+		(this->labels[this->labels.size()-1]-this->labels[0]) /psnr);
+    string logout = " - PSNR is : " + to_string2(psnr) + "\n";
+    myLog->a(logout);
+    
     return true;
 }
 
@@ -99,18 +98,19 @@ Mat1T EvalClass::check_diff(const Mat1T & dmat){
     Mat1T outmat = abs(dmat - gt_dmat);
     return outmat;
 }
-    
 
-
-bool EvalClass::compute_PSNR(const Mat1T & dmat, fType & psnr ){
+bool EvalClass::compute_RMSE_label(const Mat1T & dmat, fType & rmse, fType & q_rmse ){
+    //deprecated
+    CPING("warning, bad version of rmse");
+    assert(0);
     Mat1T tmpmat;
-    tmpmat = dmat-gt_dmat;
+    tmpmat = dmat/this->step-gt_dmat/this->step;
     pow(tmpmat,2,tmpmat);
     tmpmat=Mat(tmpmat,roi);
-    psnr = cv::sum(tmpmat)[0]/(roi_surface);
-    psnr = 10*log10(this->labels[this->labels.size()-1]/psnr);
-    string logout = " - PSNR is : " + to_string2(psnr) + "\n";
+    rmse = sqrt(cv::sum(tmpmat)[0]/(roi_surface));
+    q_rmse = 1/rmse;
+
+    string logout = " * RMSE_label is : " + to_string2(rmse) + " and Q is : " + to_string2(q_rmse) + "\n";
     myLog->a(logout);
-    
     return true;
 }

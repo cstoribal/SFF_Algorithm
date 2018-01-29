@@ -15,7 +15,7 @@ and the results under the format of a csv
 #include "logs.h"
 
 MyLog::MyLog(){
-    logversion = "v1.0";
+    logversion = "v1.1";
     logs = "Starting log file \n "+logversion+" \n";
 }
 MyLog::~MyLog(){
@@ -133,6 +133,9 @@ bool MyLog::clear_iteration_times(void){
     for(int i=1; i<this->log_data_out->output.v_rmse.size(); i++){
         this->log_data_out->output.v_rmse[i] = -1;
     }
+    for(int i=1; i<this->log_data_out->output.v_psnr.size(); i++){
+        this->log_data_out->output.v_psnr[i] = -1;
+    }
     return true;
 }
 
@@ -164,11 +167,20 @@ bool MyLog::set_eval_at(fType rmse, int iter){
     return false;
 }
 
+bool MyLog::set_eval_at(fType rmse, fType psnr, int iter){
+    if(iter<10){
+        this->log_data_out->output.v_psnr[iter] = psnr;
+        return true;
+    }
+    return false;
+}
+
 bool MyLog::set_eval(fType rmse, fType psnr){
     this->log_data_out->output.rmse = rmse;
     this->log_data_out->output.psnr = psnr;
     return true;
 }
+
 
 bool MyLog::set_bestplans(std::vector<std::string> types){
     this->log_data_out->output.types = types;
@@ -195,6 +207,7 @@ bool MyLogOut::setup(tdf_input & input){
     this->output.type_best_theorical="";
     this->output.type_best_regularized="";
     this->output.v_rmse.resize(10);
+    this->output.v_psnr.resize(10);
     return true;
 }
 
@@ -244,6 +257,9 @@ bool MyLogOut::Format_txt(void){
     for(int k=0;k<o.time.size();k++)
         strdata += "; " + to_string2(o.time[k]);
 
+    for(int k=0; k<o.v_psnr.size(); k++){
+        strdata += "; " + to_string2(o.v_psnr[k]);
+    }
 
     for(int k=0;k<o.types.size();k++)
         strdata += "; " + to_string2(o.types[k]);
@@ -323,7 +339,7 @@ bool MyLogOut::write(std::string filename, bool verbose){
 
 bool MyLogOut::create_new_logfile_header(std::ofstream & outfile){
     std::string initdata;
-    initdata = logversion + " ; outputfolder ; file1_p ; extension ; nbimg ; file2_p ; nb_img ; gt_path ; dmin ; dmax ; fmin ; fmax ; scale ; blur ; noiseA ; noiseB ; noiseCA ; noiseCS ; sharpOp ; depthOp ; oversampling ; nrj_d ; nrj_r ; connexity ; opti ; lambda ; rmse0 ; rmse1; rmse2; rmse3; rmse4 ; rmse5 ; rmse6 ; rmse7 ; rmse8 ; rmse9 ; t0_load ; t1_sharp ; t2_sharp ; t3_depth ; t4_multif ; t5_plan ; t6_charg ; topti0 ; topti1 ; topti2 ; topti3 ; topti4 ; topti5 ; topti6 ; topti7 ; topti8 ; topti9 ; t17 ; t18 ; t19 ; type 1; type 2; type 3 ; type 4 ; type 5 ; type 6 ; type 7 ; type 8 \n";
+    initdata = logversion + " ; outputfolder ; file1_p ; extension ; nbimg ; file2_p ; nb_img ; gt_path ; dmin ; dmax ; fmin ; fmax ; scale ; blur ; noiseA ; noiseB ; noiseCA ; noiseCS ; sharpOp ; depthOp ; oversampling ; nrj_d ; nrj_r ; connexity ; opti ; lambda ; rmse0 ; rmse1; rmse2; rmse3; rmse4 ; rmse5 ; rmse6 ; rmse7 ; rmse8 ; rmse9 ; t0_load ; t1_sharp ; t2_sharp ; t3_depth ; t4_multif ; t5_plan ; t6_charg ; topti0 ; topti1 ; topti2 ; topti3 ; topti4 ; topti5 ; topti6 ; topti7 ; topti8 ; topti9 ; t17 ; t18 ; t19 ; psnr0 ; psnr1 ; psnr2; psnr3; psnr4; psnr5; psnr6; psnr7; psnr8; psnr9; type 1; type 2; type 3 ; type 4 ; type 5 ; type 6 ; type 7 ; type 8 \n";
     outfile << initdata ;
     return true; //TODO
 }
