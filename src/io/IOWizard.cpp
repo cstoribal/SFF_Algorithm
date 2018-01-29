@@ -63,7 +63,7 @@ IOWizard::IOWizard() {
                 .preproc_set=0,.scale=1,.gauss=1,
                         .noise_a=0.05,.noise_b=0.05,.noise_ca=0.05,.noise_cs=0.05,
 		.sharp_set=0,.sharp="",
-                .depth_set=0,.depth="",
+                .depth_set=0,.depth="",.oversampling=1,
 		.nrj_set=0,.nrj_d="",.nrj_r="",
 		.opti_set=0,.opti="",.connexity=4,.maxiteration=-1,
                 .lambda_r_set=0,.vect_lambda_r={1,2,3},
@@ -392,7 +392,7 @@ bool IOWizard::checkArgs(void){  // TODO more checks like focus.size == images.s
     
     opt_features.resize(16);
     for(int i=0; i<16; i++){
-        opt_features[i]= opt_feature_int && (0x01 << i);
+        opt_features[i]= opt_feature_int & (0x01 << i);
     }
     // 
     return true;
@@ -430,7 +430,7 @@ bool IOWizard::displayHelp(void){
         COUT("     1/0; -focusdepths(a vector of imagefocus); \\n");
         COUT("     1/0; -sc; -gw; -n1; -n2; -nga; -ngs\\n");
         COUT("     1/0; -psharp; \\n");
-        COUT("     1/0; -pdepth; \\n");
+        COUT("     1/0; -pdepth; oversampling \\n");
         COUT("     1/0; -pnd energy data; -pnr energyregul; \\n");
         COUT("     1/0; -poptimization; connexity, maxiteration\\n");
         COUT("     1/0; -lambda_r vector; \\n");
@@ -742,6 +742,9 @@ bool IOWizard::parsevect2struct(const vector<vector<string> > & fd, tdf_input & 
             case 1:
                 inp.depth = fd[l_idx][w_idx];
                 break;
+            case 2:
+                inp.oversampling = atoi(fd[l_idx][w_idx].c_str());
+                break;
             default:
                 break;
             }
@@ -842,7 +845,7 @@ bool IOWizard::storeParameters(void){
 
     textdata += to_string2(i.sharp_set) + " ; " + i.sharp + "\n";
 
-    textdata += to_string2(i.depth_set) + " ; " + i.depth + "\n";
+    textdata += to_string2(i.depth_set) + " ; " + i.depth + " ; " + to_string2(i.oversampling) + "\n";
 
     textdata += to_string2(i.nrj_set) + " ; " + i.nrj_d+" ; "+i.nrj_r+"\n";
 
@@ -896,8 +899,13 @@ bool IOWizard::readImage(const string filepath, Mat & image) {
     {
         cout << "Could not open or find the image :" << filepath << endl ;
         return false;
-    }
+    }    
+    double _min,_max;
+    //minMaxLoc(image,&_min,&_max);
+    //CPINGIF4("load img - min - max", filepath , _min  , _max ,1);
     image.convertTo(image,CV_TF,1.0/255);
+    //minMaxLoc(image,&_min,&_max);
+    //CPINGIF4("load img2 - min - max", filepath , _min  , _max ,1);
     return true;
 }
 
@@ -1021,6 +1029,7 @@ bool IOWizard::loadGroundTruth(Mat & gtmat,string filepath = "") {
     split(gtmat,tmpmatv);
     gtmat = tmpmatv[0];
     gtmat = gtmat*(input.gta)+input.gtb;
+    
     if(input.scale!=1)
         resize(gtmat, gtmat, Size(), input.scale, input.scale);
     //for(int i=0;i<gtmat.rows;i++)for(int j =0;j<gtmat.cols;j++){
@@ -1092,7 +1101,7 @@ bool IOWizard::img_unsetscale(void){
 //// IMG DISPLAY & SAVE ////
 
 bool IOWizard::showImage(const string param, const string name, const Mat & image, int timer) {
-    if(1){return false;} //TODO Corruption of data ?!?
+    if(0){return false;} //TODO Corruption of data ?!?
     fType imin, imax, scale;
     Mat imat = image.clone();
     //image.copyTo(imat);

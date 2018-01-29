@@ -1,6 +1,6 @@
 /**************************
 *	ProjSFF
-*	mainSFF.cpp
+*	testRMSE.cpp
 *	cstoribal
 *	07-04-17
 **************************/
@@ -11,33 +11,60 @@
 #include <ctime> 
 #include <stdio.h>
 //#include <mgl2/qt.h>
-#include <mgl2/mgl.h>
+//#include <mgl2/mgl.h>
+
+
+#include "../misc/miscdef.h"
 
 
 
-
-
-#include "sffClass.h"
+#include "../io/IOWizard.h"
+#include "../io/logs.h"
+#include "../tool/evaluation.h"
+#include "../tool/utils.h"
 
 
 using namespace cv;
 using namespace std;
 vector<bool> MiscClass::optional_features(16);
-MySFF mySFF; // global eurk variable
+//MySFF mySFF; // global eurk variable
+
 
 
 int main( int argc, char** argv )
 {
     
-    //TestClass myTest;
-    //myTest.gethalfindex(58);
-    //return 0;
+    IOWizard ioW;
     
+    
+    MyLog* myLog =  new MyLog;
+    // Set Logs
+    ioW.setlogs(myLog);
+    // Load Problem
+    ioW.parseArgs(argc,argv);
+    if(!ioW.checkArgs())
+    {
+        cout<<"Arguments checking failed"<<endl;
+        ioW.displayHelp();
+        return false;
+    }
+    tdf_input input_prts;
+    ioW.setArgs(input_prts);
+    myLog->log_data_out->setup(input_prts);
+    Mat1T gt_dmat, gt_mat_copy;
+    tdf_imgset imageSet;
+    
+    ioW.loadGroundTruth(gt_dmat,"");
+    ioW.loadGroundTruth(gt_mat_copy,"");
+    ioW.autosetImsetParameters(imageSet);
+    ioW.mkdir(input_prts.outputfolder);
+    
+    ioW.set_auto_directory(input_prts.outputfolder);
 
-    mySFF.setlogs();
-    MyLog* myLog = &mySFF.myLog; //alias
-    //std::time_t t0 = std::time(0);
-    //std::time_t t1 = std::time(0);
+    ioW.writeImage("gt_out.png",gt_dmat);
+    ioW.writeImage("gt_clone.png",gt_dmat);
+    
+    /*
     myLog->time_i();
     mySFF.loadProblem(argc, argv);
     double t0 = myLog->time_r(0);
@@ -56,11 +83,7 @@ int main( int argc, char** argv )
     //mySFF.testEnergy();
     mySFF.ioWizard.img_setscale(1);
     //mySFF.showInterpolation(Point(140,10));
-    if(MiscClass::optional_features[1]){
-        myLog->as("optional feature show image for interpolation");
-        mySFF.ioWizard.showImage("scale","Idist.png",Mat::zeros(1,1,CV_TF),1);
-        
-    }//mySFF.dmat,1);}
+    if(MiscClass::optional_features[1]){mySFF.ioWizard.showImage("scale","Idist.png",Mat::zeros(1,1,CV_TF),1);}//mySFF.dmat,1);}
     mySFF.showInterpolationAt();
     //mySFF.showInterpolation(Point(10,11));
     mySFF.ioWizard.img_unsetscale();
@@ -88,6 +111,7 @@ int main( int argc, char** argv )
     //Mat1T reliability_matrix;
     //mySFF.energyClass.eParams.rmat.copyTo(reliability_matrix);
         
+    */
     return 0;
 
 }

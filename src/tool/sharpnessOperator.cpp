@@ -48,6 +48,7 @@ bool Sharpness_Operator::computeOp(string optype, const tdf_imgset & iset, tdf_i
         sset[i].dpth = iset[i].dpth;
         if(optype=="SMLAP"
           |optype=="3DLAP") compute_SMLAP(iset[i].ivmat, sset[i].ivmat);
+        if(optype=="MLAP")  compute_MLAP(iset[i].ivmat, sset[i].ivmat);
         if(optype=="STA2")  compute_STA2( iset[i].ivmat, sset[i].ivmat);
     }
     
@@ -86,6 +87,39 @@ bool Sharpness_Operator::compute_SMLAP(vector<Mat1T> ivmat, vector<Mat1T>& smat)
         
         lapb = Mat::ones(7, 7, CV_TF); //TODO define window dimensions
         filter2D(lap,lapc,-1,lapb,Point(-1,-1),0,BORDER_REPLICATE);
+        
+        svmat.push_back(lapc);
+    }
+    
+    combinRule(svmat,smat);	//TODO Select a rule for
+				//combining different Laplacians
+
+    fType seuil = 0;//1;			//TODO fixer seuil
+    smat[0] = smat[0].setTo(0,smat[0]<seuil);
+    return true;
+}
+
+bool Sharpness_Operator::compute_MLAP(vector<Mat1T> ivmat, vector<Mat1T>& smat){
+    // Build temporary modlaplacian
+    // Sum Laplacians
+    // over !
+
+    Mat lap, lapb, lapc;
+    vector<Mat1T> svmat;
+    Mat Lx = (Mat_<fType>(3,1) << -1, 2, -1);
+    Mat Ly = (Mat_<fType>(1,3) << -1, 2, -1);
+    
+    for(int i=0; i<ivmat.size(); i++)
+    {
+        filter2D(ivmat[i],lap,-1,Lx, Point(-1,-1), 0, BORDER_REPLICATE);
+        filter2D(ivmat[i],lapb,-1,Ly, Point(-1,-1), 0, BORDER_REPLICATE);
+    
+        lapc = abs(lap)+abs(lapb);
+
+        // (lap*0).copyTo(lap,lap<seuil);
+        
+        //lapb = Mat::ones(1, 1, CV_TF); //TODO define window dimensions
+        //filter2D(lap,lapc,-1,lapb,Point(-1,-1),0,BORDER_REPLICATE);
         
         svmat.push_back(lapc);
     }

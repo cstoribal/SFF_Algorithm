@@ -161,6 +161,7 @@ struct struct_input{
 
     int depth_set;//7
     std::string depth;
+    int oversampling;
 
     int nrj_set;     //8
     std::string nrj_d,nrj_r;
