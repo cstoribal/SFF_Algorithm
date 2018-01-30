@@ -51,6 +51,7 @@ int main( int argc, char** argv )
     tdf_input input_prts;
     ioW.setArgs(input_prts);
     myLog->log_data_out->setup(input_prts);
+
     Mat1T gt_dmat, gt_mat_copy;
     tdf_imgset imageSet;
     

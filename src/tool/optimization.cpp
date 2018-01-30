@@ -92,6 +92,7 @@ bool OptiClass::do_all_optimizations(void){
     p_OptiPlanner->get_nb_storedmethods(nb_storedplans);
     v_selected_method.resize(nb_storedplans);
     vv_rmse.resize(nb_storedplans);
+    vv_psnr.resize(nb_storedplans);
     v_types.resize(nb_storedplans);
     for(size_t tmp=0; tmp<nb_storedplans; tmp++){
         v_selected_method[tmp]=tmp;
@@ -487,12 +488,14 @@ bool OptiClass::compute_opt_custom(void){
         fType rmse,psnr;
         myLog->as("**** At iteration "+to_string2(n)+" ****\n");
         evalClass->compute_RMSE_label(regularized_depthmat,rmse);
-        //evalClass->compute_PSNR(regularized_depthmat,psnr);
+        evalClass->compute_PSNR(regularized_depthmat,psnr);
         
         if(n==1){myLog->set_state(selected_typename,lambda);}
-        myLog->set_eval_at(rmse,n);
+        myLog->set_eval_at(rmse,psnr,n);
         vv_rmse[actual_idx_method].resize(n);
+        vv_psnr[actual_idx_method].resize(n);
         vv_rmse[actual_idx_method][n-1] = rmse;
+        vv_psnr[actual_idx_method][n-1] = psnr;
     }
     CPING(" over");
     

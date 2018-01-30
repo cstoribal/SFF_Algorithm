@@ -191,6 +191,7 @@ struct struct_log{
     fType rmse;
     std::vector<fType> v_rmse;
     fType psnr;
+    std::vector<fType> v_psnr;
     std::vector<std::string> types;
     std::string type_best_theorical;
     std::string type_best_regularized;

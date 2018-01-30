@@ -61,6 +61,7 @@ public:
     bool   set_state(std::string opti, fType lambda);
     bool   set_eval(fType rmse, fType psnr);
     bool   set_eval_at(fType rmse, int iter);
+    bool   set_eval_at(fType rmse, fType psnr, int iter);
     bool   set_bestplans(std::vector<std::string> types);
     bool   write_deltaRMSE(std::string filename, vector<vector<vector<std::string> > > &  vvv_deltarmse, vector<vector<std::string> > & vv_type12);
     
