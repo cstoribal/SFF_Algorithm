@@ -27,9 +27,13 @@ Try "./ProjSFF help all" if you need help and detailed explanation on parameters
 The 1/0 are set to 1 if the line is active, 0 if it is inactive and that the program has to use default values.
 It is then possible to run SFF with "./ProjSFF -D [path_of_your_.txt_file]". 
 
+* -optf is the only parameter that must be called as an independant parameter. It represents a vector of boolean, each of them being linked to a special parameter, for testing purposes. -optf 0 may be the good default value. 
+    bit 0 adds points on the borders of the interpolating interval (bad behaviour), 
+    bit 1 enable "showInterpolation" (see bugs), 
+    bit 2 enables to write the noisy images in a new folder.
 
 
-## HowTo - General introduction
+## HowTo : General introduction
 
 The executable is *ProjSFF* running the main program.
 
@@ -45,6 +49,9 @@ It's currently the way our algorithm is called. For convenience, it is possible 
 
 ### Bugs to fix
 
+#### Various
+- ShowInterpolationAt is partly broken, due to a conflict when using showImage from openCV which would ruin the code. Temporary patch forbids the call to showImage in IOWizard, and the coordinates of the pixels is hardcoded. 
+
 #### Concerning parameters 
 - Loading the dataset : in the "*.param.txt" file, current versions of the program worked with the vector of filepaths and focus values (Rows 2 and 5). It had first been implemented with Row 1 (with data about file syntax) but it is now deprecated.
 - Loading the groundtruth : to compute properly our algorithm, Row 3 may be mandatory. If not needed, any image of the dataset with gta=0 may work. 
@@ -54,7 +61,6 @@ It's currently the way our algorithm is called. For convenience, it is possible 
 - maxiteration is currently not in use.
 - there are some limitations in the energy dynamics. For instance, with energy data being nL1Rw1 and lambda d being 10^6 on some samples, the graph cut algorithm reaches its maximum bound value and is therefore not computed, which crashes the program (todo). We suggest to sort values of lambda in ascending order, when possible. Additionally, due to some constraints about the regularization term being a metric and float rounding, we suggest that lambda r  are to be typed in as integers.
 - The manual call of parameters (./ProjSFF -ps 1) is not supported anymore, but may work for some.
-- optf is the only parameter that must be called as an independant parameter. It represents a vector of boolean, each of them being linked to a special parameter, for testing purposes. -optf 0 may be the good default value.
 
 ### ToDoList
 - Fixing all the above features-limitations.
