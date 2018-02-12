@@ -312,13 +312,22 @@ bool EnergyClass::e_nLx_Rw1( const vector<fType> & lvect, vector<Mat1T> & emat){
         {
             accumulator += sharp3Dvmat[k]-minmat;            
         }
+        accumulator += maxmax/10000000.0f;  // add eps on denominator
         
         Mat1T matrix;
         divide((maxmat-minmat).mul(maxmat-minmat)*nblabel, (accumulator), matrix);
         // edit : don't divide by *maxmax
         //minMaxLoc(matrix,&minmin,&maxmax);
         //CPING("rmat");CPING2(minmin,maxmax);
+        minMaxLoc(matrix,&fmin,&fmax);
+        myLog->a("Fiability Matrix before scaling min : "+to_string2(fmin)+", max : "+to_string2(fmax));
         this->eParams.rmat = matrix/mean(matrix)[0];
+        minMaxLoc(this->eParams.rmat,&fmin,&fmax);
+        myLog->a("Fiability Matrix after scaling min : "+to_string2(fmin)+", max : "+to_string2(fmax));
+
+        //TODO ? borner fmin-fmax ?
+
+        myLog->write();
         this->eParams.rmatset= "rw1";
     }
 
