@@ -27,10 +27,10 @@ Try "./ProjSFF help all" if you need help and detailed explanation on parameters
 The 1/0 are set to 1 if the line is active, 0 if it is inactive and that the program has to use default values.
 It is then possible to run SFF with "./ProjSFF -D [path_of_your_.txt_file]". 
 
-* -optf is the only parameter that must be called as an independant parameter. It represents a vector of boolean, each of them being linked to a special parameter, for testing purposes. -optf 0 may be the good default value. 
-    bit 0 adds points on the borders of the interpolating interval (bad behaviour), 
-    bit 1 enable "showInterpolation" (see bugs), 
-    bit 2 enables to write the noisy images in a new folder.
+* -optf is the only parameter that must be called as an independant parameter. It represents a vector of boolean, each of them being linked to a special parameter, for testing purposes. -optf 0 may be the good default value.
+     - bit 0 adds points on the borders of the interpolating interval (bad behaviour), 
+     - bit 1 enable "showInterpolation" (see bugs), 
+     - bit 2 enables to write the noisy images in a new folder.
 
 
 ## HowTo : General introduction
