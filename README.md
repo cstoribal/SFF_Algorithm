@@ -33,7 +33,7 @@ It is then possible to run SFF with "./ProjSFF -D [path_of_your_.txt_file]".
      - bit 2 enables to write the noisy images in a new folder.
 
 
-## HowTo : General introduction
+## HowTo General introduction
 
 The executable is *ProjSFF* running the main program.
 
